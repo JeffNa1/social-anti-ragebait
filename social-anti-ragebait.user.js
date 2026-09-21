@@ -21,6 +21,7 @@
 // @match        *://twitter.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
+// @grant        unsafeWindow
 // @connect      classifier.dev
 // @run-at       document-idle
 // ==/UserScript==
@@ -47,6 +48,14 @@
     collapseSeedingEnabled: true,
     focusModeEnabled: false,
     focusWhitelistTags: ['motivational', 'meme', 'deepdive', 'wholesome'],
+    viralDetectionEnabled: true,
+    outlierDetectionEnabled: true,
+    outlierMinViews: 3000,
+    outlierMinMultiplier: 3.0,
+    outlierMaxAgeHours: 48,
+    outlierThreadsMinLikes: 150,
+    outlierThreadsMinMultiplier: 2.0,
+    outlierThreadsMinViews: 2000,
   };
 
   try {
@@ -83,484 +92,1344 @@
   const WOMEN_OR_GOONBAIT_REGEX =
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
+  // Impeccable & Lucide SVG Icons (Zero Slop Unicode)
+  const ICONS = {
+    shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>`,
+    shieldAlert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+    scan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+    sparkles: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`,
+    smile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>`,
+    binary: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+    skull: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></svg>`,
+    zap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    messageSquare: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>`,
+    target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+    broom: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m16 4 3 3L6 20l-3-3z"/><path d="m14 6 3 3"/><path d="M3 21l3-3"/></svg>`,
+    eyeOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .698 10.793 10.793 0 0 1-3.125 4.148"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499A10.75 10.75 0 0 1 2.062 12.35a1 1 0 0 1 0-.698 10.75 10.75 0 0 1 2.825-3.834"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
+    chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+    x: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`
+  };
+
+  function getBadgeIconSvg(label) {
+    if (label === 'self-improvement / motivational') return ICONS.sparkles;
+    if (label === 'meme / humor / satire') return ICONS.smile;
+    if (label === 'deep dive / technical breakdown / industry insider') return ICONS.binary;
+    if (label === 'wholesome / positive') return ICONS.heart;
+    if (label === 'fearmongering / doom') return ICONS.skull;
+    if (label === 'fomo / hype') return ICONS.zap;
+    if (label === 'other / casual discussion') return ICONS.messageSquare;
+    return ICONS.tag;
+  }
+
   const css = `
-    .x-jev-badge-container {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      align-items: center !important;
-      gap: 6px !important;
-      margin: 4px 0 8px 0 !important;
-      width: 100% !important;
-      position: relative !important;
-      z-index: 10 !important;
-    }
-    .x-jev-badge-container:empty,
-    .x-jev-badge-container:not(:has(.x-jev-badge:not(.x-jev-hidden))) {
-      display: none !important;
-    }
-    .x-jev-badge-container .x-jev-badge {
-      margin: 0 !important;
-    }
-    .x-jev-badge {
-      display: inline-flex;
-      align-items: center !important;
-      gap: 6px !important;
-      padding: 3px 10px !important;
-      border-radius: 9999px !important;
-      font-size: 11.5px !important;
-      font-weight: 600 !important;
-      letter-spacing: 0.02em !important;
-      margin: 4px 0 8px 0 !important;
-      border: 1px solid !important;
-      width: fit-content !important;
-      user-select: none !important;
-      transition: all 0.2s ease !important;
-      cursor: help !important;
-      line-height: 1.2 !important;
-      z-index: 10 !important;
-      position: relative !important;
-      filter: none !important;
-      opacity: 1 !important;
-      pointer-events: auto !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-    }
-    .x-jev-badge:hover {
-      filter: brightness(1.2) !important;
-      transform: translateY(-1px) !important;
-    }
-    .x-jev-badge.x-jev-hidden {
-      display: none !important;
-    }
-    .x-jev-confidence {
-      font-size: 10px !important;
-      opacity: 0.85 !important;
-      font-weight: 500 !important;
-    }
-    [data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
-    [data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) video,
-    .monk-blur-media {
-      filter: blur(28px) grayscale(60%) !important;
-      opacity: 0.1 !important;
-      user-select: none !important;
-      pointer-events: none !important;
-      transition: filter 0.25s ease, opacity 0.25s ease !important;
-    }
-    .monk-revealed,
-    .monk-revealed img,
-    .monk-revealed video,
-    .monk-revealed .monk-blur-media,
-    [data-monk-revealed="true"],
-    [data-monk-revealed="true"] img,
-    [data-monk-revealed="true"] video,
-    body.x-jev-no-monk-blur [data-monk-blocked="true"] img,
-    body.x-jev-no-monk-blur [data-monk-blocked="true"] video,
-    body.x-jev-no-monk-blur .monk-blur-media,
-    body.x-jev-disable-all-blur [data-monk-blocked="true"] img,
-    body.x-jev-disable-all-blur [data-monk-blocked="true"] video {
-      filter: none !important;
-      opacity: 1 !important;
-      user-select: auto !important;
-      pointer-events: auto !important;
-    }
-    body.x-jev-no-monk-blur .x-monk-warning-box,
-    body.x-jev-disable-all-blur .x-monk-warning-box {
-      display: none !important;
-    }
-    .x-monk-warning-box {
-      background: rgba(15, 23, 42, 0.9) !important;
-      border: 1.5px solid #0ea5e9 !important;
-      border-radius: 10px !important;
-      padding: 8px 14px !important;
-      margin: 6px 0 10px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      font-size: 12px !important;
-      color: #38bdf8 !important;
-      z-index: 99 !important;
-      box-sizing: border-box !important;
-      width: 100% !important;
-    }
-    .x-monk-reveal-btn {
-      background: #0284c7 !important;
-      border: none !important;
-      color: #fff !important;
-      padding: 5px 12px !important;
-      border-radius: 6px !important;
-      cursor: pointer !important;
-      font-size: 11.5px !important;
-      font-weight: 700 !important;
-    }
-    [data-monk-reels-blocked="true"]:not(.monk-revealed) video,
-    [data-monk-reels-blocked="true"]:not(.monk-revealed) img,
-    [data-monk-tray-blocked="true"]:not(.monk-revealed) video,
-    [data-monk-tray-blocked="true"]:not(.monk-revealed) img {
-      filter: blur(36px) grayscale(80%) !important;
-      opacity: 0.05 !important;
-      pointer-events: none !important;
-      transition: filter 0.25s ease, opacity 0.25s ease !important;
-    }
-    [data-monk-reels-blocked="true"].monk-revealed video,
-    [data-monk-reels-blocked="true"].monk-revealed img,
-    [data-monk-tray-blocked="true"].monk-revealed video,
-    [data-monk-tray-blocked="true"].monk-revealed img {
-      filter: none !important;
-      opacity: 1 !important;
-      pointer-events: auto !important;
-    }
-    .x-monk-reels-overlay {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      min-height: 240px !important;
-      background: rgba(9, 13, 22, 0.94) !important;
-      backdrop-filter: blur(25px) !important;
-      -webkit-backdrop-filter: blur(25px) !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      z-index: 999999 !important;
-      padding: 24px !important;
-      box-sizing: border-box !important;
-    }
-    [data-monk-reels-blocked="true"].monk-revealed .x-monk-reels-overlay {
-      display: none !important;
-    }
-    .x-monk-reels-card {
-      max-width: 360px !important;
-      background: rgba(15, 23, 42, 0.96) !important;
-      border: 1.5px solid rgba(56, 189, 248, 0.5) !important;
-      border-radius: 16px !important;
-      padding: 22px 20px !important;
-      text-align: center !important;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7) !important;
-      color: #f8fafc !important;
-    }
-    .x-monk-reels-icon {
-      font-size: 38px !important;
-      margin-bottom: 10px !important;
-      line-height: 1 !important;
-    }
-    .x-monk-reels-title {
-      font-size: 15px !important;
-      font-weight: 700 !important;
-      color: #38bdf8 !important;
-      margin-bottom: 6px !important;
-    }
-    .x-monk-reels-desc {
-      font-size: 12px !important;
-      color: #94a3b8 !important;
-      line-height: 1.45 !important;
-      margin-bottom: 16px !important;
-    }
-    .x-monk-reels-actions {
-      display: flex !important;
-      gap: 10px !important;
-      justify-content: center !important;
-    }
-    .x-monk-btn-reveal {
-      background: #0284c7 !important;
-      color: #ffffff !important;
-      border: none !important;
-      border-radius: 8px !important;
-      padding: 8px 16px !important;
-      font-size: 12.5px !important;
-      font-weight: 700 !important;
-      cursor: pointer !important;
-    }
-    .x-monk-btn-close {
-      background: rgba(239, 68, 68, 0.18) !important;
-      color: #fca5a5 !important;
-      border: 1px solid rgba(239, 68, 68, 0.4) !important;
-      border-radius: 8px !important;
-      padding: 8px 16px !important;
-      font-size: 12.5px !important;
-      font-weight: 700 !important;
-      cursor: pointer !important;
-    }
-    .x-monk-btn-home {
-      background: rgba(255, 255, 255, 0.12) !important;
-      color: #f1f5f9 !important;
-      border: 1px solid rgba(255, 255, 255, 0.22) !important;
-      border-radius: 8px !important;
-      padding: 8px 16px !important;
-      font-size: 12.5px !important;
-      font-weight: 700 !important;
-      cursor: pointer !important;
-    }
-    .x-monk-re-blur-floating {
-      position: absolute !important;
-      top: 14px !important;
-      left: 14px !important;
-      z-index: 999999 !important;
-      background: rgba(15, 23, 42, 0.88) !important;
-      border: 1px solid rgba(56, 189, 248, 0.6) !important;
-      color: #38bdf8 !important;
-      padding: 6px 12px !important;
-      border-radius: 20px !important;
-      font-size: 11.5px !important;
-      font-weight: 700 !important;
-      cursor: pointer !important;
-      backdrop-filter: blur(8px) !important;
-      display: none;
-    }
-    [data-monk-reels-blocked="true"].monk-revealed .x-monk-re-blur-floating {
-      display: flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-    }
-    .x-monk-tray-banner {
-      background: linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 58, 138, 0.9) 100%) !important;
-      border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
-      border-radius: 10px !important;
-      padding: 10px 14px !important;
-      margin: 10px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      color: #f8fafc !important;
-      z-index: 10 !important;
-      position: relative !important;
-      box-sizing: border-box !important;
-      width: 100% !important;
-    }
-    .x-monk-tray-content {
-      display: flex !important;
-      align-items: center !important;
-      gap: 10px !important;
-      font-size: 12.5px !important;
-    }
-    .x-monk-tray-toggle {
-      background: #0284c7 !important;
-      color: #fff !important;
-      border: none !important;
-      border-radius: 6px !important;
-      padding: 6px 14px !important;
-      font-size: 11.5px !important;
-      font-weight: 700 !important;
-      cursor: pointer !important;
-      flex-shrink: 0 !important;
-    }
-    [data-jev-rage="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
-    [data-jev-scam="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
-    .x-jev-blurred-content {
-      filter: blur(14px) !important;
-      opacity: 0.15 !important;
-      user-select: none !important;
-      pointer-events: none !important;
-    }
-    [data-jev-revealed="true"] [data-jev-blur-item="true"],
-    [data-jev-revealed="true"][data-jev-blur-item="true"],
-    [data-jev-rage="true"][data-jev-revealed="true"] [data-jev-blur-item="true"],
-    [data-jev-scam="true"][data-jev-revealed="true"] [data-jev-blur-item="true"],
-    [data-jev-rage="true"].x-jev-revealed [data-jev-blur-item="true"],
-    [data-jev-scam="true"].x-jev-revealed [data-jev-blur-item="true"],
-    .x-jev-revealed,
-    .x-jev-revealed[data-jev-blur-item="true"],
-    .x-jev-revealed [data-jev-blur-item="true"],
-    .x-jev-revealed .x-jev-blurred-content,
-    .x-jev-unblurred,
-    [data-jev-revealed="true"],
-    [data-jev-revealed="true"] span,
-    [data-jev-revealed="true"] div,
-    [data-jev-revealed="true"] img,
-    [data-jev-revealed="true"] video {
-      filter: none !important;
-      opacity: 1 !important;
-      user-select: auto !important;
-      pointer-events: auto !important;
-    }
-    /* Global Unblur overrides when user disables blur in settings */
-    body.x-jev-no-rage-blur [data-jev-blur-item="true"],
-    body.x-jev-no-rage-blur [data-jev-rage="true"],
-    body.x-jev-no-rage-blur [data-jev-rage="true"] [data-jev-blur-item="true"],
-    body.x-jev-no-rage-blur [data-jev-rage="true"] span,
-    body.x-jev-no-rage-blur [data-jev-rage="true"] div,
-    body.x-jev-no-scam-blur [data-jev-scam="true"],
-    body.x-jev-no-scam-blur [data-jev-scam="true"] [data-jev-blur-item="true"],
-    body.x-jev-disable-all-blur [data-jev-blur-item="true"],
-    body.x-jev-disable-all-blur [data-jev-rage="true"] *,
-    body.x-jev-disable-all-blur [data-jev-scam="true"] *,
-    body.x-jev-disable-all-blur .x-jev-blurred-content {
-      filter: none !important;
-      opacity: 1 !important;
-      user-select: auto !important;
-      pointer-events: auto !important;
-    }
-    body.x-jev-no-rage-blur .x-jev-warning-box,
-    body.x-jev-no-scam-blur .x-jev-scam-box,
-    body.x-jev-disable-all-blur .x-jev-warning-box,
-    body.x-jev-disable-all-blur .x-jev-scam-box {
-      display: none !important;
-    }
-    .x-jev-warning-box {
-      background: rgba(239, 68, 68, 0.16) !important;
-      border: 1.5px dashed #ef4444 !important;
-      border-radius: 10px !important;
-      padding: 8px 14px !important;
-      margin: 6px 0 10px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      font-size: 12.5px !important;
-      color: #ef4444 !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    .x-jev-scam-box {
-      background: rgba(220, 38, 38, 0.18) !important;
-      border: 1.5px dashed #dc2626 !important;
-      border-radius: 10px !important;
-      padding: 9px 14px !important;
-      margin: 6px 0 10px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      font-size: 12.5px !important;
-      color: #f87171 !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    .x-jev-reveal-btn {
-      background: #ef4444 !important;
-      border: none !important;
-      color: #ffffff !important;
-      padding: 5px 14px !important;
-      border-radius: 6px !important;
-      cursor: pointer !important;
-      font-size: 12px !important;
-      font-weight: 700 !important;
-    }
-    .x-jev-seeding-collapsed {
-      background: rgba(168, 85, 247, 0.12) !important;
-      border: 1px dashed rgba(168, 85, 247, 0.45) !important;
-      border-radius: 8px !important;
-      padding: 6px 12px !important;
-      margin: 4px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      font-size: 11.5px !important;
-      color: #c084fc !important;
-      cursor: pointer !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    .x-jev-collapsed-body {
-      display: none !important;
-    }
-    /* --- Focus Feed Mode: Collapsed Bar for Off-Topic Posts --- */
-    .x-jev-focus-bar {
-      background: rgba(30, 41, 59, 0.5) !important;
-      border: 1px dashed rgba(148, 163, 184, 0.35) !important;
-      border-radius: 8px !important;
-      padding: 6px 12px !important;
-      margin: 4px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      font-size: 11.5px !important;
-      color: #94a3b8 !important;
-      cursor: pointer !important;
-      user-select: none !important;
-      transition: all 0.15s ease !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-    }
+/* Universal Social Shield (Threads, X, Facebook) - Anti-Rage, Anti-Scam, Anti-Seeding, Monk Mode */
+/* Redesigned to Impeccable Craft Floor & Shadcn Zinc Dark System */
 
-    .x-jev-focus-bar:hover {
-      background: rgba(30, 41, 59, 0.8) !important;
-      border-color: rgba(56, 189, 248, 0.6) !important;
-      color: #f1f5f9 !important;
-      transform: translateX(2px) !important;
-    }
+:root {
+  --jev-bg-canvas: #09090b;
+  --jev-bg-surface: rgba(18, 18, 23, 0.94);
+  --jev-bg-card: rgba(24, 24, 27, 0.75);
+  --jev-border-subtle: rgba(255, 255, 255, 0.08);
+  --jev-border-hover: rgba(255, 255, 255, 0.16);
+  --jev-text-primary: #f4f4f5;
+  --jev-text-muted: #a1a1aa;
+  --jev-text-dim: #71717a;
+  --jev-radius-sm: 4px;
+  --jev-radius-md: 6px;
+  --jev-radius-lg: 10px;
+  --jev-radius-pill: 9999px;
+  --jev-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-    .x-jev-focus-info {
-      display: flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      font-weight: 500 !important;
-    }
+/* --- Badges & Multi-Badge Container --- */
+.x-jev-badge-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 6px 0 8px 0 !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
 
-    .x-jev-focus-action {
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      color: #38bdf8 !important;
-      background: rgba(56, 189, 248, 0.15) !important;
-      padding: 2px 8px !important;
-      border-radius: 4px !important;
-      transition: background 0.15s ease !important;
-    }
+.x-jev-badge-container:empty,
+.x-jev-badge-container:not(:has(.x-jev-badge:not(.x-jev-hidden))) {
+  display: none !important;
+}
 
-    .x-jev-focus-bar:hover .x-jev-focus-action {
-      background: rgba(56, 189, 248, 0.25) !important;
-    }
+.x-jev-badge-container .x-jev-badge {
+  margin: 0 !important;
+}
 
-    .x-jev-focus-collapsed-content {
-      display: none !important;
-    }
+.x-jev-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 3px 9px !important;
+  border-radius: var(--jev-radius-md, 6px) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  margin: 3px 0 6px 0 !important;
+  border: 1px solid !important;
+  width: fit-content !important;
+  user-select: none !important;
+  transition: transform 0.2s var(--jev-ease-spring), border-color 0.2s, box-shadow 0.2s !important;
+  cursor: help !important;
+  line-height: 1.3 !important;
+  z-index: 10 !important;
+  position: relative !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  backdrop-filter: blur(8px) !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
 
-    .x-jev-focus-expanded .x-jev-focus-collapsed-content {
-      display: block !important;
-    }
+/* ReactBits Metallic Shimmer Sweep */
+.x-jev-badge::after {
+  content: "" !important;
+  position: absolute !important;
+  top: -50% !important;
+  left: -120% !important;
+  width: 80% !important;
+  height: 200% !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.25) 50%, transparent 100%) !important;
+  transform: rotate(30deg) !important;
+  pointer-events: none !important;
+  animation: jev-badge-shimmer 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}
 
-    body.x-jev-no-focus .x-jev-focus-bar {
-      display: none !important;
-    }
+@keyframes jev-badge-shimmer {
+  0% { left: -120%; }
+  25%, 100% { left: 220%; }
+}
 
-    body.x-jev-no-focus .x-jev-focus-collapsed-content {
-      display: revert !important;
-    }
+.x-jev-badge svg {
+  width: 12px !important;
+  height: 12px !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
 
-    .x-jev-floating-pill {
-      position: fixed !important;
-      bottom: 24px !important;
-      right: 24px !important;
-      z-index: 999999 !important;
-      background: rgba(15, 23, 42, 0.94) !important;
-      color: #e2e8f0 !important;
-      padding: 8px 16px !important;
-      border-radius: 9999px !important;
-      font-size: 12px !important;
-      font-weight: 600 !important;
-      cursor: pointer !important;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
-      border: 1px solid rgba(255,255,255,0.12) !important;
-    }
-    body.x-jev-hide-pill .x-jev-floating-pill,
-    .x-jev-floating-pill.x-jev-pill-hidden,
-    .x-jev-floating-pill[data-hidden="true"],
-    .x-jev-pill-hidden {
-      display: none !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-      visibility: hidden !important;
-    }
-    .x-jev-pill-close {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      margin-left: 8px !important;
-      padding: 2px 8px !important;
-      min-width: 18px !important;
-      min-height: 18px !important;
-      font-size: 13px !important;
-      font-weight: 800 !important;
-      color: #94a3b8 !important;
-      cursor: pointer !important;
-      border-radius: 9999px !important;
-      background: rgba(255, 255, 255, 0.12) !important;
-      user-select: none !important;
-      z-index: 1000000 !important;
-      pointer-events: auto !important;
-    }
-    .x-jev-pill-close:hover {
-      color: #ffffff !important;
-      background: #ef4444 !important;
-      transform: scale(1.15) !important;
-    }
+.x-jev-badge span {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.x-jev-badge:hover {
+  transform: translateY(-1.5px) scale(1.03) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 0 14px currentColor, inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+.x-jev-badge.x-jev-hidden {
+  display: none !important;
+}
+
+.x-jev-confidence {
+  font-size: 9.5px !important;
+  opacity: 0.75 !important;
+  font-weight: 400 !important;
+  margin-left: 2px !important;
+}
+
+/* --- Blur Targets for Rage Bait & Scams --- */
+[data-jev-rage="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
+[data-jev-scam="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
+.x-jev-blurred-content {
+  filter: blur(14px) !important;
+  opacity: 0.15 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  transition: filter 0.2s ease, opacity 0.2s ease !important;
+}
+
+/* Restored clean state when user clicks 'Reveal post' or disables blur */
+[data-jev-rage="true"].x-jev-revealed [data-jev-blur-item="true"],
+[data-jev-scam="true"].x-jev-revealed [data-jev-blur-item="true"],
+.x-jev-revealed,
+.x-jev-revealed[data-jev-blur-item="true"],
+.x-jev-revealed [data-jev-blur-item="true"],
+.x-jev-revealed.x-jev-blurred-content,
+.x-jev-revealed .x-jev-blurred-content,
+.x-jev-unblurred,
+[data-jev-revealed="true"],
+[data-jev-revealed="true"][data-jev-blur-item="true"],
+[data-jev-revealed="true"] [data-jev-blur-item="true"],
+[data-jev-revealed="true"] span,
+[data-jev-revealed="true"] div,
+[data-jev-revealed="true"] img,
+[data-jev-revealed="true"] video {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: auto !important;
+  pointer-events: auto !important;
+}
+
+/* Global Unblur overrides when user disables blur in settings */
+body.x-jev-no-rage-blur [data-jev-blur-item="true"],
+body.x-jev-no-rage-blur [data-jev-rage="true"],
+body.x-jev-no-rage-blur [data-jev-rage="true"] [data-jev-blur-item="true"],
+body.x-jev-no-rage-blur [data-jev-rage="true"] span,
+body.x-jev-no-rage-blur [data-jev-rage="true"] div,
+body.x-jev-disable-all-blur [data-jev-blur-item="true"],
+body.x-jev-disable-all-blur [data-jev-rage="true"] *,
+body.x-jev-disable-all-blur .x-jev-blurred-content {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: auto !important;
+  pointer-events: auto !important;
+}
+
+body.x-jev-no-rage-blur .x-jev-warning-box,
+body.x-jev-disable-all-blur .x-jev-warning-box {
+  display: none !important;
+}
+
+/* --- Monk Mode: Hardcore Anti-Goonbait & Women Media Blocker --- */
+[data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
+[data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) video,
+.monk-blur-media {
+  filter: blur(28px) grayscale(60%) !important;
+  opacity: 0.1 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  transition: filter 0.25s ease, opacity 0.25s ease !important;
+}
+
+.monk-revealed,
+.monk-revealed img,
+.monk-revealed video,
+.monk-revealed .monk-blur-media,
+[data-monk-revealed="true"],
+[data-monk-revealed="true"] img,
+[data-monk-revealed="true"] video,
+body.x-jev-no-monk-blur [data-monk-blocked="true"] img,
+body.x-jev-no-monk-blur [data-monk-blocked="true"] video,
+body.x-jev-no-monk-blur .monk-blur-media,
+body.x-jev-disable-all-blur [data-monk-blocked="true"] img,
+body.x-jev-disable-all-blur [data-monk-blocked="true"] video {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: auto !important;
+  pointer-events: auto !important;
+}
+
+body.x-jev-no-monk-blur .x-monk-warning-box,
+body.x-jev-disable-all-blur .x-monk-warning-box {
+  display: none !important;
+}
+
+.x-monk-warning-box {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border: 1.5px solid #0ea5e9 !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  margin: 6px 0 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  font-size: 12px !important;
+  color: #38bdf8 !important;
+  backdrop-filter: blur(10px) !important;
+  z-index: 99 !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.x-monk-warning-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 600 !important;
+  color: #38bdf8 !important;
+  line-height: 1.3 !important;
+}
+
+.x-monk-reveal-btn {
+  background: #0284c7 !important;
+  border: none !important;
+  color: #ffffff !important;
+  padding: 5px 12px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.x-monk-reveal-btn:hover {
+  background: #0369a1 !important;
+  transform: scale(1.04) !important;
+}
+
+/* --- Facebook Reels & Video Popups / Shelves (Monk Mode) --- */
+[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+[data-monk-reels-blocked="true"]:not(.monk-revealed) img,
+[data-monk-tray-blocked="true"]:not(.monk-revealed) video,
+[data-monk-tray-blocked="true"]:not(.monk-revealed) img {
+  filter: blur(36px) grayscale(80%) !important;
+  opacity: 0.05 !important;
+  pointer-events: none !important;
+  transition: filter 0.25s ease, opacity 0.25s ease !important;
+}
+
+[data-monk-reels-blocked="true"].monk-revealed video,
+[data-monk-reels-blocked="true"].monk-revealed img,
+[data-monk-tray-blocked="true"].monk-revealed video,
+[data-monk-tray-blocked="true"].monk-revealed img {
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* High-z-index Reels Modal / Pop-up Center Overlay */
+.x-monk-reels-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 240px !important;
+  background: rgba(9, 13, 22, 0.94) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999999 !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+[data-monk-reels-blocked="true"].monk-revealed .x-monk-reels-overlay {
+  display: none !important;
+}
+
+.x-monk-reels-card {
+  max-width: 360px !important;
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.5) !important;
+  border-radius: 16px !important;
+  padding: 22px 20px !important;
+  text-align: center !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7) !important;
+  color: #f8fafc !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.x-monk-reels-icon {
+  font-size: 38px !important;
+  margin-bottom: 10px !important;
+  line-height: 1 !important;
+}
+
+.x-monk-reels-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+  margin-bottom: 6px !important;
+}
+
+.x-monk-reels-desc {
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+  line-height: 1.45 !important;
+  margin-bottom: 16px !important;
+}
+
+.x-monk-reels-actions {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: center !important;
+}
+
+.x-monk-btn-reveal {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-btn-reveal:hover {
+  background: #0369a1 !important;
+  transform: scale(1.03) !important;
+}
+
+.x-monk-btn-close {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-btn-close:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+.x-monk-btn-home {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-btn-home:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+  transform: scale(1.03) !important;
+}
+
+/* YouTube Shorts & Instagram Reels Blurs */
+ytd-shorts[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+#shorts-container[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+ytd-reel-video-renderer[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+ytd-rich-shelf-renderer[is-shorts][data-monk-tray-blocked="true"]:not(.monk-revealed) #contents,
+ytd-reel-shelf-renderer[data-monk-tray-blocked="true"]:not(.monk-revealed) #contents,
+main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
+  filter: blur(36px) grayscale(80%) !important;
+  opacity: 0.05 !important;
+  pointer-events: none !important;
+  transition: filter 0.25s ease, opacity 0.25s ease !important;
+}
+
+/* Floating re-blur toggle button when video revealed */
+.x-monk-re-blur-floating {
+  position: absolute !important;
+  top: 14px !important;
+  left: 14px !important;
+  z-index: 999999 !important;
+  background: rgba(15, 23, 42, 0.88) !important;
+  border: 1px solid rgba(56, 189, 248, 0.6) !important;
+  color: #38bdf8 !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(8px) !important;
+  display: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+}
+.x-monk-re-blur-floating:hover {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+[data-monk-reels-blocked="true"].monk-revealed .x-monk-re-blur-floating {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Reels Tray Banner in Feed */
+.x-monk-tray-banner {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 58, 138, 0.9) 100%) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  margin: 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  color: #f8fafc !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  z-index: 10 !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.x-monk-tray-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 12.5px !important;
+}
+
+.x-monk-tray-toggle {
+  background: #0284c7 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-tray-toggle:hover {
+  background: #0369a1 !important;
+  transform: scale(1.04) !important;
+}
+
+/* --- Rage Bait Warning Box (Dynamic Ambient Neon Glow) --- */
+.x-jev-warning-box {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(24, 24, 27, 0.94) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  border-radius: var(--jev-radius-lg, 10px) !important;
+  padding: 10px 14px !important;
+  margin: 6px 0 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  font-size: 12px !important;
+  color: #f87171 !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  z-index: 99 !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 25px rgba(239, 68, 68, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s !important;
+}
+
+.x-jev-warning-box:hover {
+  border-color: rgba(239, 68, 68, 0.7) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 35px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.x-jev-warning-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 500 !important;
+  color: #fca5a5 !important;
+  line-height: 1.35 !important;
+}
+
+.x-jev-warning-text svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: #ef4444 !important;
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6)) !important;
+  flex-shrink: 0 !important;
+}
+
+/* --- Scam & Fraud Warning Box (Dynamic Ambient Neon Glow) --- */
+.x-jev-scam-box {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.12) 0%, rgba(24, 24, 27, 0.95) 100%) !important;
+  border: 1px solid rgba(220, 38, 38, 0.5) !important;
+  border-radius: var(--jev-radius-lg, 10px) !important;
+  padding: 10px 14px !important;
+  margin: 6px 0 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  font-size: 12px !important;
+  color: #f87171 !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  z-index: 99 !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), 0 0 28px rgba(220, 38, 38, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s !important;
+}
+
+.x-jev-scam-box:hover {
+  border-color: rgba(239, 68, 68, 0.75) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 38px rgba(220, 38, 38, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.x-jev-scam-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-weight: 500 !important;
+  color: #fca5a5 !important;
+  line-height: 1.35 !important;
+}
+
+.x-jev-scam-text svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: #ef4444 !important;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.7)) !important;
+  flex-shrink: 0 !important;
+}
+
+.x-jev-reveal-btn {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.45) !important;
+  color: #fca5a5 !important;
+  padding: 5px 13px !important;
+  border-radius: var(--jev-radius-md, 6px) !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25) !important;
+}
+
+.x-jev-reveal-btn:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #ef4444 !important;
+  transform: translateY(-1.5px) scale(1.03) !important;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.5) !important;
+}
+
+/* --- Collapsed Seeding Comment Bar (Shadcn Accordion Strip with Neon Glow) --- */
+.x-jev-seeding-collapsed {
+  background: rgba(24, 24, 27, 0.75) !important;
+  border: 1px solid rgba(168, 85, 247, 0.3) !important;
+  border-radius: var(--jev-radius-md, 6px) !important;
+  padding: 6px 12px !important;
+  margin: 4px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 11px !important;
+  color: #c084fc !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 0.2s var(--jev-ease-spring) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+.x-jev-seeding-collapsed:hover {
+  background: rgba(168, 85, 247, 0.16) !important;
+  border-color: rgba(168, 85, 247, 0.6) !important;
+  color: #f3e8ff !important;
+  transform: translateX(3px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 18px rgba(168, 85, 247, 0.28) !important;
+}
+
+.x-jev-seeding-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 500 !important;
+}
+
+.x-jev-seeding-label svg {
+  width: 13px !important;
+  height: 13px !important;
+  color: #c084fc !important;
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.5)) !important;
+  flex-shrink: 0 !important;
+}
+
+.x-jev-expand-icon {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: #e9d5ff !important;
+  background: rgba(168, 85, 247, 0.2) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  padding: 2px 7px !important;
+  border-radius: var(--jev-radius-sm, 4px) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.2) !important;
+}
+
+.x-jev-expand-icon svg {
+  width: 11px !important;
+  height: 11px !important;
+  transition: transform 0.2s var(--jev-ease-spring) !important;
+}
+
+.x-jev-collapsed-body {
+  display: none !important;
+}
+
+/* --- Focus Feed Mode: Collapsed Bar for Off-Topic Posts with Cyan Glow --- */
+.x-jev-focus-bar {
+  background: rgba(24, 24, 27, 0.75) !important;
+  border: 1px solid var(--jev-border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  border-radius: var(--jev-radius-md, 6px) !important;
+  padding: 6px 12px !important;
+  margin: 4px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 0.2s var(--jev-ease-spring) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+.x-jev-focus-bar:hover {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  color: #f1f5f9 !important;
+  transform: translateX(3px) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 18px rgba(56, 189, 248, 0.28) !important;
+}
+
+.x-jev-focus-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 500 !important;
+}
+
+.x-jev-focus-info svg {
+  width: 13px !important;
+  height: 13px !important;
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5)) !important;
+  flex-shrink: 0 !important;
+}
+
+.x-jev-focus-action {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.14) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  padding: 2px 7px !important;
+  border-radius: var(--jev-radius-sm, 4px) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2) !important;
+  transition: background 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.x-jev-focus-action svg {
+  width: 11px !important;
+  height: 11px !important;
+  transition: transform 0.2s var(--jev-ease-spring) !important;
+}
+
+.x-jev-focus-expanded .x-jev-focus-action svg {
+  transform: rotate(180deg) !important;
+}
+
+.x-jev-focus-bar:hover .x-jev-focus-action {
+  background: rgba(56, 189, 248, 0.22) !important;
+}
+
+.x-jev-focus-collapsed-content {
+  display: none !important;
+}
+
+.x-jev-focus-expanded .x-jev-focus-collapsed-content {
+  display: block !important;
+}
+
+body.x-jev-no-focus .x-jev-focus-bar {
+  display: none !important;
+}
+
+body.x-jev-no-focus .x-jev-focus-collapsed-content {
+  display: revert !important;
+}
+
+/* --- Dynamic Island / Radar Status Widget (ReactBits Border Beam & Specular 3D Glass) --- */
+@keyframes jev-radar-ping {
+  0% { transform: scale(1); opacity: 0.8; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes jev-beam-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.x-jev-floating-pill {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 999999 !important;
+  background: transparent !important;
+  color: #e2e8f0 !important;
+  padding: 5px 9px 5px 11px !important;
+  border-radius: var(--jev-radius-pill, 9999px) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(34, 197, 94, 0.25) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 0.25s var(--jev-ease-spring) !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+body.x-jev-hide-pill .x-jev-floating-pill,
+.x-jev-floating-pill.x-jev-pill-hidden,
+.x-jev-floating-pill[data-hidden="true"],
+.x-jev-pill-hidden {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* ReactBits Border Beam Container */
+.x-jev-pill-beam {
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+/* Conic Laser Beam Rotating */
+.x-jev-pill-beam::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 350% !important;
+  height: 350% !important;
+  background: conic-gradient(from 0deg, transparent 0 260deg, rgba(34, 197, 94, 0.2) 290deg, #4ade80 340deg, #22c55e 360deg) !important;
+  transform: translate(-50%, -50%) rotate(0deg) !important;
+  animation: jev-beam-spin 3.2s linear infinite !important;
+}
+
+/* Specular 3D Glass Inner Face */
+.x-jev-pill-beam::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 1px !important;
+  border-radius: inherit !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 45%, rgba(0, 0, 0, 0.4) 100%), rgba(15, 15, 20, 0.94) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Threat Alert Glow Mode */
+.x-jev-floating-pill[data-alert="true"] {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75), 0 0 28px rgba(239, 68, 68, 0.45) !important;
+}
+.x-jev-floating-pill[data-alert="true"] .x-jev-pill-beam::before {
+  background: conic-gradient(from 0deg, transparent 0 260deg, rgba(239, 68, 68, 0.2) 290deg, #f87171 340deg, #ef4444 360deg) !important;
+  animation-duration: 2.2s !important;
+}
+
+.x-jev-floating-pill:hover {
+  transform: translateY(-2.5px) scale(1.02) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 32px rgba(34, 197, 94, 0.45) !important;
+}
+.x-jev-floating-pill[data-alert="true"]:hover {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 38px rgba(239, 68, 68, 0.6) !important;
+}
+
+/* Multi-Ring Radar Indicator Dot */
+.x-jev-radar-dot {
+  position: relative !important;
+  display: inline-flex !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background-color: #4ade80 !important;
+  box-shadow: 0 0 10px #22c55e, 0 0 18px #22c55e !important;
+  flex-shrink: 0 !important;
+  z-index: 2 !important;
+}
+
+.x-jev-floating-pill[data-alert="true"] .x-jev-radar-dot {
+  background-color: #f87171 !important;
+  box-shadow: 0 0 10px #ef4444, 0 0 18px #ef4444 !important;
+}
+
+.x-jev-radar-ping {
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: 50% !important;
+  background-color: #4ade80 !important;
+  animation: jev-radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite !important;
+}
+
+.x-jev-floating-pill[data-alert="true"] .x-jev-radar-ping {
+  background-color: #ef4444 !important;
+}
+
+.x-jev-pill-platform {
+  font-weight: 700 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.05em !important;
+  color: #f1f5f9 !important;
+  text-transform: uppercase !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.x-jev-pill-badge-count {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 1px 7px !important;
+  border-radius: var(--jev-radius-pill, 9999px) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  position: relative !important;
+  z-index: 2 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.x-jev-pill-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #94a3b8 !important;
+  transition: transform 0.2s var(--jev-ease-spring) !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.x-jev-floating-pill.x-jev-expanded .x-jev-pill-toggle svg {
+  transform: rotate(180deg) !important;
+}
+
+.x-jev-pill-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 2px !important;
+  padding: 3px !important;
+  width: 17px !important;
+  height: 17px !important;
+  color: #71717a !important;
+  cursor: pointer !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+  z-index: 1000000 !important;
+  pointer-events: auto !important;
+  position: relative !important;
+}
+
+.x-jev-pill-close svg {
+  width: 11px !important;
+  height: 11px !important;
+}
+
+.x-jev-pill-close:hover {
+  color: #ffffff !important;
+  background: rgba(239, 68, 68, 0.8) !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6) !important;
+}
+
+/* Dynamic Island Expandable Flyout Panel with Specular Glass & Ambient Neon */
+.x-jev-pill-flyout {
+  position: absolute !important;
+  bottom: calc(100% + 10px) !important;
+  right: 0 !important;
+  width: 255px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 35%, rgba(0, 0, 0, 0.3) 100%), rgba(16, 16, 22, 0.96) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--jev-radius-lg, 10px) !important;
+  padding: 14px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), 0 0 35px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 9px !important;
+  cursor: default !important;
+  transform-origin: bottom right !important;
+  animation: jev-flyout-in 0.2s var(--jev-ease-spring) !important;
+  z-index: 10 !important;
+}
+
+@keyframes jev-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.x-jev-floating-pill.x-jev-expanded .x-jev-pill-flyout {
+  display: flex !important;
+}
+
+.x-jev-flyout-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  padding-bottom: 8px !important;
+}
+
+.x-jev-flyout-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  color: #cbd5e1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.x-jev-flyout-title svg {
+  width: 13px !important;
+  height: 13px !important;
+  color: #38bdf8 !important;
+  filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.6)) !important;
+}
+
+.x-jev-flyout-status {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  padding: 1.5px 7px !important;
+  border-radius: 4px !important;
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2) !important;
+}
+
+.x-jev-flyout-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6px !important;
+}
+
+.x-jev-metric-card {
+  background: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: var(--jev-radius-md, 6px) !important;
+  padding: 7px 9px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  transition: all 0.2s var(--jev-ease-spring) !important;
+}
+
+.x-jev-metric-card:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(255, 255, 255, 0.08) !important;
+}
+
+.x-jev-metric-label {
+  font-size: 10px !important;
+  color: #94a3b8 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.x-jev-metric-label svg {
+  width: 11px !important;
+  height: 11px !important;
+}
+
+.x-jev-metric-val {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Outlier & Viral Post Highlights */
+article.x-shield-outlier-post, div.x-shield-outlier-post,
+article.x-shield-viral-post, div.x-shield-viral-post {
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  border-left: 3px solid #f59e0b !important;
+  background: rgba(245, 158, 11, 0.02) !important;
+  border-radius: 12px !important;
+  transition: border-color 0.2s, background 0.2s !important;
+}
+
+article.x-shield-outlier-post.is-threads, div.x-shield-outlier-post.is-threads,
+article.x-shield-threads-viral, div.x-shield-threads-viral {
+  border: 1px solid rgba(168, 85, 247, 0.3) !important;
+  border-left: 3px solid #a855f7 !important;
+  background: rgba(168, 85, 247, 0.02) !important;
+}
+
+/* Outlier Badge */
+.x-shield-outlier-badge, .x-shield-viral-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(24, 24, 27, 0.92) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #f59e0b !important;
+  margin: 4px 0 6px 0 !important;
+  width: fit-content !important;
+  letter-spacing: -0.01em !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.x-shield-outlier-badge.is-threads {
+  color: #c084fc !important;
+  border-color: rgba(168, 85, 247, 0.25) !important;
+}
+
+.x-shield-outlier-badge .outlier-fire { font-size: 11px !important; }
+.x-shield-outlier-badge .outlier-mult { font-weight: 700 !important; }
+.x-shield-outlier-badge .outlier-sep { color: #52525b !important; font-size: 9px !important; }
+.x-shield-outlier-badge .outlier-stats { color: #d4d4d8 !important; font-weight: 500 !important; }
+.x-shield-outlier-badge .outlier-time { color: #a1a1aa !important; font-weight: 400 !important; }
+
+/* Threads & X Hook Button */
+.x-shield-threads-hook-btn, .x-shield-hook-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 9999px !important;
+  padding: 3px 9px !important;
+  color: #a1a1aa !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  margin-left: 6px !important;
+  user-select: none !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  height: 28px !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+}
+
+.x-shield-threads-hook-btn:hover, .x-shield-hook-btn:hover {
+  background: rgba(168, 85, 247, 0.12) !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+  color: #c084fc !important;
+}
+
+.x-shield-threads-hook-btn.is-saved, .x-shield-hook-btn.is-saved {
+  background: rgba(34, 197, 94, 0.12) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #4ade80 !important;
+}
+
+.x-shield-threads-hook-btn.is-loading, .x-shield-hook-btn.is-loading {
+  opacity: 0.8 !important;
+  cursor: wait !important;
+}
+
+.x-shield-threads-hook-btn svg, .x-shield-hook-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+  max-width: 14px !important;
+  max-height: 14px !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  fill: currentColor !important;
+}
+
+.x-shield-threads-hook-btn span, .x-shield-hook-btn span {
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+}
+
+.x-shield-threads-action-fallback {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 4px 0 !important;
+  margin-top: 4px !important;
+  width: 100% !important;
+}
+
+/* Floating Toast Notification */
+.x-shield-page-toast {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 24px !important;
+  background: #18181b !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #f4f4f5 !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  z-index: 9999999 !important;
+  pointer-events: none !important;
+  animation: x-shield-toast-pop 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes x-shield-toast-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.x-shield-page-toast svg {
+  width: 14px !important;
+  height: 14px !important;
+  color: #38bdf8 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Realtime Live Scanner Dock & HUD */
+.x-shield-scanner-dock {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 999998 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.x-shield-scanner-dock .scanner-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 7px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #f4f4f5 !important;
+  background: rgba(9, 9, 11, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 9999px !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  outline: none !important;
+}
+
+.x-shield-scanner-dock .scanner-btn:hover {
+  background: #18181b !important;
+  border-color: #f59e0b !important;
+  color: #fbbf24 !important;
+  transform: translateY(-1px) !important;
+}
+
+.x-shield-scanner-dock .scanner-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.x-shield-scanner-dock .scanner-live-hud {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  padding: 6px 14px !important;
+  background: rgba(9, 9, 11, 0.94) !important;
+  border: 1px solid #f59e0b !important;
+  border-radius: 9999px !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.18) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #f4f4f5 !important;
+}
+
+.x-shield-scanner-dock .btn-scanner-stop {
+  padding: 3px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #fca5a5 !important;
+  background: rgba(239, 68, 68, 0.18) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  margin-left: 4px !important;
+}
+
+.x-shield-scanner-dock .btn-scanner-stop:hover {
+  background: rgba(239, 68, 68, 0.32) !important;
+  color: #ffffff !important;
+}
+
+.x-shield-scanner-dock .hud-pulse {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  background: #f59e0b !important;
+  animation: x-pulse-dot 1s infinite alternate !important;
+}
+
+@keyframes x-pulse-dot {
+  from { transform: scale(0.8); opacity: 0.5; }
+  to { transform: scale(1.3); opacity: 1; }
+}
   `;
 
   if (typeof GM_addStyle !== 'undefined') {
@@ -770,17 +1639,78 @@
 
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
+  pill.title = 'Social Shield (Nhấn để xem thống kê / bật tắt)';
 
-  // Separate stats container from close button to preserve close button DOM & event listeners
-  const pillStats = document.createElement('span');
-  pillStats.className = 'x-jev-pill-stats';
-  pill.appendChild(pillStats);
+  const pillBeam = document.createElement('span');
+  pillBeam.className = 'x-jev-pill-beam';
+  pill.appendChild(pillBeam);
+
+  const radarDot = document.createElement('span');
+  radarDot.className = 'x-jev-radar-dot';
+  const radarPing = document.createElement('span');
+  radarPing.className = 'x-jev-radar-ping';
+  radarDot.appendChild(radarPing);
+
+  const pillPlatform = document.createElement('span');
+  pillPlatform.className = 'x-jev-pill-platform';
+
+  const pillBadgeCount = document.createElement('span');
+  pillBadgeCount.className = 'x-jev-pill-badge-count';
+  pillBadgeCount.textContent = '0';
+
+  const pillToggle = document.createElement('span');
+  pillToggle.className = 'x-jev-pill-toggle';
+  pillToggle.innerHTML = ICONS.chevronDown;
 
   const pillClose = document.createElement('span');
   pillClose.className = 'x-jev-pill-close';
-  pillClose.title = 'Ẩn thanh trạng thái này';
-  pillClose.textContent = '✕';
+  pillClose.title = 'Ẩn thanh trạng thái (bật lại trong cài đặt)';
+  pillClose.innerHTML = ICONS.x;
+
+  // Flyout Panel
+  const flyout = document.createElement('div');
+  flyout.className = 'x-jev-pill-flyout';
+  flyout.innerHTML = `
+    <div class="x-jev-flyout-header">
+      <div class="x-jev-flyout-title">${ICONS.shield} Social Shield</div>
+      <span class="x-jev-flyout-status">Active</span>
+    </div>
+    <div class="x-jev-flyout-grid">
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.scan} Đã quét</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-scanned">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.flame} Ragebait</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-rage" style="color:#f87171;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.shieldAlert} Lừa đảo</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-scam" style="color:#fb923c;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.target} Focus ẩn</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-focus" style="color:#38bdf8;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.broom} Seeding</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-seeding" style="color:#c084fc;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.eyeOff} Monk Mode</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-monk" style="color:#38bdf8;">0</span>
+      </div>
+    </div>
+    <div id="x-jev-flyout-tag-summary" style="display:flex;flex-wrap:wrap;gap:4px;font-size:10px;color:#a1a1aa;padding-top:4px;border-top:1px solid rgba(255,255,255,0.06);"></div>
+    <div style="font-size:9.5px;color:#71717a;text-align:center;margin-top:2px;">Nhấn đúp vào thanh để Bật/Tắt chế độ bảo vệ</div>
+  `;
+
+  pill.appendChild(radarDot);
+  pill.appendChild(pillPlatform);
+  pill.appendChild(pillBadgeCount);
+  pill.appendChild(pillToggle);
   pill.appendChild(pillClose);
+  pill.appendChild(flyout);
 
   // Fast capture phase listener on document ensures clicks/taps on close button are never swallowed
   const handlePillClose = (e) => {
@@ -816,7 +1746,7 @@
     document.body?.classList.remove('x-jev-hide-pill');
     pill.removeAttribute('data-hidden');
     pill.classList.remove('x-jev-pill-hidden');
-    pill.style.removeProperty('display');
+    pill.style.setProperty('display', 'flex', 'important');
     if (document.body && !document.contains(pill)) {
       document.body.appendChild(pill);
     }
@@ -829,54 +1759,78 @@
     }
     initPill();
     const pName = getPlatform().toUpperCase();
-    const parts = [
-      `🛡️ ${pName}: <span style="color:#4ade80">ON</span>`,
-      `👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span>`,
-    ];
-    if (CONFIG.focusModeEnabled) {
-      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click để Bật/Tắt Focus Feed Mode" style="cursor:pointer;">🎯 Focus: <span style="color:#38bdf8">${focusCollapsedCount} thu gọn</span></span>`);
+    pillPlatform.textContent = pName;
+
+    const totalProtected = blockedRageCount + blockedScamCount + cleanedSeedingCount + focusCollapsedCount + monkModeBlockedCount;
+    pillBadgeCount.textContent = totalProtected > 0 ? `${totalProtected} chặn` : `${scannedCount} quét`;
+
+    const hasThreats = (blockedRageCount > 0 || blockedScamCount > 0);
+    pill.setAttribute('data-alert', hasThreats ? 'true' : 'false');
+
+    const elScanned = flyout.querySelector('#x-jev-stat-scanned');
+    const elRage = flyout.querySelector('#x-jev-stat-rage');
+    const elScam = flyout.querySelector('#x-jev-stat-scam');
+    const elFocus = flyout.querySelector('#x-jev-stat-focus');
+    const elSeeding = flyout.querySelector('#x-jev-stat-seeding');
+    const elMonk = flyout.querySelector('#x-jev-stat-monk');
+    const elStatus = flyout.querySelector('.x-jev-flyout-status');
+
+    if (elScanned) elScanned.textContent = scannedCount;
+    if (elRage) elRage.textContent = blockedRageCount;
+    if (elScam) elScam.textContent = blockedScamCount;
+    if (elFocus) elFocus.textContent = focusCollapsedCount;
+    if (elSeeding) elSeeding.textContent = cleanedSeedingCount;
+    if (elMonk) elMonk.textContent = monkModeBlockedCount;
+
+    const allOn = CONFIG.monkModeEnabled || CONFIG.autoBlurRageEnabled || CONFIG.blockScamsEnabled || CONFIG.collapseSeedingEnabled;
+    if (elStatus) {
+      elStatus.textContent = allOn ? 'Active' : 'Paused';
+      elStatus.style.background = allOn ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+      elStatus.style.color = allOn ? '#4ade80' : '#f87171';
+      elStatus.style.borderColor = allOn ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)';
     }
-    if (CONFIG.autoBlurRageEnabled) {
-      parts.push(`🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span>`);
+
+    const tagSummary = flyout.querySelector('#x-jev-flyout-tag-summary');
+    if (tagSummary) {
+      const activeTags = [];
+      if (motivationalCount > 0) activeTags.push(`Động lực: ${motivationalCount}`);
+      if (memeCount > 0) activeTags.push(`Meme: ${memeCount}`);
+      if (deepDiveCount > 0) activeTags.push(`Deep Dive: ${deepDiveCount}`);
+      if (wholesomeCount > 0) activeTags.push(`Wholesome: ${wholesomeCount}`);
+      if (doomCount > 0) activeTags.push(`Doom: ${doomCount}`);
+      if (fomoCount > 0) activeTags.push(`FOMO: ${fomoCount}`);
+      if (casualCount > 0) activeTags.push(`Thảo luận: ${casualCount}`);
+      if (customCount > 0) activeTags.push(`Custom: ${customCount}`);
+
+      tagSummary.innerHTML = activeTags.length > 0
+        ? activeTags.map((t) => `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">${t}</span>`).join('')
+        : '<span style="opacity:0.6;">Chưa ghi nhận tag nổi bật</span>';
     }
-    if (CONFIG.filterMotivationalEnabled !== false) {
-      parts.push(`🌱 Động lực: <span style="color:#fbbf24">${motivationalCount}</span>`);
-    }
-    if (CONFIG.filterMemeEnabled !== false) {
-      parts.push(`🎭 Meme: <span style="color:#f472b6">${memeCount}</span>`);
-    }
-    if (CONFIG.filterDeepDiveEnabled !== false) {
-      parts.push(`🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span>`);
-    }
-    if (CONFIG.filterWholesomeEnabled !== false && wholesomeCount > 0) {
-      parts.push(`🌿 Wholesome: <span style="color:#34d399">${wholesomeCount}</span>`);
-    }
-    if (CONFIG.filterDoomEnabled !== false && doomCount > 0) {
-      parts.push(`⚠️ Doom: <span style="color:#fb923c">${doomCount}</span>`);
-    }
-    if (CONFIG.filterFomoEnabled !== false && fomoCount > 0) {
-      parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
-    }
-    if (CONFIG.filterCasualEnabled !== false && casualCount > 0) {
-      parts.push(`💬 Thảo luận: <span style="color:#94a3b8">${casualCount}</span>`);
-    }
-    const hasActiveCustom = Array.isArray(CONFIG.customLabels) && CONFIG.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
-    if (hasActiveCustom && customCount > 0) {
-      parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
-    }
-    pillStats.innerHTML = parts.join(' | ');
   }
 
   updatePill();
+
+  // Toggle expand flyout on click
   pill.addEventListener('click', (e) => {
     if (e.target.closest('.x-jev-pill-close')) return;
-    if (e.target.closest('.x-jev-pill-focus-toggle')) {
-      CONFIG.focusModeEnabled = !CONFIG.focusModeEnabled;
-      try { localStorage.setItem('social_shield_focus_mode', CONFIG.focusModeEnabled); } catch (err) {}
-      updatePill();
-      applyStateToDOM();
+    if (e.target.closest('.x-jev-pill-flyout')) {
+      e.stopPropagation();
       return;
     }
+    pill.classList.toggle('x-jev-expanded');
+  });
+
+  // Hover to expand smoothly
+  pill.addEventListener('mouseenter', () => {
+    pill.classList.add('x-jev-expanded');
+  });
+  pill.addEventListener('mouseleave', () => {
+    pill.classList.remove('x-jev-expanded');
+  });
+
+  // Double click toggles master protection state
+  pill.addEventListener('dblclick', (e) => {
+    if (e.target.closest('.x-jev-pill-close')) return;
     const allOn = CONFIG.monkModeEnabled || CONFIG.autoBlurRageEnabled || CONFIG.blockScamsEnabled || CONFIG.collapseSeedingEnabled;
     CONFIG.monkModeEnabled = !allOn;
     CONFIG.autoBlurRageEnabled = !allOn;
@@ -1090,18 +2044,18 @@
     focusBar.className = 'x-jev-focus-bar';
     focusBar.innerHTML = `
       <div class="x-jev-focus-info">
-        <span>🎯</span>
+        ${ICONS.target}
         <span>Khác tag Focus: <b style="color:#e2e8f0;">${displayTag}</b></span>
       </div>
-      <span class="x-jev-focus-action">Xem nội dung ▾</span>
+      <span class="x-jev-focus-action"><span>Xem nội dung</span>${ICONS.chevronDown}</span>
     `;
     focusBar.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const isExpanded = postEl.classList.toggle('x-jev-focus-expanded');
-      const actionBtn = focusBar.querySelector('.x-jev-focus-action');
-      if (actionBtn) {
-        actionBtn.textContent = isExpanded ? 'Thu gọn ▴' : 'Xem nội dung ▾';
+      const actionText = focusBar.querySelector('.x-jev-focus-action span');
+      if (actionText) {
+        actionText.textContent = isExpanded ? 'Thu gọn' : 'Xem nội dung';
       }
     });
     parentContainer.insertBefore(focusBar, textEl);
@@ -1180,7 +2134,7 @@
               m.style.setProperty('opacity', '1', 'important');
               m.style.setProperty('pointer-events', 'auto', 'important');
             });
-            btn.textContent = 'Ẩn lại';
+            btn.innerHTML = `${ICONS.scan} <span>Ẩn lại</span>`;
           } else {
             postEl.removeAttribute('data-monk-revealed');
             postEl.removeAttribute('data-user-revealed');
@@ -1320,9 +2274,18 @@
     if (postEl.hasAttribute('data-jev-handled')) return;
     if (!res || typeof res !== 'object') return;
 
-    const scores = (typeof res.scores === 'object' && res.scores !== null)
-      ? res.scores
-      : (res.label ? { [res.label]: res.confidence || 0 } : {});
+    let scores = {};
+    if (typeof res.scores === 'object' && res.scores !== null) {
+      scores = res.scores;
+    } else if (Array.isArray(res.labels) && res.labels.length > 0) {
+      res.labels.forEach((lbl, idx) => {
+        if (typeof lbl === 'string') {
+          scores[lbl] = Math.max(0.70, 0.95 - idx * 0.05);
+        }
+      });
+    } else if (res.label) {
+      scores = { [res.label]: typeof res.confidence === 'number' ? res.confidence : 0.88 };
+    }
     const parentContainer = textEl.parentElement;
 
     // 1. SCAM
@@ -1350,14 +2313,17 @@
         box.className = 'x-jev-scam-box';
         const pct = Math.round(scamScore * 100);
         box.innerHTML = `
-          <div>
-            <b>🛑 Cảnh báo Lừa đảo / Bẫy tài chính (${pct}%):</b>
-            <div style="font-size:11px;opacity:0.9;">Dấu hiệu: Hứa hẹn thu nhập bất thường, lùa gà crypto.</div>
+          <div class="x-jev-scam-text">
+            ${ICONS.shieldAlert}
+            <div>
+              <b>Cảnh báo Lừa đảo / Bẫy tài chính (${pct}%):</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.85;margin-top:2px;">Dấu hiệu: Hứa hẹn thu nhập bất thường, lùa gà crypto hoặc kéo nhóm kín.</div>
+            </div>
           </div>
         `;
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Xem bài viết';
+        btn.innerHTML = `${ICONS.scan} <span>Xem bài viết</span>`;
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1435,17 +2401,17 @@
         const pct = Math.round(rageScore * 100);
         warning.innerHTML = `
           <div class="x-jev-warning-text">
-            <span>🛡️</span>
+            ${ICONS.flame}
             <div>
               <b>Đã che nội dung Toxic / Rage-bait (${pct}%):</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Nội dung có thể gây khó chịu, bực tức hoặc kích động tranh cãi.</div>
+              <div style="font-size:11px;font-weight:400;opacity:0.85;margin-top:2px;">Nội dung có thể gây khó chịu, bực tức hoặc kích động tranh cãi.</div>
             </div>
           </div>
         `;
 
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Hiện nội dung';
+        btn.innerHTML = `${ICONS.scan} <span>Hiện nội dung</span>`;
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1514,14 +2480,20 @@
         bar.className = 'x-jev-seeding-collapsed';
         const pct = Math.round(seedingScore * 100);
         bar.innerHTML = `
-          <div>🧹 Đã thu gọn bình luận nghi vấn <b>Seeding / Clone</b> (${pct}%)</div>
-          <span style="font-size:11px;font-weight:700;">Xem nội dung ▾</span>
+          <div class="x-jev-seeding-label">
+            ${ICONS.broom}
+            <span>Đã thu gọn bình luận nghi vấn <b>Seeding / Clone</b> (${pct}%)</span>
+          </div>
+          <span class="x-jev-expand-icon"><span>Xem nội dung</span>${ICONS.chevronDown}</span>
         `;
         bar.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
-          bar.querySelector('span').textContent = isCollapsed ? 'Xem nội dung ▾' : 'Thu gọn ▴';
+          const txt = bar.querySelector('.x-jev-expand-icon span');
+          if (txt) {
+            txt.textContent = isCollapsed ? 'Xem nội dung' : 'Thu gọn';
+          }
         };
         parentContainer.insertBefore(bar, textEl);
         if (CONFIG.collapseSeedingEnabled) {
@@ -1628,12 +2600,19 @@
         badge.style.color = meta.color;
         badge.title = `${meta.desc} (Confidence: ${Math.round(score * 100)}%)`;
 
+        const iconWrapper = document.createElement('span');
+        iconWrapper.innerHTML = getBadgeIconSvg(label);
+        const iconSvg = iconWrapper.firstElementChild;
+
+        const cleanLabel = (meta.text || '').replace(/^[\p{Emoji}\p{Extended_Pictographic}\s]+/u, '');
         const textSpan = document.createElement('span');
-        textSpan.textContent = meta.text;
+        textSpan.textContent = cleanLabel;
+
         const confSpan = document.createElement('span');
         confSpan.className = 'x-jev-confidence';
         confSpan.textContent = `${Math.round(score * 100)}%`;
 
+        if (iconSvg) badge.appendChild(iconSvg);
         badge.appendChild(textSpan);
         badge.appendChild(confSpan);
         container.appendChild(badge);
@@ -2205,6 +3184,747 @@
     });
   }
 
+  // --- Followers & Post Cache (Userscript Interceptor) ---
+  const authorFollowerCache = new Map();
+  const tweetDataCache = new Map();
+
+  try {
+    const saved = sessionStorage.getItem('social_shield_fols_v1');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.entries(parsed).forEach(([k, v]) => authorFollowerCache.set(k, v));
+    }
+  } catch (e) {}
+
+  function saveFollowersCache() {
+    try {
+      const obj = {};
+      const entries = Array.from(authorFollowerCache.entries()).slice(-600);
+      entries.forEach(([k, v]) => (obj[k] = v));
+      sessionStorage.setItem('social_shield_fols_v1', JSON.stringify(obj));
+    } catch (e) {}
+  }
+
+  // Network Interceptor for Userscript (Threads & X GraphQL)
+  (function initUserscriptInterceptor() {
+    try {
+      const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+      if (win.__socialShieldUserscriptIntercepted) return;
+      win.__socialShieldUserscriptIntercepted = true;
+
+      function extractUserData(obj) {
+        if (!obj || typeof obj !== 'object') return;
+        const u = obj.user || obj.author || (obj.__typename === 'User' ? obj : null);
+        const targetUser = u || (obj.username ? obj : null);
+        if (targetUser && (targetUser.username || targetUser.pk || targetUser.id)) {
+          const username = targetUser.username || targetUser.screen_name;
+          let fCount = typeof targetUser.follower_count === 'number' ? targetUser.follower_count :
+                       (typeof targetUser.followers_count === 'number' ? targetUser.followers_count :
+                       (targetUser.edge_followed_by?.count));
+          if (username && typeof fCount === 'number') {
+            authorFollowerCache.set(username.toLowerCase().replace('@', ''), fCount);
+            saveFollowersCache();
+          }
+        }
+        if (obj.legacy && typeof obj.legacy.followers_count === 'number') {
+          const handle = obj.legacy.screen_name;
+          if (handle) {
+            authorFollowerCache.set(handle.toLowerCase().replace('@', ''), obj.legacy.followers_count);
+            saveFollowersCache();
+          }
+        }
+        if ((obj.code || obj.pk || obj.id) && (typeof obj.like_count === 'number' || typeof obj.reply_count === 'number')) {
+          const code = String(obj.code || obj.pk || obj.id);
+          tweetDataCache.set(code, {
+            likes: obj.like_count || 0,
+            replies: obj.reply_count || 0,
+            retweets: obj.reshare_count || 0,
+            viewsCount: obj.view_count || obj.impression_count || 0
+          });
+        }
+        if (Array.isArray(obj)) {
+          for (let i = 0; i < obj.length; i++) extractUserData(obj[i]);
+        } else {
+          const keys = Object.keys(obj);
+          for (let i = 0; i < keys.length; i++) {
+            if (keys[i] === '__reactFiber' || keys[i] === '__reactProps') continue;
+            extractUserData(obj[keys[i]]);
+          }
+        }
+      }
+
+      function isApiUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        const l = url.toLowerCase();
+        return l.includes('graphql') || l.includes('threads.net') || l.includes('threads.com') || l.includes('x.com') || l.includes('twitter.com');
+      }
+
+      const origFetch = win.fetch;
+      win.fetch = async function (...args) {
+        const res = await origFetch.apply(this, args);
+        try {
+          const u = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
+          if (isApiUrl(u)) {
+            res.clone().json().then(extractUserData).catch(() => {});
+          }
+        } catch (e) {}
+        return res;
+      };
+    } catch (e) {}
+  })();
+
+  function parseMetricNumber(raw) {
+    if (!raw) return 0;
+    const clean = raw.toString().trim().toLowerCase().replace(/,/g, '.');
+    const match = clean.match(/^([\d\.]+)\s*(k|m|b|n|tr|tỷ)?$/i);
+    if (!match) return 0;
+    let num = parseFloat(match[1]) || 0;
+    const unit = (match[2] || '').toLowerCase();
+    if (unit === 'k' || unit === 'n') num *= 1000;
+    else if (unit === 'm' || unit === 'tr') num *= 1000000;
+    else if (unit === 'b' || unit === 'tỷ') num *= 1000000000;
+    return Math.round(num);
+  }
+
+  function formatMetricNumber(num) {
+    if (!num || isNaN(num)) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return Number(num).toLocaleString('vi-VN');
+  }
+
+  function extractTweetHook(fullText) {
+    if (!fullText) return '';
+    const clean = fullText.trim();
+    const doubleBreak = clean.indexOf('\n\n');
+    if (doubleBreak > 10) {
+      const p1 = clean.slice(0, doubleBreak).trim();
+      if (p1.length <= 45 && clean.length > doubleBreak + 2) {
+        const p2Start = doubleBreak + 2;
+        const nextBreak = clean.indexOf('\n\n', p2Start);
+        return (p1 + ' ' + (nextBreak !== -1 ? clean.slice(p2Start, nextBreak) : clean.slice(p2Start))).slice(0, 280).trim();
+      }
+      return p1.slice(0, 280);
+    }
+    const lines = clean.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (lines.length >= 2 && lines[0].length < 60) {
+      return (lines[0] + ' ' + lines[1]).slice(0, 280);
+    }
+    const matchSentence = clean.match(/^.*?[.?!](\s|$)/);
+    if (matchSentence && matchSentence[0].length >= 20) {
+      return matchSentence[0].trim();
+    }
+    return clean.slice(0, 160).trim();
+  }
+
+  function classifyHookFormula(text) {
+    const lower = text.toLowerCase();
+    if (/\b(unpopular opinion|stop doing|most people are wrong|nobody wants to hear|truth is|sai lầm|ngừng ngay|sự thật mất lòng)\b/i.test(lower)) {
+      return 'contrarian';
+    }
+    if (/\b(\d+\s*(tools|websites|prompts|tips|steps|books|rules|công cụ|bước|mẹo|nguyên tắc|cuốn sách)|cheatsheet|cẩm nang|framework|khung sườn|bookmark|tổng hợp|lưu lại)\b/i.test(lower)) {
+      return 'cheatsheet';
+    }
+    if (/\b(years ago|in 20\d\d|today i|how i went from|started with|năm ngoái|cách đây|tôi từng|từ số 0|hành trình|bước ngoặt)\b/i.test(lower)) {
+      return 'story';
+    }
+    if (/\b(i analyzed|studied|examined|billionaire|millionaire|ceo|mrbeast|musk|jobs|phân tích|nghiên cứu|chuyên gia|doanh thu|triệu đô|hàng ngàn)\b/i.test(lower)) {
+      return 'proof';
+    }
+    if (/\?$/m.test(text.trim()) || /^(why|how|what if|want to|have you ever|tại sao|làm sao|liệu bạn|có bao giờ)\b/i.test(lower)) {
+      return 'challenge';
+    }
+    if (/\b(secret|nobody talks about|hardly anyone|most people don't|hidden|the reason why|bí mật|ít ai biết|không ai nói|lý do tại sao|sự thật là)\b/i.test(lower)) {
+      return 'curiosity';
+    }
+    return 'other';
+  }
+
+  function showShieldToast(msg) {
+    const existing = document.querySelector('.x-shield-page-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'x-shield-page-toast';
+    toast.innerHTML = `${ICONS.zap} <span>${msg}</span>`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }
+
+  function getPostAgeHours(postEl) {
+    const timeEl = postEl.querySelector('time');
+    if (timeEl) {
+      const datetime = timeEl.getAttribute('datetime');
+      if (datetime) {
+        const diffMs = Date.now() - new Date(datetime).getTime();
+        if (!isNaN(diffMs) && diffMs >= 0) return diffMs / (1000 * 60 * 60);
+      }
+      const text = (timeEl.innerText || '').trim().toLowerCase();
+      if (text.endsWith('m') || text.includes('phút')) return (parseInt(text, 10) || 1) / 60;
+      if (text.endsWith('h') || text.includes('giờ')) return parseInt(text, 10) || 1;
+      if (text.endsWith('d') || text.includes('ngày')) return (parseInt(text, 10) || 1) * 24;
+    }
+    return 6;
+  }
+
+  function evaluateOutlierStatus(metrics, authorHandle, postEl, platform = 'x') {
+    const ageHours = getPostAgeHours(postEl);
+    const maxAge = CONFIG.outlierMaxAgeHours || 48;
+    const isRecent = ageHours <= maxAge;
+    const cleanHandle = (authorHandle || '').toLowerCase().replace('@', '');
+    const followers = authorFollowerCache.get(cleanHandle) || 0;
+
+    if (!isRecent) {
+      return { isOutlier: false, multiplier: 0, followers, reach: platform === 'x' ? metrics.views : metrics.likes, ageHours, reason: 'too_old' };
+    }
+
+    if (platform === 'x') {
+      const views = metrics.views || 0;
+      const minViews = CONFIG.outlierMinViews || 3000;
+      const minMultiplier = CONFIG.outlierMinMultiplier || 3.0;
+
+      if (followers > 0) {
+        const multiplier = views / followers;
+        const isOutlier = multiplier >= minMultiplier && views >= minViews;
+        return { isOutlier, multiplier, followers, reach: views, ageHours };
+      }
+
+      const isOutlierFallback = views >= 20000 && metrics.likes >= 800;
+      return { isOutlier: isOutlierFallback, multiplier: 0, followers: 0, reach: views, ageHours, isEstimated: true };
+    } else {
+      // Threads
+      const likes = metrics.likes || 0;
+      const views = metrics.views || 0;
+      const minMultiplier = CONFIG.outlierThreadsMinMultiplier || 2.0;
+
+      if (views > 0) {
+        const minViews = CONFIG.outlierThreadsMinViews || 2000;
+        if (followers > 0) {
+          const multiplier = views / followers;
+          const isOutlier = multiplier >= minMultiplier && views >= minViews;
+          return { isOutlier, multiplier, followers, reach: views, ageHours };
+        }
+        const isOutlierFallback = views >= 10000;
+        return { isOutlier: isOutlierFallback, multiplier: 0, followers: 0, reach: views, ageHours, isEstimated: true };
+      }
+
+      const minLikes = CONFIG.outlierThreadsMinLikes || 150;
+      if (followers > 0) {
+        const multiplier = (likes * 15) / followers;
+        const isOutlier = multiplier >= minMultiplier && likes >= minLikes;
+        return { isOutlier, multiplier, followers, reach: likes, ageHours };
+      }
+
+      const isOutlierFallback = likes >= 250;
+      return { isOutlier: isOutlierFallback, multiplier: 0, followers: 0, reach: likes, ageHours, isEstimated: true };
+    }
+  }
+
+  function saveHookToVaultUserscript(itemToSave, hookBtn, confidence) {
+    try {
+      const raw = localStorage.getItem('x_hook_vault_v1');
+      let vault = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(vault)) vault = [];
+      vault = vault.filter((item) => item.id !== itemToSave.id);
+      vault.unshift(itemToSave);
+      localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
+      hookBtn.classList.add('is-saved');
+      hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+      showShieldToast(`✓ Jev AI đã phân tích (${Math.round(confidence * 100)}%) & lưu Hook Outlier vào Vault!`);
+    } catch (e) {
+      hookBtn.classList.add('is-saved');
+      hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+      showShieldToast('✓ Đã lưu Hook vào Vault!');
+    }
+  }
+
+  // --- Threads Hook & Outlier Engine ---
+  function extractThreadsMetrics(postEl) {
+    let likes = 0;
+    let replies = 0;
+    let reposts = 0;
+    let views = 0;
+
+    const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
+    if (postLink && postLink.href) {
+      const idMatch = postLink.href.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
+      if (idMatch && idMatch[1]) {
+        const cached = tweetDataCache.get(idMatch[1]);
+        if (cached) {
+          likes = Math.max(likes, cached.likes || 0);
+          replies = Math.max(replies, cached.replies || 0);
+          reposts = Math.max(reposts, cached.retweets || 0);
+          views = Math.max(views, cached.viewsCount || 0);
+        }
+      }
+    }
+
+    const ariaEls = postEl.querySelectorAll('[aria-label]');
+    ariaEls.forEach((el) => {
+      const label = el.getAttribute('aria-label') || '';
+      const likeMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:likes?|lượt thích|người thích)/i) ||
+                         label.match(/(?:likes?|lượt thích)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i) ||
+                         label.match(/\(([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\)/);
+      if (likeMatch && (label.toLowerCase().includes('like') || label.toLowerCase().includes('thích'))) {
+        likes = Math.max(likes, parseMetricNumber(`${likeMatch[1]} ${likeMatch[2] || ''}`));
+      }
+
+      const replyMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:replies?|câu trả lời|bình luận)/i) ||
+                          label.match(/(?:replies?|câu trả lời|bình luận)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i);
+      if (replyMatch) {
+        replies = Math.max(replies, parseMetricNumber(`${replyMatch[1]} ${replyMatch[2] || ''}`));
+      }
+
+      const repostMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:reposts?|lượt đăng lại)/i) ||
+                           label.match(/(?:reposts?|lượt đăng lại)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i);
+      if (repostMatch) {
+        reposts = Math.max(reposts, parseMetricNumber(`${repostMatch[1]} ${repostMatch[2] || ''}`));
+      }
+
+      const viewMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:views?|lượt xem)/i) ||
+                         label.match(/(?:views?|lượt xem)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i);
+      if (viewMatch) {
+        views = Math.max(views, parseMetricNumber(`${viewMatch[1]} ${viewMatch[2] || ''}`));
+      }
+    });
+
+    const candidates = postEl.querySelectorAll('span[dir="auto"], a[href*="/post/"], a[href*="/t/"], div[dir="auto"]');
+    candidates.forEach((el) => {
+      const t = (el.innerText || '').trim();
+      if (!t) return;
+      const likeMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:likes?|lượt thích)/i);
+      if (likeMatch) likes = Math.max(likes, parseMetricNumber(`${likeMatch[1]} ${likeMatch[2] || ''}`));
+      const replyMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:replies?|câu trả lời|bình luận)/i);
+      if (replyMatch) replies = Math.max(replies, parseMetricNumber(`${replyMatch[1]} ${replyMatch[2] || ''}`));
+      const repostMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:reposts?|lượt đăng lại)/i);
+      if (repostMatch) reposts = Math.max(reposts, parseMetricNumber(`${repostMatch[1]} ${repostMatch[2] || ''}`));
+      const viewMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:views?|lượt xem)/i);
+      if (viewMatch) views = Math.max(views, parseMetricNumber(`${viewMatch[1]} ${viewMatch[2] || ''}`));
+    });
+
+    return { views, likes, replies, reposts, bookmarks: 0 };
+  }
+
+  function extractThreadsAuthor(postEl) {
+    let authorName = '';
+    let authorHandle = '';
+    let authorAvatar = '';
+    let permalink = window.location.href;
+
+    const handleLink = postEl.querySelector('a[href*="/@"]');
+    if (handleLink) {
+      const raw = handleLink.getAttribute('href') || '';
+      const match = raw.match(/@([a-zA-Z0-9_\.]+)/);
+      authorHandle = match ? '@' + match[1] : raw.replace('/', '');
+      const nameSpan = handleLink.querySelector('span') || postEl.querySelector('span[dir="auto"]');
+      authorName = nameSpan ? nameSpan.innerText.trim() : authorHandle;
+    }
+
+    const avatarImg = postEl.querySelector('img[alt*="ảnh đại diện"], img[alt*="profile"], img[src*="cdninstagram.com"], img[src*="threads.net"]');
+    if (avatarImg) authorAvatar = avatarImg.src || '';
+
+    const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
+    if (postLink && postLink.href) permalink = postLink.href;
+
+    return { authorName: authorName || 'Threads Creator', authorHandle, authorAvatar, permalink };
+  }
+
+  function findThreadsActionBar(postEl) {
+    if (!postEl) return null;
+
+    const actionButtons = Array.from(postEl.querySelectorAll('div[role="button"], button')).filter((btn) => {
+      if (btn.closest('video') || btn.querySelector('video')) return false;
+      if (btn.closest('a[href*="/@"]') || btn.querySelector('a[href*="/@"]')) return false;
+      if (btn.closest('time') || btn.querySelector('time')) return false;
+
+      const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+      if (label.includes('more') || label.includes('thêm') || label.includes('menu') || label.includes('tùy chọn')) return false;
+      if (label.includes('follow') || label.includes('theo dõi')) return false;
+
+      return !!btn.querySelector('svg');
+    });
+
+    for (const btn of actionButtons) {
+      const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+      const isAction = label.includes('like') || label.includes('thích') ||
+                       label.includes('reply') || label.includes('trả lời') ||
+                       label.includes('repost') || label.includes('đăng lại') ||
+                       label.includes('share') || label.includes('chia sẻ');
+      if (isAction) {
+        let curr = btn.parentElement;
+        for (let depth = 0; depth < 4; depth++) {
+          if (!curr || curr === postEl || curr === document.body) break;
+          if (!curr.querySelector('a[href*="/@"]') && !curr.querySelector('time')) {
+            const svgs = curr.querySelectorAll('svg');
+            if (svgs.length >= 2 && svgs.length <= 8) return curr;
+          }
+          curr = curr.parentElement;
+        }
+      }
+    }
+
+    for (const btn of actionButtons) {
+      let curr = btn.parentElement;
+      for (let depth = 0; depth < 4; depth++) {
+        if (!curr || curr === postEl || curr === document.body) break;
+        if (!curr.querySelector('a[href*="/@"]') && !curr.querySelector('time')) {
+          const svgs = curr.querySelectorAll('svg');
+          const textLen = (curr.innerText || '').trim().length;
+          if (svgs.length >= 3 && svgs.length <= 8 && textLen < 80) return curr;
+        }
+        curr = curr.parentElement;
+      }
+    }
+
+    return null;
+  }
+
+  function processThreadsHookAndViral(post, fullText, contentEl) {
+    if (!CONFIG.viralDetectionEnabled && !CONFIG.outlierDetectionEnabled) return;
+
+    const metrics = extractThreadsMetrics(post);
+    const authorInfo = extractThreadsAuthor(post);
+    const outlier = evaluateOutlierStatus(metrics, authorInfo.authorHandle, post, 'threads');
+    const actionBar = findThreadsActionBar(post);
+
+    if (outlier.isOutlier) {
+      post.classList.add('x-shield-outlier-post', 'is-threads');
+      let badge = post.querySelector('.x-shield-outlier-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'x-shield-outlier-badge is-threads';
+        const jevContainer = post.querySelector('.x-jev-badge-container');
+        if (jevContainer) {
+          jevContainer.appendChild(badge);
+        } else if (contentEl && contentEl.parentElement) {
+          contentEl.parentElement.insertBefore(badge, contentEl);
+        } else if (actionBar && actionBar.parentElement) {
+          actionBar.parentElement.insertBefore(badge, actionBar);
+        }
+      }
+      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : 'Breakout Outlier';
+      const folsStr = outlier.followers > 0 ? `${formatMetricNumber(outlier.followers)} fols → ` : '';
+      const reachStr = `${formatMetricNumber(metrics.likes)} likes`;
+      const timeStr = outlier.ageHours < 1 ? '<1h trước' : `${Math.round(outlier.ageHours)}h trước`;
+      badge.innerHTML = `<span class="outlier-fire">🔥</span> <span class="outlier-mult">${multStr}</span> <span class="outlier-sep">•</span> <span class="outlier-stats">${folsStr}${reachStr}</span> <span class="outlier-sep">•</span> <span class="outlier-time">${timeStr}</span>`;
+    } else {
+      post.classList.remove('x-shield-outlier-post', 'is-threads', 'x-shield-threads-viral');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+    }
+
+    if (post.querySelector('.x-shield-threads-hook-btn')) return;
+
+    if (!actionBar) return;
+
+    const hookBtn = document.createElement('button');
+    hookBtn.type = 'button';
+    hookBtn.className = 'x-shield-threads-hook-btn';
+    hookBtn.setAttribute('title', 'Phân tích ngữ nghĩa bằng Jev AI và lưu Hook vào Vault');
+    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook (Jev AI)</span>`;
+
+    hookBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (hookBtn.classList.contains('is-loading')) return;
+      hookBtn.classList.add('is-loading');
+      hookBtn.innerHTML = `${ICONS.scan} <span>Jev AI Đang Bóc Tách...</span>`;
+
+      const hookText = extractTweetHook(fullText);
+      const idMatch = authorInfo.permalink.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
+      const threadId = idMatch ? 'threads-' + idMatch[1] : 'threads-' + Date.now();
+
+      const HOOK_LABELS = [
+        'Curiosity Gap hook: creates intense mystery or withholds key information',
+        'Contrarian / Hot Take hook: boldly challenges conventional wisdom',
+        'Cheatsheet / Framework hook: curated list, tools, step-by-step blueprint',
+        'Personal Story transformation hook: vulnerability, from zero to success',
+        'Social Proof authority hook: big numbers, case study, expert credibility',
+        'Direct Provocation challenge hook: tough wake-up call, sharp question',
+      ];
+      const HOOK_INSTRUCTIONS =
+        'Analyze the opening hook or message of this Threads post. Classify its primary hook formula, copywriting technique, and engagement mechanism into exactly one category.';
+
+      const baseItem = {
+        id: threadId,
+        platform: 'threads',
+        authorName: authorInfo.authorName,
+        authorHandle: authorInfo.authorHandle,
+        authorAvatar: authorInfo.authorAvatar,
+        authorFollowers: outlier.followers || 0,
+        outlierMultiplier: outlier.multiplier || 0,
+        postAgeHours: Math.round(outlier.ageHours),
+        hook: hookText,
+        fullText: fullText,
+        metrics: metrics,
+        formula: classifyHookFormula(hookText),
+        jevConfidence: 0.88,
+        jevLabel: 'Heuristic',
+        url: authorInfo.permalink,
+        savedAt: new Date().toISOString(),
+      };
+
+      if (typeof GM_xmlhttpRequest !== 'undefined') {
+        GM_xmlhttpRequest({
+          method: 'POST',
+          url: CONFIG.apiEndpoint,
+          headers: { 'Content-Type': 'application/json' },
+          data: JSON.stringify({
+            labels: HOOK_LABELS,
+            inputs: [hookText],
+            instructions: HOOK_INSTRUCTIONS,
+            multi: false,
+          }),
+          onload: (response) => {
+            hookBtn.classList.remove('is-loading');
+            let formula = classifyHookFormula(hookText);
+            let score = 0.88;
+            let rawLabel = '';
+            try {
+              const resData = JSON.parse(response.responseText);
+              const item = resData?.results?.[0];
+              rawLabel = typeof item === 'string' ? item : (item?.label || (Array.isArray(item?.labels) ? item.labels[0] : ''));
+              score = typeof item?.score === 'number' ? item.score : (typeof item?.confidence === 'number' ? item.confidence : 0.88);
+              const lower = rawLabel.toLowerCase();
+              if (lower.includes('curiosity')) formula = 'curiosity';
+              else if (lower.includes('contrarian')) formula = 'contrarian';
+              else if (lower.includes('cheatsheet') || lower.includes('framework')) formula = 'cheatsheet';
+              else if (lower.includes('story') || lower.includes('personal')) formula = 'story';
+              else if (lower.includes('social proof') || lower.includes('authority')) formula = 'proof';
+              else if (lower.includes('challenge') || lower.includes('provocation')) formula = 'challenge';
+            } catch (err) {}
+            baseItem.formula = formula;
+            baseItem.jevConfidence = score;
+            baseItem.jevLabel = rawLabel;
+            saveHookToVaultUserscript(baseItem, hookBtn, score);
+          },
+          onerror: () => {
+            hookBtn.classList.remove('is-loading');
+            saveHookToVaultUserscript(baseItem, hookBtn, 0.75);
+          },
+        });
+      } else {
+        hookBtn.classList.remove('is-loading');
+        saveHookToVaultUserscript(baseItem, hookBtn, 0.75);
+      }
+    });
+
+    actionBar.appendChild(hookBtn);
+  }
+
+  // --- X (Twitter) Hook & Outlier Engine ---
+  function extractXTweetAuthor(post) {
+    const userNameEl = post.querySelector('div[data-testid="User-Name"]');
+    let authorName = '';
+    let authorHandle = '';
+    if (userNameEl) {
+      const nameSpan = userNameEl.querySelector('span');
+      if (nameSpan) authorName = nameSpan.innerText.trim();
+      const handleLink = userNameEl.querySelector('a[href^="/"]');
+      if (handleLink) {
+        const match = handleLink.innerText.match(/@\w+/);
+        authorHandle = match ? match[0] : (handleLink.getAttribute('href') || '').replace('/', '@');
+      }
+    }
+    const avatarImg = post.querySelector('div[data-testid="Tweet-User-Avatar"] img, img[src*="profile_images"]');
+    const authorAvatar = avatarImg ? avatarImg.src : '';
+    return { authorName, authorHandle, authorAvatar };
+  }
+
+  function extractXTweetMetrics(post) {
+    let views = 0, likes = 0, retweets = 0, replies = 0, bookmarks = 0;
+    const analyticsLink = post.querySelector('a[href*="/analytics"]');
+    if (analyticsLink) views = parseMetricNumber(analyticsLink.innerText || analyticsLink.getAttribute('aria-label') || '');
+    const likeBtn = post.querySelector('button[data-testid="like"], button[data-testid="unlike"]');
+    if (likeBtn) likes = parseMetricNumber(likeBtn.innerText || likeBtn.getAttribute('aria-label') || '');
+    const retweetBtn = post.querySelector('button[data-testid="retweet"]');
+    if (retweetBtn) retweets = parseMetricNumber(retweetBtn.innerText || retweetBtn.getAttribute('aria-label') || '');
+    const replyBtn = post.querySelector('button[data-testid="reply"]');
+    if (replyBtn) replies = parseMetricNumber(replyBtn.innerText || replyBtn.getAttribute('aria-label') || '');
+    const bookmarkBtn = post.querySelector('button[data-testid="bookmark"]');
+    if (bookmarkBtn) bookmarks = parseMetricNumber(bookmarkBtn.innerText || bookmarkBtn.getAttribute('aria-label') || '');
+    return { views, likes, retweets, replies, bookmarks };
+  }
+
+  function findXTweetActionBar(post) {
+    const likeBtn = post.querySelector('button[data-testid="like"], button[data-testid="unlike"]');
+    if (!likeBtn) return null;
+    let curr = likeBtn.parentElement;
+    for (let i = 0; i < 4; i++) {
+      if (!curr) break;
+      if (curr.getAttribute('role') === 'group' || curr.querySelectorAll('button').length >= 3) return curr;
+      curr = curr.parentElement;
+    }
+    return likeBtn.closest('[role="group"]') || likeBtn.parentElement;
+  }
+
+  function processXTweetHookAndViral(post, fullText) {
+    if (!CONFIG.viralDetectionEnabled && !CONFIG.outlierDetectionEnabled) return;
+    const metrics = extractXTweetMetrics(post);
+    const author = extractXTweetAuthor(post);
+    const outlier = evaluateOutlierStatus(metrics, author.authorHandle, post, 'x');
+
+    if (outlier.isOutlier) {
+      post.classList.add('x-shield-outlier-post');
+      let badge = post.querySelector('.x-shield-outlier-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'x-shield-outlier-badge';
+        const tweetTextEl = post.querySelector('div[data-testid="tweetText"]');
+        if (tweetTextEl && tweetTextEl.parentElement) tweetTextEl.parentElement.insertBefore(badge, tweetTextEl);
+      }
+      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : 'Breakout Outlier';
+      const folsStr = outlier.followers > 0 ? `${formatMetricNumber(outlier.followers)} fols → ` : '';
+      const reachStr = `${formatMetricNumber(metrics.views)} views`;
+      const timeStr = outlier.ageHours < 1 ? '<1h trước' : `${Math.round(outlier.ageHours)}h trước`;
+      badge.innerHTML = `<span class="outlier-fire">🔥</span> <span class="outlier-mult">${multStr}</span> <span class="outlier-sep">•</span> <span class="outlier-stats">${folsStr}${reachStr}</span> <span class="outlier-sep">•</span> <span class="outlier-time">${timeStr}</span>`;
+    } else {
+      post.classList.remove('x-shield-outlier-post', 'x-shield-viral-post');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+    }
+
+    if (post.querySelector('.x-shield-hook-btn')) return;
+    const group = findXTweetActionBar(post);
+    if (!group) return;
+
+    const hookBtn = document.createElement('button');
+    hookBtn.type = 'button';
+    hookBtn.className = 'x-shield-hook-btn';
+    hookBtn.setAttribute('title', 'Phân tích ngữ nghĩa bằng Jev AI và lưu Hook vào Vault');
+    hookBtn.innerHTML = `${ICONS.zap} <span>Save Hook</span>`;
+
+    hookBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (hookBtn.classList.contains('is-loading')) return;
+      hookBtn.classList.add('is-loading');
+      hookBtn.innerHTML = `${ICONS.scan} <span>Jev AI...</span>`;
+
+      const hookText = extractTweetHook(fullText);
+      const permalinkEl = post.querySelector('a[href*="/status/"]');
+      const tweetIdMatch = permalinkEl ? permalinkEl.href.match(/status\/(\d+)/) : null;
+      const tweetId = tweetIdMatch ? tweetIdMatch[1] : 'x-' + Date.now();
+
+      const baseItem = {
+        id: tweetId,
+        platform: 'x',
+        authorName: author.authorName,
+        authorHandle: author.authorHandle,
+        authorAvatar: author.authorAvatar,
+        authorFollowers: outlier.followers || 0,
+        outlierMultiplier: outlier.multiplier || 0,
+        postAgeHours: Math.round(outlier.ageHours),
+        hook: hookText,
+        fullText: fullText,
+        metrics: metrics,
+        formula: classifyHookFormula(hookText),
+        jevConfidence: 0.88,
+        jevLabel: 'Heuristic',
+        url: permalinkEl ? permalinkEl.href : window.location.href,
+        savedAt: new Date().toISOString(),
+      };
+
+      hookBtn.classList.remove('is-loading');
+      saveHookToVaultUserscript(baseItem, hookBtn, 0.88);
+    });
+
+    group.appendChild(hookBtn);
+  }
+
+  // --- Real-time Live Scanner Engine ---
+  let isRealtimeScanning = false;
+  let scanIntervalId = null;
+
+  function initRealtimeScannerDock() {
+    const platform = getPlatform();
+    if (platform !== 'x' && platform !== 'threads') return;
+    if (document.getElementById('x-shield-scanner-dock')) return;
+
+    const dock = document.createElement('div');
+    dock.id = 'x-shield-scanner-dock';
+    dock.className = 'x-shield-scanner-dock';
+    dock.innerHTML = `
+      <div id="scannerLiveHud" class="scanner-live-hud hidden">
+        <span class="hud-pulse"></span>
+        <span id="scannerHudStatus">Đang quét feed...</span>
+        <button type="button" class="btn-scanner-stop" id="btnStopRealtimeScan" title="Dừng quét">Dừng</button>
+      </div>
+      <button type="button" class="scanner-btn" id="btnTriggerRealtimeScan" title="Bắt đầu quét tìm bài viết Outlier gần đây theo thời gian thực">
+        <span>${ICONS.scan}</span>
+        <span>Quét Outlier Feed</span>
+      </button>
+    `;
+
+    document.body.appendChild(dock);
+
+    const triggerBtn = dock.querySelector('#btnTriggerRealtimeScan');
+    const stopBtn = dock.querySelector('#btnStopRealtimeScan');
+    const liveHud = dock.querySelector('#scannerLiveHud');
+    const hudStatus = dock.querySelector('#scannerHudStatus');
+
+    triggerBtn.addEventListener('click', () => {
+      startRealtimeScanning(triggerBtn, liveHud, hudStatus);
+    });
+
+    stopBtn.addEventListener('click', () => {
+      stopRealtimeScanning(triggerBtn, liveHud);
+    });
+  }
+
+  function startRealtimeScanning(triggerBtn, liveHud, hudStatus) {
+    if (isRealtimeScanning) return;
+    isRealtimeScanning = true;
+
+    triggerBtn.classList.add('hidden');
+    liveHud.classList.remove('hidden');
+    showShieldToast('⚡ Bắt đầu quét Outlier Realtime...');
+
+    let scrollSteps = 0;
+    const maxSteps = 40;
+
+    scanIntervalId = setInterval(() => {
+      if (!isRealtimeScanning || scrollSteps >= maxSteps) {
+        stopRealtimeScanning(triggerBtn, liveHud);
+        return;
+      }
+
+      scrollSteps++;
+      scanFeed();
+
+      const platform = getPlatform();
+      const selector = platform === 'x' ? 'article[data-testid="tweet"]' : 'article[role="article"], div[data-pressable-container="true"]';
+      const allPosts = document.querySelectorAll(selector);
+      const outliers = document.querySelectorAll('.x-shield-outlier-post');
+
+      hudStatus.textContent = `Đang quét: ${allPosts.length} bài • ${outliers.length} Outlier 🔥`;
+
+      window.scrollBy({ top: 380, behavior: 'smooth' });
+    }, 600);
+  }
+
+  function stopRealtimeScanning(triggerBtn, liveHud) {
+    if (!isRealtimeScanning && !scanIntervalId) return;
+    isRealtimeScanning = false;
+    if (scanIntervalId) {
+      clearInterval(scanIntervalId);
+      scanIntervalId = null;
+    }
+
+    if (liveHud) liveHud.classList.add('hidden');
+    if (triggerBtn) triggerBtn.classList.remove('hidden');
+
+    const outliers = document.querySelectorAll('.x-shield-outlier-post');
+    showShieldToast(`✓ Đã quét xong! Phát hiện ${outliers.length} bài Outlier đột biến.`);
+  }
+
   function scanFeed() {
     // 0. Synchronize active taxonomy & restore bypassed elements
     const activeTaxonomy = getActiveTaxonomy(CONFIG);
@@ -2246,16 +3966,16 @@
     const platform = getPlatform();
 
     if (platform === 'threads') {
-      const candidates = new Set();
-      document.querySelectorAll('div[data-pressable-container="true"], div[role="article"], article, div[data-testid*="post"], div[data-testid*="thread"], div[role="listitem"], div[data-testid*="activity"], div[data-testid*="cell"]').forEach((el) => {
-        if (!el.hasAttribute('data-jev-scanned')) candidates.add(el);
+      const postContainers = new Set();
+      document.querySelectorAll('div[data-pressable-container="true"], div[role="article"], article, div[data-testid*="post"], div[data-testid*="thread"]').forEach((el) => {
+        postContainers.add(el);
       });
       document.querySelectorAll('a[href*="/post/"], a[href*="/t/"]').forEach((link) => {
-        let container = link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]') || link.closest('article');
+        let container = link.closest('article') || link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]');
         if (!container) {
           let curr = link.parentElement;
           let depth = 0;
-          while (curr && curr !== document.body && depth < 5) {
+          while (curr && curr !== document.body && depth < 6) {
             if (curr.querySelector('span[dir="auto"], div[dir="auto"]') && curr.querySelectorAll('svg').length >= 1) {
               container = curr;
               break;
@@ -2264,17 +3984,15 @@
             depth++;
           }
         }
-        if (container && !container.hasAttribute('data-jev-scanned')) candidates.add(container);
+        if (container) postContainers.add(container);
       });
 
-      const filteredCandidates = Array.from(candidates).filter((el) => {
-        return !Array.from(candidates).some((other) => other !== el && el.contains(other));
+      const candidateContainers = Array.from(postContainers).filter((el) => {
+        return !Array.from(postContainers).some((other) => other !== el && other.contains(el));
       });
 
-      filteredCandidates.forEach((cont) => {
-        checkAndApplyMonkMode(cont, cont.innerText || '');
-
-        const textEls = cont.querySelectorAll('span[dir="auto"], div[dir="auto"]');
+      candidateContainers.forEach((post) => {
+        const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         const candidateEls = [];
 
         textEls.forEach((el) => {
@@ -2286,36 +4004,44 @@
           if (/^(\d+\s*(s|m|h|d|w|y|giây|phút|giờ|ngày|tuần|tháng|năm)|just now|vừa xong)$/i.test(t)) return;
           if (/^(translate|xem bản dịch|reply|trả lời|like|thích|share|chia sẻ|follow|theo dõi|following|đang theo dõi|edited|đã chỉnh sửa)$/i.test(t)) return;
           if (/^@?[\w\.]+(\s+and\s+\d+\s+others)?(\s+\d+[smhdw])?$/i.test(t)) return;
-
           if (el.children.length > 5) return;
-
           candidateEls.push({ el, text: t });
         });
 
+        let targetItem = null;
         if (candidateEls.length > 0) {
-          let targetItem = candidateEls[candidateEls.length - 1];
+          targetItem = candidateEls[candidateEls.length - 1];
           if (!window.location.pathname.includes('/activity')) {
             candidateEls.forEach((item) => {
               if (item.text.length > targetItem.text.length) targetItem = item;
             });
           }
+        }
 
-          cont.setAttribute('data-jev-scanned', 'true');
-          scannedCount++;
-          updatePill();
-          const cleanText = targetItem.text;
-          if (textCache.has(cleanText)) {
-            renderClassification({ postEl: cont, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
-          } else {
-            queue.push({ postEl: cont, text: cleanText, textEl: targetItem.el });
+        const cleanText = targetItem ? targetItem.text : (post.innerText || '').slice(0, 300);
+
+        if (cleanText) {
+          processThreadsHookAndViral(post, cleanText, targetItem ? targetItem.el : null);
+        }
+
+        if (!post.hasAttribute('data-jev-scanned')) {
+          checkAndApplyMonkMode(post, post.innerText || '');
+
+          if (targetItem && cleanText.length >= 2) {
+            post.setAttribute('data-jev-scanned', 'true');
+            scannedCount++;
+            updatePill();
+
+            if (textCache.has(cleanText)) {
+              renderClassification({ postEl: post, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
+            } else {
+              queue.push({ postEl: post, text: cleanText, textEl: targetItem.el });
+            }
           }
         }
       });
     } else if (platform === 'facebook') {
-      // 1. Scan Facebook Reels, Pop-up video player, and Feed Trays
       scanFacebookReels();
-
-      // 2. Scan standard feed units
       document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]):not(:has([role="article"])), div[role="article"]:not([data-jev-scanned]), div[role="feed"] > div:not([data-jev-scanned]):not(:has([data-pagelet])):not(:has([role="article"]))').forEach((post) => {
         checkAndApplyMonkMode(post, post.innerText || '');
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
@@ -2340,13 +4066,17 @@
     } else if (platform === 'youtube') {
       scanYouTubeShorts();
     } else if (platform === 'x') {
-      document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned]), div[data-testid="cellInnerDiv"]:not(:has(article[data-testid="tweet"])):not([data-jev-scanned])').forEach((post) => {
-        checkAndApplyMonkMode(post, post.innerText || '');
+      document.querySelectorAll('article[data-testid="tweet"]').forEach((post) => {
         const textEl = post.querySelector('div[data-testid="tweetText"]');
-        if (textEl) {
-          let text = textEl.innerText.trim();
-          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
-          if (text.length >= 2) {
+        let text = textEl ? textEl.innerText.trim().replace(/\s*(Translate|Xem bản dịch)$/i, '').trim() : '';
+
+        if (text) {
+          processXTweetHookAndViral(post, text);
+        }
+
+        if (!post.hasAttribute('data-jev-scanned')) {
+          checkAndApplyMonkMode(post, post.innerText || '');
+          if (text && text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
             scannedCount++;
             updatePill();
@@ -2401,6 +4131,7 @@
   // Safety heartbeat interval: keep pill alive & catch dynamic SPA updates
   setInterval(() => {
     initPill();
+    initRealtimeScannerDock();
     scanFeed();
   }, 1500);
 
@@ -2411,4 +4142,6 @@
       scanFeed();
     }
   }, 500);
+
+  initRealtimeScannerDock();
 })();

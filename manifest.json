@@ -52,6 +52,21 @@
         "*://*.x.com/*",
         "*://x.com/*",
         "*://*.twitter.com/*",
+        "*://twitter.com/*"
+      ],
+      "js": ["interceptor.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.threads.net/*",
+        "*://threads.net/*",
+        "*://*.threads.com/*",
+        "*://threads.com/*",
+        "*://*.x.com/*",
+        "*://x.com/*",
+        "*://*.twitter.com/*",
         "*://twitter.com/*",
         "*://*.facebook.com/*",
         "*://facebook.com/*",
@@ -64,6 +79,12 @@
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["dashboard.html", "dashboard.js", "dashboard.css", "interceptor.js"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

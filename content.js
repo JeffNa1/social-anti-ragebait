@@ -23,6 +23,16 @@
     collapseSeedingEnabled: true,
     hideFloatingPill: false,
     customLabels: [],
+    viralDetectionEnabled: true,
+    viralMinViews: 50000,
+    viralMinLikes: 1000,
+    viralMinBookmarks: 200,
+    outlierDetectionEnabled: true,
+    outlierMinMultiplier: 3.0,
+    outlierMinViews: 3000,
+    outlierMaxAgeHours: 48,
+    outlierThreadsMinLikes: 150,
+    outlierThreadsMinMultiplier: 2.0,
   };
 
   let scannedCount = 0;
@@ -52,6 +62,38 @@
   // Regex pattern matching women visual tags in Meta/X alt-text and captions
   const WOMEN_OR_GOONBAIT_REGEX =
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
+
+  // Impeccable & Lucide SVG Icons (Zero Slop Unicode)
+  const ICONS = {
+    shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>`,
+    shieldAlert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+    scan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+    sparkles: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`,
+    smile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>`,
+    binary: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+    skull: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></svg>`,
+    zap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    messageSquare: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>`,
+    target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+    broom: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m16 4 3 3L6 20l-3-3z"/><path d="m14 6 3 3"/><path d="M3 21l3-3"/></svg>`,
+    eyeOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .698 10.793 10.793 0 0 1-3.125 4.148"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499A10.75 10.75 0 0 1 2.062 12.35a1 1 0 0 1 0-.698 10.75 10.75 0 0 1 2.825-3.834"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
+    chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+    x: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`
+  };
+
+  function getBadgeIconSvg(label) {
+    if (label === 'self-improvement / motivational') return ICONS.sparkles;
+    if (label === 'meme / humor / satire') return ICONS.smile;
+    if (label === 'deep dive / technical breakdown / industry insider') return ICONS.binary;
+    if (label === 'wholesome / positive') return ICONS.heart;
+    if (label === 'fearmongering / doom') return ICONS.skull;
+    if (label === 'fomo / hype') return ICONS.zap;
+    if (label === 'other / casual discussion') return ICONS.messageSquare;
+    return ICONS.tag;
+  }
 
   // Fast synchronous session cache (0ms instant response on reload)
   const CACHE_KEY = `social_guardian_cache_v4_${getPlatform()}`;
@@ -105,6 +147,55 @@
     } catch (e) {}
   }
 
+  // Follower & Outlier Caches (populated by Main World Interceptor)
+  const authorFollowerCache = new Map();
+  const tweetDataCache = new Map();
+  try {
+    const rawFols = sessionStorage.getItem('social_shield_fols_v1');
+    if (rawFols) {
+      const parsed = JSON.parse(rawFols);
+      Object.entries(parsed).forEach(([k, v]) => authorFollowerCache.set(k, v));
+    }
+  } catch (e) {}
+
+  function saveFollowersCache() {
+    try {
+      const obj = {};
+      const entries = Array.from(authorFollowerCache.entries()).slice(-600);
+      entries.forEach(([k, v]) => (obj[k] = v));
+      sessionStorage.setItem('social_shield_fols_v1', JSON.stringify(obj));
+    } catch (e) {}
+  }
+
+  window.addEventListener('SOCIAL_SHIELD_INTERCEPTED_DATA', (e) => {
+    const { users, tweets } = e.detail || {};
+    let updated = false;
+    if (users) {
+      Object.entries(users).forEach(([handle, info]) => {
+        const clean = handle.toLowerCase().replace('@', '');
+        if (typeof info.followersCount === 'number' && info.followersCount > 0) {
+          authorFollowerCache.set(clean, info.followersCount);
+          updated = true;
+        }
+      });
+    }
+    if (tweets) {
+      Object.entries(tweets).forEach(([id, t]) => {
+        tweetDataCache.set(id, t);
+        if (t.authorHandle && t.followersCount > 0) {
+          const clean = t.authorHandle.toLowerCase().replace('@', '');
+          authorFollowerCache.set(clean, t.followersCount);
+          updated = true;
+        }
+      });
+    }
+    if (updated) {
+      saveFollowersCache();
+      if (config.viralDetectionEnabled && (getPlatform() === 'x' || getPlatform() === 'threads')) {
+        scheduleScan();
+      }
+    }
+  });
   // Load saved settings from Chrome Storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
@@ -139,8 +230,24 @@
         'focusModeEnabled',
         'focusWhitelistTags',
         'focusCollapsedCount',
+        'viralDetectionEnabled',
+        'viralMinViews',
+        'viralMinLikes',
+        'viralMinBookmarks',
+        'outlierDetectionEnabled',
+        'outlierMinMultiplier',
+        'outlierMinViews',
+        'outlierMaxAgeHours',
+        'outlierThreadsMinLikes',
+        'outlierThreadsMinMultiplier',
       ],
       (res) => {
+        if (typeof res.outlierDetectionEnabled === 'boolean') config.outlierDetectionEnabled = res.outlierDetectionEnabled;
+        if (typeof res.outlierMinMultiplier === 'number') config.outlierMinMultiplier = res.outlierMinMultiplier;
+        if (typeof res.outlierMinViews === 'number') config.outlierMinViews = res.outlierMinViews;
+        if (typeof res.outlierMaxAgeHours === 'number') config.outlierMaxAgeHours = res.outlierMaxAgeHours;
+        if (typeof res.outlierThreadsMinLikes === 'number') config.outlierThreadsMinLikes = res.outlierThreadsMinLikes;
+        if (typeof res.outlierThreadsMinMultiplier === 'number') config.outlierThreadsMinMultiplier = res.outlierThreadsMinMultiplier;
         if (typeof res.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = res.filterMotivationalEnabled;
         if (typeof res.filterMemeEnabled === 'boolean') config.filterMemeEnabled = res.filterMemeEnabled;
         if (typeof res.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = res.filterDeepDiveEnabled;
@@ -160,6 +267,10 @@
         if (typeof res.confidenceThreshold === 'number') {
           config.confidenceThreshold = res.confidenceThreshold;
         }
+        if (typeof res.viralDetectionEnabled === 'boolean') config.viralDetectionEnabled = res.viralDetectionEnabled;
+        if (typeof res.viralMinViews === 'number') config.viralMinViews = res.viralMinViews;
+        if (typeof res.viralMinLikes === 'number') config.viralMinLikes = res.viralMinLikes;
+        if (typeof res.viralMinBookmarks === 'number') config.viralMinBookmarks = res.viralMinBookmarks;
 
         if (typeof res.monkModeBlockedCount === 'number') monkModeBlockedCount = res.monkModeBlockedCount;
         if (typeof res.blockedRageCount === 'number') blockedRageCount = res.blockedRageCount;
@@ -225,6 +336,10 @@
         if (Array.isArray(request.config.focusWhitelistTags)) config.focusWhitelistTags = request.config.focusWhitelistTags;
         if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
         config.confidenceThreshold = request.config.confidenceThreshold;
+        if (typeof request.config.viralDetectionEnabled === 'boolean') config.viralDetectionEnabled = request.config.viralDetectionEnabled;
+        if (typeof request.config.viralMinViews === 'number') config.viralMinViews = request.config.viralMinViews;
+        if (typeof request.config.viralMinLikes === 'number') config.viralMinLikes = request.config.viralMinLikes;
+        if (typeof request.config.viralMinBookmarks === 'number') config.viralMinBookmarks = request.config.viralMinBookmarks;
 
         if (taxonomyChanged) {
           textCache.clear();
@@ -479,17 +594,94 @@
   let queue = [];
   let debounceTimer = null;
 
-  // Unified Floating Status Pill UI
+  // Dynamic Island / Radar Status Widget UI (ReactBits Border Beam & Shadcn)
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
-  const pillStats = document.createElement('span');
-  pillStats.className = 'x-jev-pill-stats';
+  pill.title = 'Social Shield (Nhấn để xem thống kê / bật tắt)';
+
+  const pillBeam = document.createElement('span');
+  pillBeam.className = 'x-jev-pill-beam';
+  pill.appendChild(pillBeam);
+
+  const radarDot = document.createElement('span');
+  radarDot.className = 'x-jev-radar-dot';
+  const radarPing = document.createElement('span');
+  radarPing.className = 'x-jev-radar-ping';
+  radarDot.appendChild(radarPing);
+
+  const pillPlatform = document.createElement('span');
+  pillPlatform.className = 'x-jev-pill-platform';
+
+  const pillBadgeCount = document.createElement('span');
+  pillBadgeCount.className = 'x-jev-pill-badge-count';
+  pillBadgeCount.textContent = '0';
+
+  const pillToggle = document.createElement('span');
+  pillToggle.className = 'x-jev-pill-toggle';
+  pillToggle.innerHTML = ICONS.chevronDown;
+
   const pillClose = document.createElement('span');
   pillClose.className = 'x-jev-pill-close';
-  pillClose.title = 'Ẩn thanh trạng thái nổi này (bật lại trong popup)';
-  pillClose.textContent = '✕';
-  pill.appendChild(pillStats);
+  pillClose.title = 'Ẩn thanh trạng thái (bật lại trong popup)';
+  pillClose.innerHTML = ICONS.x;
+
+  // Flyout Panel
+  const flyout = document.createElement('div');
+  flyout.className = 'x-jev-pill-flyout';
+  flyout.innerHTML = `
+    <div class="x-jev-flyout-header">
+      <div class="x-jev-flyout-title">${ICONS.shield} Social Shield</div>
+      <span class="x-jev-flyout-status">Active</span>
+    </div>
+    <div class="x-jev-flyout-grid">
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.scan} Đã quét</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-scanned">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.flame} Ragebait</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-rage" style="color:#f87171;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.shieldAlert} Lừa đảo</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-scam" style="color:#fb923c;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.target} Focus ẩn</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-focus" style="color:#38bdf8;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.broom} Seeding</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-seeding" style="color:#c084fc;">0</span>
+      </div>
+      <div class="x-jev-metric-card">
+        <span class="x-jev-metric-label">${ICONS.eyeOff} Monk Mode</span>
+        <span class="x-jev-metric-val" id="x-jev-stat-monk" style="color:#38bdf8;">0</span>
+      </div>
+    </div>
+    <div id="x-jev-flyout-tag-summary" style="display:flex;flex-wrap:wrap;gap:4px;font-size:10px;color:#a1a1aa;padding-top:4px;border-top:1px solid rgba(255,255,255,0.06);"></div>
+    <button id="x-jev-flyout-open-vault" type="button" style="width:100%;margin-top:6px;padding:6px 10px;background:rgba(2,132,199,0.15);border:1px solid rgba(2,132,199,0.3);border-radius:6px;color:#38bdf8;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:background 0.2s;">
+      ${ICONS.zap} Mở Hook Vault Dashboard
+    </button>
+    <div style="font-size:9.5px;color:#71717a;text-align:center;margin-top:4px;">Nhấn đúp vào thanh để Bật/Tắt chế độ bảo vệ</div>
+  `;
+
+  pill.appendChild(radarDot);
+  pill.appendChild(pillPlatform);
+  pill.appendChild(pillBadgeCount);
+  pill.appendChild(pillToggle);
   pill.appendChild(pillClose);
+  pill.appendChild(flyout);
+
+  const btnOpenVault = flyout.querySelector('#x-jev-flyout-open-vault');
+  if (btnOpenVault) {
+    btnOpenVault.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' });
+      }
+    });
+  }
 
   // Capture phase listeners so React / framework can NEVER swallow close click
   document.addEventListener(
@@ -556,47 +748,77 @@
     }
     initPill();
     const pName = getPlatform().toUpperCase();
-    const parts = [
-      `🛡️ ${pName}: <span style="color:#4ade80">ON</span>`,
-      `👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span>`,
-    ];
-    if (config.focusModeEnabled) {
-      parts.push(`🎯 Focus: <span style="color:#38bdf8">${focusCollapsedCount} thu gọn</span>`);
+    pillPlatform.textContent = pName;
+
+    const totalProtected = blockedRageCount + blockedScamCount + cleanedSeedingCount + focusCollapsedCount + monkModeBlockedCount;
+    pillBadgeCount.textContent = totalProtected > 0 ? `${totalProtected} chặn` : `${scannedCount} quét`;
+
+    const hasThreats = (blockedRageCount > 0 || blockedScamCount > 0);
+    pill.setAttribute('data-alert', hasThreats ? 'true' : 'false');
+
+    const elScanned = flyout.querySelector('#x-jev-stat-scanned');
+    const elRage = flyout.querySelector('#x-jev-stat-rage');
+    const elScam = flyout.querySelector('#x-jev-stat-scam');
+    const elFocus = flyout.querySelector('#x-jev-stat-focus');
+    const elSeeding = flyout.querySelector('#x-jev-stat-seeding');
+    const elMonk = flyout.querySelector('#x-jev-stat-monk');
+    const elStatus = flyout.querySelector('.x-jev-flyout-status');
+
+    if (elScanned) elScanned.textContent = scannedCount;
+    if (elRage) elRage.textContent = blockedRageCount;
+    if (elScam) elScam.textContent = blockedScamCount;
+    if (elFocus) elFocus.textContent = focusCollapsedCount;
+    if (elSeeding) elSeeding.textContent = cleanedSeedingCount;
+    if (elMonk) elMonk.textContent = monkModeBlockedCount;
+
+    const allOn = config.monkModeEnabled || config.autoBlurRageEnabled || config.blockScamsEnabled || config.collapseSeedingEnabled;
+    if (elStatus) {
+      elStatus.textContent = allOn ? 'Active' : 'Paused';
+      elStatus.style.background = allOn ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+      elStatus.style.color = allOn ? '#4ade80' : '#f87171';
+      elStatus.style.borderColor = allOn ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)';
     }
-    if (config.autoBlurRageEnabled) {
-      parts.push(`🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span>`);
+
+    const tagSummary = flyout.querySelector('#x-jev-flyout-tag-summary');
+    if (tagSummary) {
+      const activeTags = [];
+      if (motivationalCount > 0) activeTags.push(`Động lực: ${motivationalCount}`);
+      if (memeCount > 0) activeTags.push(`Meme: ${memeCount}`);
+      if (deepDiveCount > 0) activeTags.push(`Deep Dive: ${deepDiveCount}`);
+      if (wholesomeCount > 0) activeTags.push(`Wholesome: ${wholesomeCount}`);
+      if (doomCount > 0) activeTags.push(`Doom: ${doomCount}`);
+      if (fomoCount > 0) activeTags.push(`FOMO: ${fomoCount}`);
+      if (casualCount > 0) activeTags.push(`Thảo luận: ${casualCount}`);
+      if (customCount > 0) activeTags.push(`Custom: ${customCount}`);
+
+      tagSummary.innerHTML = activeTags.length > 0
+        ? activeTags.map((t) => `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">${t}</span>`).join('')
+        : '<span style="opacity:0.6;">Chưa ghi nhận tag nổi bật</span>';
     }
-    if (config.filterMotivationalEnabled !== false) {
-      parts.push(`🌱 Động lực: <span style="color:#fbbf24">${motivationalCount}</span>`);
-    }
-    if (config.filterMemeEnabled !== false) {
-      parts.push(`🎭 Meme: <span style="color:#f472b6">${memeCount}</span>`);
-    }
-    if (config.filterDeepDiveEnabled !== false) {
-      parts.push(`🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span>`);
-    }
-    if (config.filterWholesomeEnabled !== false && wholesomeCount > 0) {
-      parts.push(`🌿 Wholesome: <span style="color:#34d399">${wholesomeCount}</span>`);
-    }
-    if (config.filterDoomEnabled !== false && doomCount > 0) {
-      parts.push(`⚠️ Doom: <span style="color:#fb923c">${doomCount}</span>`);
-    }
-    if (config.filterFomoEnabled !== false && fomoCount > 0) {
-      parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
-    }
-    if (config.filterCasualEnabled !== false && casualCount > 0) {
-      parts.push(`💬 Thảo luận: <span style="color:#94a3b8">${casualCount}</span>`);
-    }
-    const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
-    if (hasActiveCustom && customCount > 0) {
-      parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
-    }
-    pillStats.innerHTML = parts.join(' | ');
   }
 
   updatePill();
-  pill.title = 'Social Shield: All-in-One Protection (Click to toggle master state)';
+
+  // Toggle expand flyout on click
   pill.addEventListener('click', (e) => {
+    if (e.target.closest('.x-jev-pill-close')) return;
+    if (e.target.closest('.x-jev-pill-flyout')) {
+      e.stopPropagation();
+      return;
+    }
+    pill.classList.toggle('x-jev-expanded');
+  });
+
+  // Hover to expand smoothly
+  pill.addEventListener('mouseenter', () => {
+    pill.classList.add('x-jev-expanded');
+  });
+  pill.addEventListener('mouseleave', () => {
+    pill.classList.remove('x-jev-expanded');
+  });
+
+  // Double click toggles master protection state
+  pill.addEventListener('dblclick', (e) => {
     if (e.target.closest('.x-jev-pill-close')) return;
     const allOn = config.monkModeEnabled || config.autoBlurRageEnabled || config.blockScamsEnabled || config.collapseSeedingEnabled;
     config.monkModeEnabled = !allOn;
@@ -1099,18 +1321,18 @@
     focusBar.className = 'x-jev-focus-bar';
     focusBar.innerHTML = `
       <div class="x-jev-focus-info">
-        <span>🎯</span>
+        ${ICONS.target}
         <span>Khác tag Focus: <b style="color:#e2e8f0;">${displayTag}</b></span>
       </div>
-      <span class="x-jev-focus-action">Xem nội dung ▾</span>
+      <span class="x-jev-focus-action"><span>Xem nội dung</span>${ICONS.chevronDown}</span>
     `;
     focusBar.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const isExpanded = postEl.classList.toggle('x-jev-focus-expanded');
-      const actionBtn = focusBar.querySelector('.x-jev-focus-action');
-      if (actionBtn) {
-        actionBtn.textContent = isExpanded ? 'Thu gọn ▴' : 'Xem nội dung ▾';
+      const actionText = focusBar.querySelector('.x-jev-focus-action span');
+      if (actionText) {
+        actionText.textContent = isExpanded ? 'Thu gọn' : 'Xem nội dung';
       }
     });
     parentContainer.insertBefore(focusBar, textEl);
@@ -1146,9 +1368,18 @@
     if (postEl.hasAttribute('data-jev-handled')) return;
     if (!res || typeof res !== 'object') return;
 
-    const scores = (typeof res.scores === 'object' && res.scores !== null)
-      ? res.scores
-      : (res.label ? { [res.label]: res.confidence || 0 } : {});
+    let scores = {};
+    if (typeof res.scores === 'object' && res.scores !== null) {
+      scores = res.scores;
+    } else if (Array.isArray(res.labels) && res.labels.length > 0) {
+      res.labels.forEach((lbl, idx) => {
+        if (typeof lbl === 'string') {
+          scores[lbl] = Math.max(0.70, 0.95 - idx * 0.05);
+        }
+      });
+    } else if (res.label) {
+      scores = { [res.label]: typeof res.confidence === 'number' ? res.confidence : 0.88 };
+    }
     const parentContainer = textEl.parentElement;
 
     const matchedLabels = Object.entries(scores)
@@ -1186,17 +1417,17 @@
         const pct = Math.round(scamScore * 100);
         box.innerHTML = `
           <div class="x-jev-scam-text">
-            <span>🛑</span>
+            ${ICONS.shieldAlert}
             <div>
               <b>Cảnh báo Lừa đảo / Bẫy tài chính (${pct}%):</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Dấu hiệu: Hứa hẹn thu nhập bất thường, lùa gà crypto hoặc kéo nhóm kín.</div>
+              <div style="font-size:11px;font-weight:400;opacity:0.85;margin-top:2px;">Dấu hiệu: Hứa hẹn thu nhập bất thường, lùa gà crypto hoặc kéo nhóm kín.</div>
             </div>
           </div>
         `;
 
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Xem bài viết';
+        btn.innerHTML = `${ICONS.scan} <span>Xem bài viết</span>`;
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1278,12 +1509,12 @@
         warningBox.className = 'x-jev-warning-box';
         const pct = Math.round(rageScore * 100);
         warningBox.innerHTML = `
-          <span class="x-jev-warning-text">🛡️ <b>Rage / Toxic Warning (${pct}%):</b> Bài viết / bình luận tiêu cực, công kích, vô bổ đã bị làm mờ.</span>
+          <span class="x-jev-warning-text">${ICONS.flame} <span><b>Ragebait / Toxic (${pct}%):</b> Nội dung tiêu cực hoặc công kích đã được làm mờ.</span></span>
         `;
 
         const revealBtn = document.createElement('button');
         revealBtn.className = 'x-jev-reveal-btn';
-        revealBtn.textContent = 'Reveal post';
+        revealBtn.innerHTML = `${ICONS.scan} <span>Reveal post</span>`;
         revealBtn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1358,17 +1589,20 @@
         const pct = Math.round(seedingScore * 100);
         bar.innerHTML = `
           <div class="x-jev-seeding-label">
-            <span>🧹</span>
+            ${ICONS.broom}
             <span>Đã thu gọn bình luận nghi vấn <b>Seeding / Clone</b> (${pct}%)</span>
           </div>
-          <span class="x-jev-expand-icon">Xem nội dung ▾</span>
+          <span class="x-jev-expand-icon"><span>Xem nội dung</span>${ICONS.chevronDown}</span>
         `;
 
         bar.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
-          bar.querySelector('.x-jev-expand-icon').textContent = isCollapsed ? 'Xem nội dung ▾' : 'Thu gọn ▴';
+          const txt = bar.querySelector('.x-jev-expand-icon span');
+          if (txt) {
+            txt.textContent = isCollapsed ? 'Xem nội dung' : 'Thu gọn';
+          }
         };
 
         parentContainer.insertBefore(bar, textEl);
@@ -1502,12 +1736,19 @@
         badge.style.color = meta.color;
         badge.title = `${meta.desc} (Confidence: ${Math.round(score * 100)}%)`;
 
+        const iconWrapper = document.createElement('span');
+        iconWrapper.innerHTML = getBadgeIconSvg(label);
+        const iconSvg = iconWrapper.firstElementChild;
+
+        const cleanLabel = (meta.text || '').replace(/^[\p{Emoji}\p{Extended_Pictographic}\s]+/u, '');
         const textSpan = document.createElement('span');
-        textSpan.textContent = meta.text;
+        textSpan.textContent = cleanLabel;
+
         const confSpan = document.createElement('span');
         confSpan.className = 'x-jev-confidence';
         confSpan.textContent = `${Math.round(score * 100)}%`;
 
+        if (iconSvg) badge.appendChild(iconSvg);
         badge.appendChild(textSpan);
         badge.appendChild(confSpan);
         container.appendChild(badge);
@@ -2125,6 +2366,711 @@
     });
   }
 
+  // --- X (Twitter) Viral Scanner & Hook Vault Engine ---
+  function parseMetricNumber(str) {
+    if (!str) return 0;
+    str = str.trim();
+    const m = str.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i);
+    if (!m) return 0;
+    let numStr = m[1];
+    const suffix = (m[2] || '').toLowerCase();
+
+    if (numStr.includes(',') && numStr.includes('.')) {
+      if (numStr.indexOf(',') < numStr.indexOf('.')) {
+        numStr = numStr.replace(/,/g, '');
+      } else {
+        numStr = numStr.replace(/\./g, '').replace(',', '.');
+      }
+    } else if (numStr.includes(',')) {
+      if (suffix || /,\d{1,2}$/.test(numStr)) {
+        numStr = numStr.replace(',', '.');
+      } else {
+        numStr = numStr.replace(/,/g, '');
+      }
+    } else if (numStr.includes('.')) {
+      if (!suffix && /\.\d{3}$/.test(numStr)) {
+        numStr = numStr.replace(/\./g, '');
+      }
+    }
+
+    let val = parseFloat(numStr) || 0;
+    if (suffix === 'k' || suffix === 'n') val *= 1000;
+    else if (suffix === 'm' || suffix === 'tr') val *= 1000000;
+    else if (suffix === 'b' || suffix === 'tỷ') val *= 1000000000;
+    return Math.round(val);
+  }
+
+  function extractMetricFromElement(el) {
+    if (!el) return 0;
+    const aria = el.getAttribute('aria-label') || '';
+    if (aria) {
+      const m = aria.match(/([\d\.,]+\s*[kmbntr]?)\s*(likes?|views?|retweets?|reposts?|bookmarks?|replies?|lượt|câu trả lời)/i);
+      if (m) return parseMetricNumber(m[1]);
+      const anyNum = aria.match(/([\d\.,]+\s*[kmbntr]?)/i);
+      if (anyNum) return parseMetricNumber(anyNum[1]);
+    }
+    const text = el.innerText || '';
+    return parseMetricNumber(text);
+  }
+
+  function extractTweetMetrics(postEl) {
+    const group = postEl.querySelector('div[role="group"]');
+    if (!group) return { views: 0, likes: 0, retweets: 0, bookmarks: 0, replies: 0 };
+
+    const replyEl = group.querySelector('button[data-testid="reply"], [data-testid="reply"]');
+    const retweetEl = group.querySelector('button[data-testid="retweet"], button[data-testid="unretweet"]');
+    const likeEl = group.querySelector('button[data-testid="like"], button[data-testid="unlike"]');
+    const bookmarkEl = group.querySelector('button[data-testid="bookmark"], button[data-testid="removeBookmark"]');
+    const analyticsEl = group.querySelector('a[href*="/analytics"], [data-testid*="analytics"], a[aria-label*="views"], a[aria-label*="lượt xem"]');
+
+    return {
+      replies: extractMetricFromElement(replyEl),
+      retweets: extractMetricFromElement(retweetEl),
+      likes: extractMetricFromElement(likeEl),
+      bookmarks: extractMetricFromElement(bookmarkEl),
+      views: extractMetricFromElement(analyticsEl)
+    };
+  }
+
+  function extractTweetHook(fullText) {
+    if (!fullText) return '';
+    const trimmed = fullText.trim();
+    const parts = trimmed.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 0 && parts.length > 1) {
+      if (parts[0].length < 25 && parts.length > 1) {
+        return `${parts[0]}\n${parts[1]}`;
+      }
+      return parts[0];
+    }
+    const sentenceMatch = trimmed.match(/^([^.!?\n]+[.!?])(?:\s|$)/);
+    if (sentenceMatch && sentenceMatch[1].length >= 20) {
+      return sentenceMatch[1].trim();
+    }
+    return parts.length === 1 ? parts[0] : trimmed.slice(0, 180);
+  }
+
+  function classifyHookFormula(text) {
+    if (!text) return 'other';
+    const lower = text.toLowerCase();
+    if (/\b(unpopular opinion|is dead|isn't real|stop doing|stop using|don't do|myth|lie|wrong about|đã chết|đừng làm|sai lầm|ảo tưởng|sự thật phũ phàng|ngược lại)\b/i.test(lower)) {
+      return 'contrarian';
+    }
+    if (/\b(\d+\s*(tools|websites|prompts|tips|steps|books|rules|công cụ|bước|mẹo|nguyên tắc|cuốn sách)|cheatsheet|cẩm nang|framework|khung sườn|bookmark|tổng hợp|lưu lại)\b/i.test(lower)) {
+      return 'cheatsheet';
+    }
+    if (/\b(years ago|in 20\d\d|today i|how i went from|started with|năm ngoái|cách đây|tôi từng|từ số 0|hành trình|bước ngoặt)\b/i.test(lower)) {
+      return 'story';
+    }
+    if (/\b(i analyzed|studied|examined|billionaire|millionaire|ceo|mrbeast|musk|jobs|phân tích|nghiên cứu|chuyên gia|doanh thu|triệu đô|hàng ngàn)\b/i.test(lower)) {
+      return 'proof';
+    }
+    if (/\?$/m.test(text.trim()) || /^(why|how|what if|want to|have you ever|tại sao|làm sao|liệu bạn|có bao giờ)\b/i.test(lower)) {
+      return 'challenge';
+    }
+    if (/\b(secret|nobody talks about|hardly anyone|most people don't|hidden|the reason why|bí mật|ít ai biết|không ai nói|lý do tại sao|sự thật là)\b/i.test(lower)) {
+      return 'curiosity';
+    }
+    return 'other';
+  }
+
+  function showShieldToast(msg) {
+    const existing = document.querySelector('.x-shield-page-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = 'x-shield-page-toast';
+    toast.innerHTML = `${ICONS.zap} <span>${msg}</span>`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }
+
+  function formatMetricNumber(num) {
+    if (!num || isNaN(num)) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return Number(num).toLocaleString('vi-VN');
+  }
+
+  function getPostAgeHours(postEl) {
+    const timeEl = postEl.querySelector('time');
+    if (timeEl) {
+      const datetime = timeEl.getAttribute('datetime');
+      if (datetime) {
+        const diffMs = Date.now() - new Date(datetime).getTime();
+        if (!isNaN(diffMs) && diffMs >= 0) {
+          return diffMs / (1000 * 60 * 60);
+        }
+      }
+      const text = (timeEl.innerText || '').trim().toLowerCase();
+      if (text.endsWith('m') || text.includes('phút')) return (parseInt(text, 10) || 1) / 60;
+      if (text.endsWith('h') || text.includes('giờ')) return parseInt(text, 10) || 1;
+      if (text.endsWith('d') || text.includes('ngày')) return (parseInt(text, 10) || 1) * 24;
+    }
+    return 6;
+  }
+
+  function evaluateOutlierStatus(metrics, authorHandle, postEl, platform = 'x') {
+    const ageHours = getPostAgeHours(postEl);
+    const maxAge = config.outlierMaxAgeHours || 48;
+    const isRecent = ageHours <= maxAge;
+    const cleanHandle = (authorHandle || '').toLowerCase().replace('@', '');
+    const followers = authorFollowerCache.get(cleanHandle) || 0;
+
+    if (!isRecent) {
+      return { isOutlier: false, multiplier: 0, followers, reach: platform === 'x' ? metrics.views : metrics.likes, ageHours, reason: 'too_old' };
+    }
+
+    if (platform === 'x') {
+      const views = metrics.views || 0;
+      const minViews = config.outlierMinViews || 3000;
+      const minMultiplier = config.outlierMinMultiplier || 3.0;
+
+      if (followers > 0) {
+        const multiplier = views / followers;
+        const isOutlier = multiplier >= minMultiplier && views >= minViews;
+        return { isOutlier, multiplier, followers, reach: views, ageHours };
+      }
+
+      const isOutlierFallback = views >= 20000 && metrics.likes >= 800;
+      return { isOutlier: isOutlierFallback, multiplier: 0, followers: 0, reach: views, ageHours, isEstimated: true };
+    } else {
+      // Threads
+      const likes = metrics.likes || 0;
+      const views = metrics.views || 0;
+      const minMultiplier = config.outlierThreadsMinMultiplier || 2.0;
+
+      if (views > 0) {
+        const minViews = config.outlierThreadsMinViews || 2000;
+        if (followers > 0) {
+          const multiplier = views / followers;
+          const isOutlier = multiplier >= minMultiplier && views >= minViews;
+          return { isOutlier, multiplier, followers, reach: views, ageHours };
+        }
+        const isOutlierFallback = views >= 10000;
+        return { isOutlier: isOutlierFallback, multiplier: 0, followers: 0, reach: views, ageHours, isEstimated: true };
+      }
+
+      const minLikes = config.outlierThreadsMinLikes || 150;
+      if (followers > 0) {
+        const multiplier = (likes * 15) / followers;
+        const isOutlier = multiplier >= minMultiplier && likes >= minLikes;
+        return { isOutlier, multiplier, followers, reach: likes, ageHours };
+      }
+
+      const isOutlierFallback = likes >= 250;
+      return { isOutlier: isOutlierFallback, multiplier: 0, followers: 0, reach: likes, ageHours, isEstimated: true };
+    }
+  }
+
+  function extractXTweetAuthor(post) {
+    const userNameEl = post.querySelector('div[data-testid="User-Name"]');
+    let authorName = '';
+    let authorHandle = '';
+    if (userNameEl) {
+      const nameSpan = userNameEl.querySelector('span');
+      if (nameSpan) authorName = nameSpan.innerText.trim();
+      const handleLink = userNameEl.querySelector('a[href^="/"]');
+      if (handleLink) {
+        const match = handleLink.innerText.match(/@\w+/);
+        authorHandle = match ? match[0] : (handleLink.getAttribute('href') || '').replace('/', '@');
+      }
+    }
+    const avatarImg = post.querySelector('div[data-testid="Tweet-User-Avatar"] img, img[src*="profile_images"]');
+    const authorAvatar = avatarImg ? avatarImg.src : '';
+    return { authorName, authorHandle, authorAvatar };
+  }
+
+  function processXTweetHookAndViral(post, fullText) {
+    if (!config.viralDetectionEnabled && !config.outlierDetectionEnabled) return;
+
+    const group = post.querySelector('div[role="group"]');
+    if (!group) return;
+
+    const metrics = extractTweetMetrics(post);
+    const author = extractXTweetAuthor(post);
+    const outlier = evaluateOutlierStatus(metrics, author.authorHandle, post, 'x');
+
+    if (outlier.isOutlier) {
+      post.classList.add('x-shield-outlier-post');
+      let badge = post.querySelector('.x-shield-outlier-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'x-shield-outlier-badge';
+        const textEl = post.querySelector('div[data-testid="tweetText"]');
+        if (textEl && textEl.parentElement) {
+          textEl.parentElement.insertBefore(badge, textEl);
+        }
+      }
+      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : 'Breakout Outlier';
+      const folsStr = outlier.followers > 0 ? `${formatMetricNumber(outlier.followers)} fols → ` : '';
+      const reachStr = `${formatMetricNumber(metrics.views || metrics.likes)} views`;
+      const timeStr = outlier.ageHours < 1 ? '<1h trước' : `${Math.round(outlier.ageHours)}h trước`;
+      badge.innerHTML = `<span class="outlier-fire">🔥</span> <span class="outlier-mult">${multStr}</span> <span class="outlier-sep">•</span> <span class="outlier-stats">${folsStr}${reachStr}</span> <span class="outlier-sep">•</span> <span class="outlier-time">${timeStr}</span>`;
+    } else {
+      post.classList.remove('x-shield-outlier-post', 'x-shield-viral-post');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+    }
+
+    if (group.querySelector('.x-shield-hook-btn')) return;
+
+    // Create 1-click Save Hook button
+    const hookBtn = document.createElement('button');
+    hookBtn.type = 'button';
+    hookBtn.className = 'x-shield-hook-btn';
+    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
+    hookBtn.innerHTML = `${ICONS.zap} <span>Save Hook</span>`;
+
+    hookBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const hookText = extractTweetHook(fullText);
+      const formula = classifyHookFormula(hookText);
+
+      // URL & ID
+      let tweetUrl = window.location.href;
+      const permalink = post.querySelector('a[href*="/status/"]');
+      if (permalink && permalink.href) {
+        tweetUrl = permalink.href;
+      }
+      const idMatch = tweetUrl.match(/status\/(\d+)/);
+      const tweetId = idMatch ? idMatch[1] : 'tweet-' + Date.now();
+
+      const itemToSave = {
+        id: tweetId,
+        platform: 'x',
+        authorName: author.authorName || 'X Creator',
+        authorHandle: author.authorHandle || '',
+        authorAvatar: author.authorAvatar,
+        authorFollowers: outlier.followers || 0,
+        outlierMultiplier: outlier.multiplier || 0,
+        postAgeHours: Math.round(outlier.ageHours),
+        hook: hookText,
+        fullText: fullText,
+        metrics: metrics,
+        formula: formula,
+        url: tweetUrl,
+        savedAt: new Date().toISOString()
+      };
+
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['x_hook_vault_v1'], (res) => {
+          let vault = Array.isArray(res.x_hook_vault_v1) ? res.x_hook_vault_v1 : [];
+          vault = vault.filter((item) => item.id !== tweetId);
+          vault.unshift(itemToSave);
+          chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
+            hookBtn.classList.add('is-saved');
+            hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+            showShieldToast(`✓ Đã lưu Hook Outlier của ${author.authorHandle || author.authorName || 'bài viết'} vào Vault!`);
+          });
+        });
+      } else {
+        hookBtn.classList.add('is-saved');
+        hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+        showShieldToast('✓ Đã lưu Hook vào Vault!');
+      }
+    });
+
+    group.appendChild(hookBtn);
+  }
+
+  // --- Threads Hook Vault & Jev AI Engine ---
+  function extractThreadsMetrics(postEl) {
+    let likes = 0;
+    let replies = 0;
+    let reposts = 0;
+    let views = 0;
+
+    // 1. Check if post permalink has ID and look up in tweetDataCache (from interceptor)
+    const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
+    if (postLink && postLink.href) {
+      const idMatch = postLink.href.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
+      if (idMatch && idMatch[1]) {
+        const cached = tweetDataCache.get(idMatch[1]);
+        if (cached) {
+          likes = Math.max(likes, cached.likes || 0);
+          replies = Math.max(replies, cached.replies || 0);
+          reposts = Math.max(reposts, cached.retweets || 0);
+          views = Math.max(views, cached.viewsCount || 0);
+        }
+      }
+    }
+
+    // 2. Scan accessibility aria-labels
+    const ariaEls = postEl.querySelectorAll('[aria-label]');
+    ariaEls.forEach((el) => {
+      const label = el.getAttribute('aria-label') || '';
+      
+      const likeMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:likes?|lượt thích|người thích)/i) ||
+                         label.match(/(?:likes?|lượt thích)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i) ||
+                         label.match(/\(([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\)/);
+      if (likeMatch && (label.toLowerCase().includes('like') || label.toLowerCase().includes('thích'))) {
+        likes = Math.max(likes, parseMetricNumber(`${likeMatch[1]} ${likeMatch[2] || ''}`));
+      }
+
+      const replyMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:replies?|câu trả lời|bình luận)/i) ||
+                          label.match(/(?:replies?|câu trả lời|bình luận)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i);
+      if (replyMatch) {
+        replies = Math.max(replies, parseMetricNumber(`${replyMatch[1]} ${replyMatch[2] || ''}`));
+      }
+
+      const repostMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:reposts?|lượt đăng lại)/i) ||
+                           label.match(/(?:reposts?|lượt đăng lại)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i);
+      if (repostMatch) {
+        reposts = Math.max(reposts, parseMetricNumber(`${repostMatch[1]} ${repostMatch[2] || ''}`));
+      }
+
+      const viewMatch = label.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:views?|lượt xem)/i) ||
+                         label.match(/(?:views?|lượt xem)[:\s]*([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?/i);
+      if (viewMatch) {
+        views = Math.max(views, parseMetricNumber(`${viewMatch[1]} ${viewMatch[2] || ''}`));
+      }
+    });
+
+    // 3. Scan visible candidate text elements
+    const candidates = postEl.querySelectorAll('span[dir="auto"], a[href*="/post/"], a[href*="/t/"], div[dir="auto"]');
+    candidates.forEach((el) => {
+      const t = (el.innerText || '').trim();
+      if (!t) return;
+
+      const likeMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:likes?|lượt thích)/i);
+      if (likeMatch) {
+        likes = Math.max(likes, parseMetricNumber(`${likeMatch[1]} ${likeMatch[2] || ''}`));
+      }
+      const replyMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:replies?|câu trả lời|bình luận)/i);
+      if (replyMatch) {
+        replies = Math.max(replies, parseMetricNumber(`${replyMatch[1]} ${replyMatch[2] || ''}`));
+      }
+      const repostMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:reposts?|lượt đăng lại)/i);
+      if (repostMatch) {
+        reposts = Math.max(reposts, parseMetricNumber(`${repostMatch[1]} ${repostMatch[2] || ''}`));
+      }
+      const viewMatch = t.match(/([\d\.,]+)\s*(k|m|b|n|tr|tỷ)?\s*(?:views?|lượt xem)/i);
+      if (viewMatch) {
+        views = Math.max(views, parseMetricNumber(`${viewMatch[1]} ${viewMatch[2] || ''}`));
+      }
+
+      // Bare numbers next to buttons
+      if (/^[\d\.,]+\s*(k|m|b|n|tr|tỷ)?$/i.test(t)) {
+        const prevSvg = el.previousElementSibling?.tagName === 'svg' || el.parentElement?.querySelector('svg');
+        if (prevSvg) {
+          const val = parseMetricNumber(t);
+          if (val > 0) likes = Math.max(likes, val);
+        }
+      }
+    });
+
+    return { views, likes, replies, reposts, bookmarks: 0 };
+  }
+
+  function extractThreadsAuthor(postEl) {
+    let authorName = '';
+    let authorHandle = '';
+    let authorAvatar = '';
+    let permalink = window.location.href;
+
+    const handleLink = postEl.querySelector('a[href*="/@"]');
+    if (handleLink) {
+      const raw = handleLink.getAttribute('href') || '';
+      const match = raw.match(/@([a-zA-Z0-9_\.]+)/);
+      if (match) {
+        authorHandle = '@' + match[1];
+      } else {
+        authorHandle = raw.replace('/', '');
+      }
+      const nameSpan = handleLink.querySelector('span') || postEl.querySelector('span[dir="auto"]');
+      authorName = nameSpan ? nameSpan.innerText.trim() : authorHandle;
+    }
+
+    const avatarImg = postEl.querySelector('img[alt*="ảnh đại diện"], img[alt*="profile"], img[src*="cdninstagram.com"], img[src*="threads.net"]');
+    if (avatarImg) {
+      authorAvatar = avatarImg.src || '';
+    }
+
+    const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
+    if (postLink && postLink.href) {
+      permalink = postLink.href;
+    }
+
+    return { authorName: authorName || 'Threads Creator', authorHandle, authorAvatar, permalink };
+  }
+
+  function findThreadsActionBar(postEl) {
+    if (!postEl) return null;
+
+    // Filter candidate interaction buttons, strictly rejecting header elements
+    const actionButtons = Array.from(postEl.querySelectorAll('div[role="button"], button')).filter((btn) => {
+      if (btn.closest('video') || btn.querySelector('video')) return false;
+      if (btn.closest('a[href*="/@"]') || btn.querySelector('a[href*="/@"]')) return false;
+      if (btn.closest('time') || btn.querySelector('time')) return false;
+
+      const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+      if (label.includes('more') || label.includes('thêm') || label.includes('menu') || label.includes('tùy chọn')) return false;
+      if (label.includes('follow') || label.includes('theo dõi')) return false;
+
+      return !!btn.querySelector('svg');
+    });
+
+    // Strategy 1: Find parent from explicit action buttons (like, reply, repost, share)
+    for (const btn of actionButtons) {
+      const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+      const isAction = label.includes('like') || label.includes('thích') ||
+                       label.includes('reply') || label.includes('trả lời') ||
+                       label.includes('repost') || label.includes('đăng lại') ||
+                       label.includes('share') || label.includes('chia sẻ');
+      if (isAction) {
+        let curr = btn.parentElement;
+        for (let depth = 0; depth < 4; depth++) {
+          if (!curr || curr === postEl || curr === document.body) break;
+          if (!curr.querySelector('a[href*="/@"]') && !curr.querySelector('time')) {
+            const svgs = curr.querySelectorAll('svg');
+            if (svgs.length >= 2 && svgs.length <= 8) {
+              return curr;
+            }
+          }
+          curr = curr.parentElement;
+        }
+      }
+    }
+
+    // Strategy 2: Flex row with 3-6 SVGs and minimal text, strictly outside header
+    for (const btn of actionButtons) {
+      let curr = btn.parentElement;
+      for (let depth = 0; depth < 4; depth++) {
+        if (!curr || curr === postEl || curr === document.body) break;
+        if (!curr.querySelector('a[href*="/@"]') && !curr.querySelector('time')) {
+          const svgs = curr.querySelectorAll('svg');
+          const textLen = (curr.innerText || '').trim().length;
+          if (svgs.length >= 3 && svgs.length <= 8 && textLen < 80) {
+            return curr;
+          }
+        }
+        curr = curr.parentElement;
+      }
+    }
+
+    return null;
+  }
+
+  function processThreadsHookAndViral(post, fullText, contentEl) {
+    if (!config.viralDetectionEnabled && !config.outlierDetectionEnabled) return;
+
+    const metrics = extractThreadsMetrics(post);
+    const authorInfo = extractThreadsAuthor(post);
+    const outlier = evaluateOutlierStatus(metrics, authorInfo.authorHandle, post, 'threads');
+    const actionBar = findThreadsActionBar(post);
+
+    if (outlier.isOutlier) {
+      post.classList.add('x-shield-outlier-post', 'is-threads');
+      let badge = post.querySelector('.x-shield-outlier-badge');
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'x-shield-outlier-badge is-threads';
+
+        // Safe insertion avoiding author handle
+        const jevContainer = post.querySelector('.x-jev-badge-container');
+        if (jevContainer) {
+          jevContainer.appendChild(badge);
+        } else if (contentEl && contentEl.parentElement) {
+          contentEl.parentElement.insertBefore(badge, contentEl);
+        } else if (actionBar && actionBar.parentElement) {
+          actionBar.parentElement.insertBefore(badge, actionBar);
+        }
+      }
+      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : 'Breakout Outlier';
+      const folsStr = outlier.followers > 0 ? `${formatMetricNumber(outlier.followers)} fols → ` : '';
+      const reachStr = `${formatMetricNumber(metrics.likes)} likes`;
+      const timeStr = outlier.ageHours < 1 ? '<1h trước' : `${Math.round(outlier.ageHours)}h trước`;
+      badge.innerHTML = `<span class="outlier-fire">🔥</span> <span class="outlier-mult">${multStr}</span> <span class="outlier-sep">•</span> <span class="outlier-stats">${folsStr}${reachStr}</span> <span class="outlier-sep">•</span> <span class="outlier-time">${timeStr}</span>`;
+    } else {
+      post.classList.remove('x-shield-outlier-post', 'is-threads', 'x-shield-threads-viral');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+    }
+
+    if (post.querySelector('.x-shield-threads-hook-btn')) return;
+
+    // Do NOT inject hook button until action bar is rendered
+    if (!actionBar) return;
+
+    const hookBtn = document.createElement('button');
+    hookBtn.type = 'button';
+    hookBtn.className = 'x-shield-threads-hook-btn';
+    hookBtn.setAttribute('title', 'Phân tích ngữ nghĩa bằng Jev AI và lưu Hook vào Vault');
+    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook (Jev AI)</span>`;
+
+    hookBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (hookBtn.classList.contains('is-loading')) return;
+      hookBtn.classList.add('is-loading');
+      hookBtn.innerHTML = `${ICONS.scan} <span>Jev AI Đang Bóc Tách...</span>`;
+
+      const hookText = extractTweetHook(fullText);
+
+      const idMatch = authorInfo.permalink.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
+      const threadId = idMatch ? 'threads-' + idMatch[1] : 'threads-' + Date.now();
+
+      // Send to background for Jev AI Zero-shot NLP analysis
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage(
+          {
+            type: 'ANALYZE_HOOK_JEV',
+            payload: {
+              hookText: hookText,
+              fullText: fullText,
+              authorName: authorInfo.authorName,
+              authorHandle: authorInfo.authorHandle,
+              authorAvatar: authorInfo.authorAvatar,
+              authorFollowers: outlier.followers || 0,
+              outlierMultiplier: outlier.multiplier || 0,
+              postAgeHours: Math.round(outlier.ageHours),
+              metrics: metrics,
+              url: authorInfo.permalink,
+            },
+          },
+          (res) => {
+            hookBtn.classList.remove('is-loading');
+            const formula = res?.formula || classifyHookFormula(hookText);
+            const confidence = res?.confidence || 0.88;
+            const rawLabel = res?.rawLabel || '';
+
+            const itemToSave = {
+              id: threadId,
+              platform: 'threads',
+              authorName: authorInfo.authorName,
+              authorHandle: authorInfo.authorHandle,
+              authorAvatar: authorInfo.authorAvatar,
+              authorFollowers: outlier.followers || 0,
+              outlierMultiplier: outlier.multiplier || 0,
+              postAgeHours: Math.round(outlier.ageHours),
+              hook: hookText,
+              fullText: fullText,
+              metrics: metrics,
+              formula: formula,
+              jevConfidence: confidence,
+              jevLabel: rawLabel,
+              url: authorInfo.permalink,
+              savedAt: new Date().toISOString(),
+            };
+
+            chrome.storage.local.get(['x_hook_vault_v1'], (vaultRes) => {
+              let vault = Array.isArray(vaultRes.x_hook_vault_v1) ? vaultRes.x_hook_vault_v1 : [];
+              vault = vault.filter((item) => item.id !== threadId);
+              vault.unshift(itemToSave);
+              chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
+                hookBtn.classList.add('is-saved');
+                hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+                showShieldToast(`✓ Jev AI đã phân tích (${Math.round(confidence * 100)}%) & lưu Hook Outlier vào Vault!`);
+              });
+            });
+          }
+        );
+      } else {
+        hookBtn.classList.remove('is-loading');
+        hookBtn.classList.add('is-saved');
+        hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+        showShieldToast('✓ Đã lưu Hook vào Vault!');
+      }
+    });
+
+    actionBar.appendChild(hookBtn);
+  }
+
+  // --- Real-time Live Feed Scanner Engine ---
+  let isRealtimeScanning = false;
+  let scanIntervalId = null;
+
+  function initRealtimeScannerDock() {
+    const platform = getPlatform();
+    if (platform !== 'x' && platform !== 'threads') return;
+    if (document.getElementById('x-shield-scanner-dock')) return;
+
+    const dock = document.createElement('div');
+    dock.id = 'x-shield-scanner-dock';
+    dock.className = 'x-shield-scanner-dock';
+    dock.innerHTML = `
+      <div id="scannerLiveHud" class="scanner-live-hud hidden">
+        <span class="hud-pulse"></span>
+        <span id="scannerHudStatus">Đang quét feed...</span>
+        <button type="button" class="btn-scanner-stop" id="btnStopRealtimeScan" title="Dừng quét">Dừng</button>
+      </div>
+      <button type="button" class="scanner-btn" id="btnTriggerRealtimeScan" title="Bắt đầu quét tìm bài viết Outlier gần đây theo thời gian thực">
+        <span>${ICONS.scan}</span>
+        <span>Quét Outlier Feed</span>
+      </button>
+    `;
+
+    document.body.appendChild(dock);
+
+    const triggerBtn = dock.querySelector('#btnTriggerRealtimeScan');
+    const stopBtn = dock.querySelector('#btnStopRealtimeScan');
+    const liveHud = dock.querySelector('#scannerLiveHud');
+    const hudStatus = dock.querySelector('#scannerHudStatus');
+
+    triggerBtn.addEventListener('click', () => {
+      startRealtimeScanning(triggerBtn, liveHud, hudStatus);
+    });
+
+    stopBtn.addEventListener('click', () => {
+      stopRealtimeScanning(triggerBtn, liveHud);
+    });
+  }
+
+  function startRealtimeScanning(triggerBtn, liveHud, hudStatus) {
+    if (isRealtimeScanning) return;
+    isRealtimeScanning = true;
+
+    triggerBtn.classList.add('hidden');
+    liveHud.classList.remove('hidden');
+    showShieldToast('⚡ Bắt đầu quét Outlier Realtime...');
+
+    let scrollSteps = 0;
+    const maxSteps = 40;
+
+    scanIntervalId = setInterval(() => {
+      if (!isRealtimeScanning || scrollSteps >= maxSteps) {
+        stopRealtimeScanning(triggerBtn, liveHud);
+        return;
+      }
+
+      scrollSteps++;
+      scanFeed();
+
+      const platform = getPlatform();
+      const selector = platform === 'x' ? 'article[data-testid="tweet"]' : 'article[role="article"], div[data-pressable-container="true"]';
+      const allPosts = document.querySelectorAll(selector);
+      const outliers = document.querySelectorAll('.x-shield-outlier-post');
+
+      hudStatus.textContent = `Đang quét: ${allPosts.length} bài • ${outliers.length} Outlier 🔥`;
+
+      window.scrollBy({ top: 380, behavior: 'smooth' });
+    }, 600);
+  }
+
+  function stopRealtimeScanning(triggerBtn, liveHud) {
+    if (!isRealtimeScanning && !scanIntervalId) return;
+    isRealtimeScanning = false;
+    if (scanIntervalId) {
+      clearInterval(scanIntervalId);
+      scanIntervalId = null;
+    }
+
+    if (liveHud) liveHud.classList.add('hidden');
+    if (triggerBtn) triggerBtn.classList.remove('hidden');
+
+    const outliers = document.querySelectorAll('.x-shield-outlier-post');
+    showShieldToast(`✓ Đã quét xong! Phát hiện ${outliers.length} bài Outlier đột biến.`);
+  }
+
   // Scanner for Posts & Comments
   function scanFeed() {
     const platform = getPlatform();
@@ -2132,14 +3078,14 @@
     if (platform === 'threads') {
       const postContainers = new Set();
       document.querySelectorAll('div[data-pressable-container="true"], div[role="article"], article, div[data-testid*="post"], div[data-testid*="thread"]').forEach((el) => {
-        if (!el.hasAttribute('data-jev-scanned')) postContainers.add(el);
+        postContainers.add(el);
       });
       document.querySelectorAll('a[href*="/post/"], a[href*="/t/"]').forEach((link) => {
-        let container = link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]') || link.closest('article');
+        let container = link.closest('article') || link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]');
         if (!container) {
           let curr = link.parentElement;
           let depth = 0;
-          while (curr && curr !== document.body && depth < 5) {
+          while (curr && curr !== document.body && depth < 6) {
             if (curr.querySelector('span[dir="auto"], div[dir="auto"]') && curr.querySelectorAll('svg').length >= 1) {
               container = curr;
               break;
@@ -2148,19 +3094,17 @@
             depth++;
           }
         }
-        if (container && !container.hasAttribute('data-jev-scanned')) {
+        if (container) {
           postContainers.add(container);
         }
       });
 
+      // Filter to keep top-level containers (discard elements contained by another candidate)
       const candidateContainers = Array.from(postContainers).filter((el) => {
-        return !Array.from(postContainers).some((other) => other !== el && el.contains(other));
+        return !Array.from(postContainers).some((other) => other !== el && other.contains(el));
       });
 
       candidateContainers.forEach((post) => {
-        // Fast instant client-side check for Monk Mode on any images before waiting for text
-        checkAndApplyMonkMode(post, post.innerText || '');
-
         const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         const candidateEls = [];
 
@@ -2179,24 +3123,37 @@
           candidateEls.push({ el, text: t });
         });
 
+        let targetItem = null;
         if (candidateEls.length > 0) {
-          // On Activity notifications with quoted text + reply: the incoming reply is the LAST element!
-          // On regular posts: pick the longest text candidate.
-          let targetItem = candidateEls[candidateEls.length - 1];
+          targetItem = candidateEls[candidateEls.length - 1];
           if (!window.location.pathname.includes('/activity')) {
             candidateEls.forEach((item) => {
               if (item.text.length > targetItem.text.length) targetItem = item;
             });
           }
+        }
 
-          post.setAttribute('data-jev-scanned', 'true');
-          scannedCount++;
-          updatePill();
-          const cleanText = targetItem.text;
-          if (textCache.has(cleanText)) {
-            renderClassification({ postEl: post, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
-          } else {
-            queue.push({ postEl: post, text: cleanText, textEl: targetItem.el });
+        const cleanText = targetItem ? targetItem.text : (post.innerText || '').slice(0, 300);
+
+        // Threads Hook Vault & Jev AI Viral Scanner runs unconditionally on ALL visible posts
+        if (cleanText) {
+          processThreadsHookAndViral(post, cleanText, targetItem ? targetItem.el : null);
+        }
+
+        // Only feed classification queue is guarded by data-jev-scanned
+        if (!post.hasAttribute('data-jev-scanned')) {
+          checkAndApplyMonkMode(post, post.innerText || '');
+
+          if (targetItem && cleanText.length >= 2) {
+            post.setAttribute('data-jev-scanned', 'true');
+            scannedCount++;
+            updatePill();
+
+            if (textCache.has(cleanText)) {
+              renderClassification({ postEl: post, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
+            } else {
+              queue.push({ postEl: post, text: cleanText, textEl: targetItem.el });
+            }
           }
         }
       });
@@ -2247,14 +3204,18 @@
     } else if (platform === 'youtube') {
       scanYouTubeShorts();
     } else if (platform === 'x') {
-      document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned]), div[data-testid="cellInnerDiv"]:not(:has(article[data-testid="tweet"])):not([data-jev-scanned])').forEach((post) => {
-        checkAndApplyMonkMode(post, post.innerText || '');
-
+      document.querySelectorAll('article[data-testid="tweet"]').forEach((post) => {
         const textEl = post.querySelector('div[data-testid="tweetText"]');
-        if (textEl) {
-          let text = textEl.innerText.trim();
-          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
-          if (text.length >= 2) {
+        let text = textEl ? textEl.innerText.trim().replace(/\s*(Translate|Xem bản dịch)$/i, '').trim() : '';
+
+        // Run Hook & Viral scanner on all visible tweets
+        if (text) {
+          processXTweetHookAndViral(post, text);
+        }
+
+        if (!post.hasAttribute('data-jev-scanned')) {
+          checkAndApplyMonkMode(post, post.innerText || '');
+          if (text && text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
             scannedCount++;
             updatePill();
@@ -2320,6 +3281,7 @@
     // Safety heartbeat interval: keep pill alive against React hydration & catch missed feed updates
     setInterval(() => {
       initPill();
+      initRealtimeScannerDock();
       scheduleScan();
     }, 1500);
 
@@ -2334,5 +3296,6 @@
   }
 
   initObserver();
+  initRealtimeScannerDock();
   console.log(`[Social Shield + Monk Mode] Active on ${getPlatform().toUpperCase()} (${window.location.hostname}) 🛡️`);
 })();

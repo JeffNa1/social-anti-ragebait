@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚡ Hook Vault & Viral Intelligence - Social Shield</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <div class="vault-app">
+    <!-- Top Navigation Bar -->
+    <header class="vault-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          <span class="brand-title">Social Shield</span>
+          <span class="brand-tag">PRO</span>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-titles">
+          <h1>Hook Vault & Viral Intelligence</h1>
+          <p class="subtitle">Kho tàng Hook triệu views trên X & Bộ phân tích biến hóa theo Niche</p>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="btnExportMd" class="btn btn-secondary" title="Xuất toàn bộ Hook ra định dạng Markdown (hỗ trợ Obsidian/Notion)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Xuất Markdown</span>
+        </button>
+        <button id="btnExportJson" class="btn btn-secondary" title="Xuất dữ liệu thô JSON để sao lưu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>Xuất JSON</span>
+        </button>
+        <button id="btnClearAll" class="btn btn-destructive-subtle" title="Xóa sạch toàn bộ Hook đã lưu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          <span>Dọn sạch</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Overview Section -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-wrapper blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">Tổng Hook Đã Lưu</div>
+          <div class="stat-value" id="statTotalHooks">0</div>
+          <div class="stat-hint">Sẵn sàng để học hỏi & mài sắc</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">Kỷ Lục Reach (Views)</div>
+          <div class="stat-value" id="statMaxViews">0</div>
+          <div class="stat-hint" id="statMaxViewsAuthor">Chưa có dữ liệu</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper purple">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">Công Thức Thống Trị</div>
+          <div class="stat-value text-base" id="statTopFormula">Chưa đủ dữ liệu</div>
+          <div class="stat-hint" id="statTopFormulaPct">0% tỷ trọng</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper emerald">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">Trung Bình Tương Tác</div>
+          <div class="stat-value" id="statAvgLikes">0</div>
+          <div class="stat-hint">Lượt thích / bài viết</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter & Search Toolbar -->
+    <section class="toolbar-section">
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm nội dung hook, tác giả (@handle), hoặc từ khóa..." />
+        <button id="btnClearSearch" class="btn-clear-search hidden">&times;</button>
+      </div>
+
+      <div class="filter-controls">
+        <div class="select-wrapper">
+          <label for="filterPlatform">Nền tảng:</label>
+          <select id="filterPlatform">
+            <option value="all">🌐 Tất cả nền tảng</option>
+            <option value="x">𝕏 X (Twitter)</option>
+            <option value="threads">🧵 Threads (Jev AI)</option>
+          </select>
+        </div>
+
+        <div class="select-wrapper">
+          <label for="filterFormula">Công thức:</label>
+          <select id="filterFormula">
+            <option value="all">⚡ Tất cả công thức</option>
+            <option value="curiosity">🔍 Curiosity Gap (Khoảng trống tò mò)</option>
+            <option value="contrarian">🔥 Contrarian (Ý kiến ngược chiều)</option>
+            <option value="cheatsheet">📚 Cheatsheet / Framework</option>
+            <option value="story">📖 Story / Transformation</option>
+            <option value="proof">🏆 Social Proof / Authority</option>
+            <option value="challenge">🎯 Direct Challenge / Question</option>
+            <option value="other">💬 Khác / Đa dạng</option>
+          </select>
+        </div>
+
+        <div class="select-wrapper">
+          <label for="filterOutlier">Loại bài:</label>
+          <select id="filterOutlier">
+            <option value="all">⚡ Tất cả bài viết</option>
+            <option value="outliers_only">🔥 Chỉ Outlier (&gt;= 3x)</option>
+            <option value="super_outliers">🚀 Siêu Outlier (&gt;= 10x)</option>
+          </select>
+        </div>
+
+        <div class="select-wrapper">
+          <label for="sortOrder">Sắp xếp:</label>
+          <select id="sortOrder">
+            <option value="multiplier_desc">🔥 Outlier Multiplier (Cao → Thấp)</option>
+            <option value="views_desc">👁️ Views cao nhất</option>
+            <option value="likes_desc">❤️ Likes nhiều nhất</option>
+            <option value="bookmarks_desc">🔖 Bookmarks nhiều nhất</option>
+            <option value="date_desc">🕒 Mới lưu gần nhất</option>
+            <option value="date_asc">⏳ Cũ nhất</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Vault Feed -->
+    <main class="vault-container">
+      <div id="hookList" class="hook-grid">
+        <!-- Dynamic Cards Injected via JS -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state hidden">
+        <div class="empty-icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10"/>
+            <path d="M6 10h10"/>
+          </svg>
+        </div>
+        <h3>Chưa có Hook nào trong Vault</h3>
+        <p>Lướt X (Twitter) và bấm nút <strong>[⚡ Save Hook]</strong> trên thanh công cụ của bất kỳ bài viết nào để tự động gom vào đây.</p>
+        <a href="https://x.com" target="_blank" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <span>Mở X.com để tìm Hook</span>
+        </a>
+      </div>
+    </main>
+
+    <!-- Niche Adaptor Modal -->
+    <div id="adaptorModal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div class="modal-badge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>AI Niche Adaptor</span>
+            </div>
+            <h2>Biến Hóa Hook Theo Niche Của Bạn</h2>
+          </div>
+          <button id="btnCloseModal" class="btn-close-modal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Original Hook Reference -->
+          <div class="ref-box">
+            <div class="ref-meta">
+              <span class="ref-label">Hook Gốc:</span>
+              <span id="modalRefFormula" class="formula-pill">Curiosity Gap</span>
+              <span id="modalRefAuthor" class="ref-author">@elonmusk</span>
+            </div>
+            <div id="modalRefHookText" class="ref-hook-text">...</div>
+          </div>
+
+          <!-- Niche Input Form -->
+          <div class="niche-input-group">
+            <label for="nicheInput">Niche / Chủ đề bạn muốn áp dụng:</label>
+            <div class="input-with-button">
+              <input type="text" id="nicheInput" placeholder="Ví dụ: Học lập trình Python, Gym & Tăng cơ, Đầu tư Crypto, Bán hàng B2B, v.v." />
+              <button id="btnGenerateVariations" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                <span>Tạo Biến Thể</span>
+              </button>
+            </div>
+            <div class="niche-chips">
+              <span class="chip" data-niche="Lập trình & Kỹ thuật AI">💻 Lập trình AI</span>
+              <span class="chip" data-niche="Phát triển bản thân & Đọc sách">🌱 Self-help</span>
+              <span class="chip" data-niche="Kinh doanh Online & Dropshipping">💼 E-commerce</span>
+              <span class="chip" data-niche="Gym, Sức khỏe & Dinh dưỡng">💪 Gym & Fitness</span>
+              <span class="chip" data-niche="Tài chính cá nhân & Đầu tư">💰 Đầu tư</span>
+            </div>
+          </div>
+
+          <!-- Generated Variations Container -->
+          <div id="variationsContainer" class="variations-container hidden">
+            <h3>3 Biến Thể Hook Tối Ưu Cho Niche Của Bạn:</h3>
+            <div id="variationsList" class="variations-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="vaultToast" class="vault-toast hidden">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+      <span id="toastMsg">Đã sao chép thành công!</span>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

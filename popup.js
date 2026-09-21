@@ -15,6 +15,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const hideFloatingPillToggle = document.getElementById('hideFloatingPillToggle');
   const thresholdRange = document.getElementById('thresholdRange');
   const thresholdVal = document.getElementById('thresholdVal');
+  const btnOpenVaultDashboard = document.getElementById('btnOpenVaultDashboard');
+  const viralDetectionToggle = document.getElementById('viralDetectionToggle');
+  const viralMinViewsInput = document.getElementById('viralMinViewsInput');
+  const viralMinLikesInput = document.getElementById('viralMinLikesInput');
+
+  if (btnOpenVaultDashboard) {
+    btnOpenVaultDashboard.onclick = () => {
+      chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' });
+    };
+  }
 
   const motivationalCounter = document.getElementById('motivationalCounter');
   const memeCounter = document.getElementById('memeCounter');
@@ -215,8 +225,21 @@ document.addEventListener('DOMContentLoaded', () => {
       'focusModeEnabled',
       'focusWhitelistTags',
       'focusCollapsedCount',
+      'viralDetectionEnabled',
+      'viralMinViews',
+      'viralMinLikes',
     ],
     (res) => {
+      if (typeof res.viralDetectionEnabled === 'boolean' && viralDetectionToggle) {
+        viralDetectionToggle.checked = res.viralDetectionEnabled;
+      }
+      if (typeof res.viralMinViews === 'number' && viralMinViewsInput) {
+        viralMinViewsInput.value = res.viralMinViews;
+      }
+      if (typeof res.viralMinLikes === 'number' && viralMinLikesInput) {
+        viralMinLikesInput.value = res.viralMinLikes;
+      }
+
       if (Array.isArray(res.customLabels)) {
         customLabels = res.customLabels
           .map((c) => (typeof c === 'string' ? { name: c.trim(), enabled: true } : { name: (c?.name || '').trim(), enabled: c?.enabled !== false }))
@@ -344,6 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
       collapseSeedingEnabled: collapseSeedingToggle.checked,
       hideFloatingPill: hideFloatingPillToggle.checked,
       confidenceThreshold: parseInt(thresholdRange.value, 10) / 100,
+      viralDetectionEnabled: viralDetectionToggle ? viralDetectionToggle.checked : true,
+      viralMinViews: viralMinViewsInput ? (parseInt(viralMinViewsInput.value, 10) || 50000) : 50000,
+      viralMinLikes: viralMinLikesInput ? (parseInt(viralMinLikesInput.value, 10) || 1000) : 1000,
     };
 
     updateFocusUI(config.focusModeEnabled);
@@ -390,6 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
   blockScamsToggle.addEventListener('change', saveAndNotify);
   collapseSeedingToggle.addEventListener('change', saveAndNotify);
   hideFloatingPillToggle.addEventListener('change', saveAndNotify);
+  if (viralDetectionToggle) viralDetectionToggle.addEventListener('change', saveAndNotify);
+  if (viralMinViewsInput) viralMinViewsInput.addEventListener('change', saveAndNotify);
+  if (viralMinLikesInput) viralMinLikesInput.addEventListener('change', saveAndNotify);
 
   thresholdRange.addEventListener('input', () => {
     thresholdVal.textContent = `${thresholdRange.value}%`;
