@@ -53,6 +53,7 @@
       const userObj = obj.user || obj.author || {};
       const authorUsername = userObj.username || '';
       const authorFollowers = typeof userObj.follower_count === 'number' ? userObj.follower_count : (typeof userObj.followers_count === 'number' ? userObj.followers_count : 0);
+      const isRepost = !!(obj.reshared_post || obj.repost || obj.is_reshare || (obj.reshare_count && obj.is_repost));
       
       if (threadCode) {
         tweetsMap[String(threadCode)] = {
@@ -64,7 +65,9 @@
           likes: obj.like_count || 0,
           retweets: obj.reshare_count || 0,
           replies: obj.reply_count || 0,
-          bookmarks: 0
+          bookmarks: 0,
+          isRepost: isRepost,
+          isRetweet: isRepost
         };
       }
     }
@@ -81,6 +84,7 @@
       const userObj = obj.core?.user_results?.result?.legacy || {};
       const authorHandle = userObj.screen_name || legacy.screen_name || '';
       const authorFollowers = typeof userObj.followers_count === 'number' ? userObj.followers_count : 0;
+      const isRetweet = !!(legacy.retweeted_status_result || legacy.retweeted_status_id_str || obj.retweeted_status_result);
 
       if (restId) {
         tweetsMap[restId] = {
@@ -92,7 +96,9 @@
           likes: legacy.favorite_count || 0,
           retweets: legacy.retweet_count || 0,
           replies: legacy.reply_count || 0,
-          bookmarks: legacy.bookmark_count || 0
+          bookmarks: legacy.bookmark_count || 0,
+          isRetweet: isRetweet,
+          isRepost: isRetweet
         };
       }
     }

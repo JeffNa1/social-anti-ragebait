@@ -1196,51 +1196,120 @@ body.x-jev-hide-pill .x-jev-floating-pill,
   letter-spacing: -0.01em !important;
 }
 
-/* Outlier & Viral Post Highlights */
+/* Luxury Glowing Cyber-Glass Outlier Post Highlight on X and Threads */
 article.x-shield-outlier-post, div.x-shield-outlier-post,
 article.x-shield-viral-post, div.x-shield-viral-post {
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-  border-left: 3px solid #f59e0b !important;
-  background: rgba(245, 158, 11, 0.02) !important;
-  border-radius: 12px !important;
-  transition: border-color 0.2s, background 0.2s !important;
+  border: 1px solid rgba(251, 191, 36, 0.45) !important;
+  border-left: 4px solid #fbbf24 !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.02) 100%) !important;
+  box-shadow: 0 0 26px -3px rgba(245, 158, 11, 0.35), inset 0 0 16px -3px rgba(245, 158, 11, 0.12) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
+article.x-shield-outlier-post:hover, div.x-shield-outlier-post:hover {
+  border-color: rgba(251, 191, 36, 0.65) !important;
+  box-shadow: 0 0 32px 0 rgba(245, 158, 11, 0.45), inset 0 0 20px -2px rgba(245, 158, 11, 0.16) !important;
+}
+
+/* Threads Luxury Violet Amethyst Glow */
 article.x-shield-outlier-post.is-threads, div.x-shield-outlier-post.is-threads,
 article.x-shield-threads-viral, div.x-shield-threads-viral {
-  border: 1px solid rgba(168, 85, 247, 0.3) !important;
-  border-left: 3px solid #a855f7 !important;
-  background: rgba(168, 85, 247, 0.02) !important;
+  border: 1px solid rgba(192, 132, 252, 0.45) !important;
+  border-left: 4px solid #c084fc !important;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(147, 51, 234, 0.02) 100%) !important;
+  box-shadow: 0 0 26px -3px rgba(168, 85, 247, 0.38), inset 0 0 16px -3px rgba(168, 85, 247, 0.12) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-/* Outlier Badge */
+article.x-shield-outlier-post.is-threads:hover, div.x-shield-outlier-post.is-threads:hover,
+article.x-shield-threads-viral:hover, div.x-shield-threads-viral:hover {
+  border-color: rgba(192, 132, 252, 0.65) !important;
+  box-shadow: 0 0 32px 0 rgba(168, 85, 247, 0.48), inset 0 0 20px -2px rgba(168, 85, 247, 0.18) !important;
+}
+
+body.is-activity-page .x-shield-outlier-post,
+body.is-activity-page .x-shield-threads-viral,
+body.is-activity-page .x-shield-threads-hook-btn {
+  border: none !important;
+  border-left: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Luxury Glassmorphic Outlier Badge */
 .x-shield-outlier-badge, .x-shield-viral-badge {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  background: rgba(24, 24, 27, 0.92) !important;
-  border: 1px solid rgba(245, 158, 11, 0.25) !important;
-  border-radius: 6px !important;
-  padding: 3px 8px !important;
+  gap: 7px !important;
+  background: rgba(18, 18, 22, 0.85) !important;
+  border: 1px solid rgba(251, 191, 36, 0.4) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 14px -2px rgba(245, 158, 11, 0.25) !important;
+  border-radius: 9999px !important;
+  padding: 4px 10px !important;
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: #f59e0b !important;
-  margin: 4px 0 6px 0 !important;
+  color: #fbbf24 !important;
+  margin: 6px 0 8px 0 !important;
   width: fit-content !important;
   letter-spacing: -0.01em !important;
-  backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  transition: all 0.2s ease !important;
+}
+
+.x-shield-outlier-badge:hover, .x-shield-viral-badge:hover {
+  border-color: rgba(251, 191, 36, 0.65) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 20px 0 rgba(245, 158, 11, 0.4) !important;
+  transform: translateY(-1px) !important;
 }
 
 .x-shield-outlier-badge.is-threads {
-  color: #c084fc !important;
-  border-color: rgba(168, 85, 247, 0.25) !important;
+  color: #f0abfc !important;
+  border-color: rgba(192, 132, 252, 0.4) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 14px -2px rgba(168, 85, 247, 0.28) !important;
 }
 
-.x-shield-outlier-badge .outlier-fire { font-size: 11px !important; }
-.x-shield-outlier-badge .outlier-mult { font-weight: 700 !important; }
-.x-shield-outlier-badge .outlier-sep { color: #52525b !important; font-size: 9px !important; }
-.x-shield-outlier-badge .outlier-stats { color: #d4d4d8 !important; font-weight: 500 !important; }
-.x-shield-outlier-badge .outlier-time { color: #a1a1aa !important; font-weight: 400 !important; }
+.x-shield-outlier-badge.is-threads:hover {
+  border-color: rgba(192, 132, 252, 0.7) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), 0 0 22px 0 rgba(168, 85, 247, 0.45) !important;
+}
+
+.x-shield-outlier-badge .outlier-fire {
+  font-size: 12px !important;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6)) !important;
+}
+
+.x-shield-outlier-badge.is-threads .outlier-fire {
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.7)) !important;
+}
+
+.x-shield-outlier-badge .outlier-mult {
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.x-shield-outlier-badge .outlier-sep {
+  color: rgba(255, 255, 255, 0.25) !important;
+  font-size: 9px !important;
+}
+
+.x-shield-outlier-badge .outlier-stats {
+  color: #e4e4e7 !important;
+  font-weight: 500 !important;
+}
+
+.x-shield-outlier-badge .outlier-time {
+  color: #a1a1aa !important;
+  font-size: 10.5px !important;
+}
 
 /* Threads & X Hook Button */
 .x-shield-threads-hook-btn, .x-shield-hook-btn {
@@ -2220,6 +2289,26 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
     const href = a.getAttribute('href') || '';
     // If href contains /post/ or /t/, it links to post content, NOT a user profile link!
     return !href.includes('/post/') && !href.includes('/t/');
+  }
+
+  function isHeaderOrNavigation(el) {
+    if (!el || el === document.body || el === document.documentElement) return false;
+    if (el.closest && el.closest('header, nav, [role="banner"], [role="navigation"], [aria-label*="navigation" i], [aria-label*="header" i], [data-testid*="header" i], [data-testid*="topbar" i], [data-testid*="nav" i]')) {
+      return true;
+    }
+    let curr = el;
+    let depth = 0;
+    while (curr && curr !== document.body && curr !== document.documentElement && depth < 6) {
+      try {
+        const style = window.getComputedStyle(curr);
+        if (style && (style.position === 'sticky' || style.position === 'fixed')) {
+          return true;
+        }
+      } catch (e) {}
+      curr = curr.parentElement;
+      depth++;
+    }
+    return false;
   }
 
   function syncRevealState(targetEl, isRevealed, text) {
@@ -3235,12 +3324,27 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
         }
         if ((obj.code || obj.pk || obj.id) && (typeof obj.like_count === 'number' || typeof obj.reply_count === 'number')) {
           const code = String(obj.code || obj.pk || obj.id);
+          const isRepost = !!(obj.reshared_post || obj.repost || obj.is_reshare || (obj.reshare_count && obj.is_repost));
           tweetDataCache.set(code, {
             likes: obj.like_count || 0,
             replies: obj.reply_count || 0,
             retweets: obj.reshare_count || 0,
-            viewsCount: obj.view_count || obj.impression_count || 0
+            viewsCount: obj.view_count || obj.impression_count || 0,
+            isRepost: isRepost,
+            isRetweet: isRepost
           });
+        }
+        if (obj.__typename === 'Tweet' || (obj.legacy && obj.rest_id)) {
+          const restId = String(obj.rest_id || obj.id || '');
+          const isRetweet = !!(obj.legacy?.retweeted_status_result || obj.legacy?.retweeted_status_id_str || obj.retweeted_status_result);
+          if (restId) {
+            tweetDataCache.set(restId, {
+              isRetweet: isRetweet,
+              isRepost: isRetweet,
+              likes: obj.legacy?.favorite_count || 0,
+              viewsCount: obj.views?.count ? parseInt(obj.views.count, 10) || 0 : 0
+            });
+          }
         }
         if (Array.isArray(obj)) {
           for (let i = 0; i < obj.length; i++) extractUserData(obj[i]);
@@ -3451,6 +3555,10 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
     let reposts = 0;
     let views = 0;
 
+    if (isHeaderOrNavigation(postEl)) {
+      return { views: 0, likes: 0, replies: 0, reposts: 0, bookmarks: 0 };
+    }
+
     const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
     if (postLink && postLink.href) {
       const idMatch = postLink.href.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
@@ -3511,13 +3619,82 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
     return { views, likes, replies, reposts, bookmarks: 0 };
   }
 
+  const THREADS_REPOST_REGEX = /(?:reposted|reshared|đã đăng lại|đã chia sẻ lại|reposteó|ha reposteado|republicou|a republié|hat repostet|再投稿|リポスト|转帖|轉發|재게시|перепостил)/i;
+
+  function isThreadsRepost(postEl, contentEl) {
+    if (!postEl) return false;
+
+    // 1. Check tweetDataCache from interceptor if permalink exists
+    const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
+    if (postLink && postLink.href) {
+      const idMatch = postLink.href.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
+      if (idMatch && idMatch[1]) {
+        const cached = tweetDataCache.get(idMatch[1]);
+        if (cached && (cached.isRepost || cached.isRetweet)) {
+          return true;
+        }
+      }
+    }
+
+    // 2. Check author links near top of postEl (reposter banner)
+    const authorLinks = postEl.querySelectorAll('a[href*="/@"]');
+    for (const link of authorLinks) {
+      if (contentEl && contentEl.contains(link)) continue;
+      let curr = link.parentElement;
+      for (let i = 0; i < 3; i++) {
+        if (!curr || curr === postEl) break;
+        const text = (curr.innerText || '').trim();
+        if (text.length > 0 && text.length < 120 && THREADS_REPOST_REGEX.test(text)) {
+          if (!contentEl || !contentEl.contains(curr)) {
+            return true;
+          }
+        }
+        curr = curr.parentElement;
+      }
+    }
+
+    // 3. Check for any top header row with repost text outside contentEl
+    const topElements = postEl.querySelectorAll('div[dir="auto"], span[dir="auto"], header');
+    for (const el of topElements) {
+      if (contentEl && contentEl.contains(el)) continue;
+      const t = (el.innerText || '').trim();
+      if (t.length > 0 && t.length < 80 && THREADS_REPOST_REGEX.test(t)) {
+        if (!contentEl || (el.compareDocumentPosition && (el.compareDocumentPosition(contentEl) & Node.DOCUMENT_POSITION_FOLLOWING))) {
+          return true;
+        }
+      }
+    }
+
+    // 4. Check for reshare / repost SVG icons in upper header outside action bar
+    const actionBar = findThreadsActionBar(postEl);
+    const allSvgs = postEl.querySelectorAll('svg');
+    for (const svg of allSvgs) {
+      if (actionBar && actionBar.contains(svg)) continue;
+      if (contentEl && contentEl.contains(svg)) continue;
+      const ariaLabel = (svg.getAttribute('aria-label') || svg.parentElement?.getAttribute('aria-label') || '').toLowerCase();
+      if (THREADS_REPOST_REGEX.test(ariaLabel)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   function extractThreadsAuthor(postEl) {
     let authorName = '';
     let authorHandle = '';
     let authorAvatar = '';
     let permalink = window.location.href;
 
-    const handleLink = postEl.querySelector('a[href*="/@"]');
+    const allLinks = Array.from(postEl.querySelectorAll('a[href*="/@"]'));
+    let handleLink = allLinks[0];
+    if (allLinks.length > 1) {
+      const firstParentText = (allLinks[0].parentElement?.innerText || '').trim();
+      if (THREADS_REPOST_REGEX.test(firstParentText)) {
+        handleLink = allLinks[1];
+      }
+    }
+
     if (handleLink) {
       const raw = handleLink.getAttribute('href') || '';
       const match = raw.match(/@([a-zA-Z0-9_\.]+)/);
@@ -3587,14 +3764,33 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
 
   function processThreadsHookAndViral(post, fullText, contentEl) {
     if (!CONFIG.viralDetectionEnabled && !CONFIG.outlierDetectionEnabled) return;
+    if (isHeaderOrNavigation(post)) return;
+    if (window.location.pathname.includes('/activity')) return;
+
+    // Reposted threads must never be tagged or highlighted as viral/outlier
+    if (isThreadsRepost(post, contentEl)) {
+      post.classList.remove('x-shield-outlier-post', 'is-threads', 'x-shield-threads-viral');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+      const oldBtn = post.querySelector('.x-shield-threads-hook-btn');
+      if (oldBtn) oldBtn.remove();
+      return;
+    }
+
+    const authorInfo = extractThreadsAuthor(post);
+    if (!authorInfo.authorHandle) return;
 
     const metrics = extractThreadsMetrics(post);
-    const authorInfo = extractThreadsAuthor(post);
     const outlier = evaluateOutlierStatus(metrics, authorInfo.authorHandle, post, 'threads');
     const actionBar = findThreadsActionBar(post);
 
-    if (outlier.isOutlier) {
+    const isViral = !!(CONFIG.viralDetectionEnabled && (metrics.likes >= 500 || metrics.replies >= 50));
+
+    if (outlier.isOutlier || isViral) {
       post.classList.add('x-shield-outlier-post', 'is-threads');
+      if (isViral && !outlier.isOutlier) {
+        post.classList.add('x-shield-threads-viral');
+      }
       let badge = post.querySelector('.x-shield-outlier-badge');
       if (!badge) {
         badge = document.createElement('div');
@@ -3608,7 +3804,7 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
           actionBar.parentElement.insertBefore(badge, actionBar);
         }
       }
-      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : 'Breakout Outlier';
+      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : (isViral && !outlier.isOutlier ? 'Viral Post' : 'Breakout Outlier');
       const folsStr = outlier.followers > 0 ? `${formatMetricNumber(outlier.followers)} fols → ` : '';
       const reachStr = `${formatMetricNumber(metrics.likes)} likes`;
       const timeStr = outlier.ageHours < 1 ? '<1h trước' : `${Math.round(outlier.ageHours)}h trước`;
@@ -3765,8 +3961,49 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
     return likeBtn.closest('[role="group"]') || likeBtn.parentElement;
   }
 
+  const X_REPOST_REGEX = /(?:reposted|retweeted|đã đăng lại|đã retweet|reposteó|republicou|reposté|repostet|リポスト|リツイート|转推|轉推|재게시|retwit|ripubblic)/i;
+
+  function isXRepost(post) {
+    if (!post) return false;
+
+    // 1. Check data-testid="socialContext"
+    const socialContext = post.querySelector('div[data-testid="socialContext"]');
+    if (socialContext) {
+      const text = (socialContext.innerText || '').trim();
+      if (X_REPOST_REGEX.test(text)) {
+        return true;
+      }
+    }
+
+    // 2. Check tweetDataCache from interceptor if permalink exists
+    const permalink = post.querySelector('a[href*="/status/"]');
+    if (permalink && permalink.href) {
+      const idMatch = permalink.href.match(/status\/(\d+)/);
+      if (idMatch && idMatch[1]) {
+        const cached = tweetDataCache.get(idMatch[1]);
+        if (cached && (cached.isRetweet || cached.isRepost)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   function processXTweetHookAndViral(post, fullText) {
     if (!CONFIG.viralDetectionEnabled && !CONFIG.outlierDetectionEnabled) return;
+    if (window.location.pathname.includes('/notifications')) return;
+
+    // Reposted tweets must never be tagged or highlighted as viral/outlier
+    if (isXRepost(post)) {
+      post.classList.remove('x-shield-outlier-post', 'x-shield-viral-post');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+      const oldBtn = post.querySelector('.x-shield-hook-btn');
+      if (oldBtn) oldBtn.remove();
+      return;
+    }
+
     const metrics = extractXTweetMetrics(post);
     const author = extractXTweetAuthor(post);
     const outlier = evaluateOutlierStatus(metrics, author.authorHandle, post, 'x');
@@ -3966,16 +4203,35 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
     const platform = getPlatform();
 
     if (platform === 'threads') {
+      const isActivity = window.location.pathname.includes('/activity');
+      if (document.body) document.body.classList.toggle('is-activity-page', isActivity);
+
+      if (isActivity) {
+        document.querySelectorAll('.x-shield-outlier-post, .x-shield-threads-viral, .x-shield-threads-hook-btn, .x-shield-outlier-badge').forEach((el) => {
+          el.classList.remove('x-shield-outlier-post', 'is-threads', 'x-shield-threads-viral');
+          if (el.classList.contains('x-shield-threads-hook-btn') || el.classList.contains('x-shield-outlier-badge')) {
+            el.remove();
+          }
+        });
+      }
+
+      // Cleanup any lingering badges mistakenly injected into header or navigation
+      document.querySelectorAll('header .x-jev-badge-container, nav .x-jev-badge-container, [role="banner"] .x-jev-badge-container, [role="navigation"] .x-jev-badge-container, header .x-shield-outlier-badge, nav .x-shield-outlier-badge').forEach((b) => b.remove());
+
       const postContainers = new Set();
       document.querySelectorAll('div[data-pressable-container="true"], div[role="article"], article, div[data-testid*="post"], div[data-testid*="thread"]').forEach((el) => {
-        postContainers.add(el);
+        if (!isHeaderOrNavigation(el)) {
+          postContainers.add(el);
+        }
       });
       document.querySelectorAll('a[href*="/post/"], a[href*="/t/"]').forEach((link) => {
+        if (isHeaderOrNavigation(link)) return;
         let container = link.closest('article') || link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]');
         if (!container) {
           let curr = link.parentElement;
           let depth = 0;
           while (curr && curr !== document.body && depth < 6) {
+            if (isHeaderOrNavigation(curr)) break;
             if (curr.querySelector('span[dir="auto"], div[dir="auto"]') && curr.querySelectorAll('svg').length >= 1) {
               container = curr;
               break;
@@ -3984,14 +4240,22 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
             depth++;
           }
         }
-        if (container) postContainers.add(container);
+        if (container && !isHeaderOrNavigation(container)) postContainers.add(container);
       });
 
       const candidateContainers = Array.from(postContainers).filter((el) => {
+        if (isHeaderOrNavigation(el)) return false;
         return !Array.from(postContainers).some((other) => other !== el && other.contains(el));
       });
 
       candidateContainers.forEach((post) => {
+        if (isHeaderOrNavigation(post)) return;
+
+        // A valid Threads post must have an author handle/link or action bar or be an article
+        const hasAuthor = !!post.querySelector('a[href*="/@"]');
+        const hasActionBar = !!findThreadsActionBar(post);
+        const isArticle = post.tagName === 'ARTICLE' || post.getAttribute('role') === 'article';
+        if (!hasAuthor && !hasActionBar && !isArticle) return;
         const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         const candidateEls = [];
 
@@ -4020,7 +4284,7 @@ article.x-shield-threads-viral, div.x-shield-threads-viral {
 
         const cleanText = targetItem ? targetItem.text : (post.innerText || '').slice(0, 300);
 
-        if (cleanText) {
+        if (cleanText && !isActivity) {
           processThreadsHookAndViral(post, cleanText, targetItem ? targetItem.el : null);
         }
 

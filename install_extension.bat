@@ -8,7 +8,7 @@ echo 1. Đang mở trang quản lý Extensions trên Google Chrome...
 start chrome.exe "chrome://extensions"
 
 echo 2. Đang mở thư mục Extension trong File Explorer...
-start explorer.exe /select,"C:\Users\Administrator\.gemini\antigravity\scratch\x-anti-ragebait"
+start explorer.exe /select,"%~dp0manifest.json"
 
 echo.
 echo ========================================================

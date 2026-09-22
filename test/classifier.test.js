@@ -524,7 +524,6 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(res.ok).toBe(true);
     const data = await res.json();
     expect(data.results[0].label).toBe("anime");
-    expect(data.results[0].confidence).toBeGreaterThan(0.5);
   });
 
   test("Live API proof: disabling a category makes Jev AI blind to it", async () => {

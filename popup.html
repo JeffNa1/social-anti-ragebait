@@ -6,18 +6,20 @@
   <title>Social Shield: All-in-One Guardian</title>
   <style>
     :root {
-      --bg: #09090b;
-      --card: rgba(24, 24, 27, 0.85);
-      --border: rgba(255, 255, 255, 0.08);
+      --bg: #07080a;
+      --card: rgba(16, 18, 27, 0.75);
+      --card-highlight: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.07);
       --border-hover: rgba(255, 255, 255, 0.16);
-      --fg: #f4f4f5;
-      --muted: #a1a1aa;
-      --dim: #71717a;
+      --fg: #f8fafc;
+      --muted: #94a3b8;
+      --dim: #64748b;
       --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.35);
       --destructive: #ef4444;
-      --radius-sm: 4px;
-      --radius-md: 6px;
-      --radius-lg: 10px;
+      --radius-sm: 5px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
       --radius-pill: 9999px;
       --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -26,75 +28,134 @@
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
 
     body {
-      width: 330px;
-      max-height: 590px;
+      width: 350px;
+      max-height: 600px;
       overflow-y: auto;
       overflow-x: hidden;
-      background: radial-gradient(ellipse 90% 45% at 50% -10%, rgba(56, 189, 248, 0.16), transparent), var(--bg);
+      background:
+        radial-gradient(ellipse 90% 45% at 50% -5%, rgba(56, 189, 248, 0.18), transparent),
+        radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.08), transparent 50%),
+        var(--bg);
       color: var(--fg);
       padding: 16px;
       font-size: 12px;
-      line-height: 1.4;
+      line-height: 1.45;
       letter-spacing: -0.01em;
     }
 
     body::-webkit-scrollbar {
-      width: 4px;
+      width: 5px;
     }
     body::-webkit-scrollbar-track {
-      background: transparent;
+      background: rgba(0, 0, 0, 0.15);
     }
     body::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius-pill);
+    }
+    body::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
     }
 
     .header {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 11px;
       margin-bottom: 12px;
       padding-bottom: 12px;
       border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .header::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 48px;
+      height: 1px;
+      background: linear-gradient(90deg, #38bdf8, transparent);
     }
 
     .logo {
-      width: 32px;
-      height: 32px;
+      width: 34px;
+      height: 34px;
       background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      box-shadow: 0 0 16px rgba(2, 132, 199, 0.5);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
       flex-shrink: 0;
-      animation: jev-pulse-logo 3.5s ease-in-out infinite;
+      animation: pulse-shield-glow 3.5s ease-in-out infinite;
     }
 
-    @keyframes jev-pulse-logo {
-      0%, 100% { box-shadow: 0 0 14px rgba(2, 132, 199, 0.4); }
-      50% { box-shadow: 0 0 24px rgba(56, 189, 248, 0.7); }
+    @keyframes pulse-shield-glow {
+      0%, 100% {
+        box-shadow: 0 0 14px rgba(2, 132, 199, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      }
+      50% {
+        box-shadow: 0 0 26px rgba(56, 189, 248, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      }
     }
 
     .logo svg {
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
+    }
+
+    .title {
+      flex: 1;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .title h1 {
-      font-size: 13.5px;
+      font-size: 14px;
       font-weight: 700;
       color: #fff;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.025em;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1.5px 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 6px #34d399;
+      animation: blink-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes blink-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
 
     .title p {
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--muted);
       margin-top: 1px;
     }
@@ -107,14 +168,21 @@
     }
 
     .platform-tag {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 2.5px 7px;
-      font-size: 10px;
+      padding: 2.5px 7.5px;
+      font-size: 9.5px;
       font-weight: 600;
       color: var(--muted);
-      letter-spacing: 0.02em;
+      letter-spacing: 0.01em;
+      transition: all 0.15s ease;
+    }
+
+    .platform-tag:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #e2e8f0;
+      border-color: var(--border-hover);
     }
 
     .section {
@@ -123,42 +191,40 @@
       border-radius: var(--radius-lg);
       padding: 12px;
       margin-bottom: 10px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
       transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
     }
 
     .section:hover {
-      border-color: rgba(255, 255, 255, 0.18);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 6px 22px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
     .section-title {
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
       color: var(--muted);
       margin-bottom: 10px;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
     }
 
     .section-title svg {
       width: 13px;
       height: 13px;
+      flex-shrink: 0;
     }
 
     .row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .row:last-child {
-      margin-bottom: 0;
+      gap: 8px;
     }
 
     .label {
@@ -168,6 +234,7 @@
       display: flex;
       align-items: center;
       gap: 5px;
+      letter-spacing: -0.01em;
     }
 
     .label svg {
@@ -179,11 +246,12 @@
     .sublabel {
       font-size: 10px;
       color: var(--dim);
-      margin-top: 2px;
+      margin-top: 1px;
       font-weight: 400;
+      line-height: 1.35;
     }
 
-    /* Shadcn Switch Component */
+    /* Modern Obsidian Switch Component */
     .switch {
       position: relative;
       display: inline-block;
@@ -202,10 +270,10 @@
       position: absolute;
       cursor: pointer;
       inset: 0;
-      background-color: #27272a;
-      transition: background-color 0.18s var(--ease);
+      background-color: rgba(255, 255, 255, 0.08);
+      transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
       border-radius: var(--radius-pill);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .slider:before {
@@ -215,36 +283,38 @@
       width: 14px;
       left: 2px;
       bottom: 2px;
-      background-color: #f4f4f5;
-      transition: transform 0.18s var(--ease);
+      background-color: #f8fafc;
+      transition: transform 0.2s var(--ease), background-color 0.2s;
       border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
     }
 
     input:checked + .slider {
       background-color: var(--primary);
+      border-color: transparent;
       box-shadow: 0 0 12px var(--primary);
     }
 
     input:checked + .slider:before {
       transform: translateX(14px);
+      background-color: #ffffff;
     }
 
-    input.motivational-toggle:checked + .slider { background-color: #f59e0b; box-shadow: 0 0 12px #f59e0b; }
-    input.meme-toggle:checked + .slider { background-color: #ec4899; box-shadow: 0 0 12px #ec4899; }
-    input.deepdive-toggle:checked + .slider { background-color: #6366f1; box-shadow: 0 0 12px #6366f1; }
-    input.wholesome-toggle:checked + .slider { background-color: #10b981; box-shadow: 0 0 12px #10b981; }
-    input.doom-toggle:checked + .slider { background-color: #f97316; box-shadow: 0 0 12px #f97316; }
-    input.fomo-toggle:checked + .slider { background-color: #eab308; box-shadow: 0 0 12px #eab308; }
-    input.casual-toggle:checked + .slider { background-color: #64748b; box-shadow: 0 0 12px #64748b; }
-    input.custom-toggle:checked + .slider { background-color: #a855f7; box-shadow: 0 0 12px #a855f7; }
-    input.monk-toggle:checked + .slider { background-color: #0284c7; box-shadow: 0 0 12px #0284c7; }
-    input.reels-toggle:checked + .slider { background-color: #06b6d4; box-shadow: 0 0 12px #06b6d4; }
-    input.rage-toggle:checked + .slider { background-color: #ef4444; box-shadow: 0 0 12px #ef4444; }
-    input.scam-toggle:checked + .slider { background-color: #f97316; box-shadow: 0 0 12px #f97316; }
-    input.seeding-toggle:checked + .slider { background-color: #a855f7; box-shadow: 0 0 12px #a855f7; }
-    input.pill-toggle:checked + .slider { background-color: #0284c7; box-shadow: 0 0 12px #0284c7; }
-    input.focus-toggle:checked + .slider { background-color: #38bdf8; box-shadow: 0 0 12px #38bdf8; }
+    input.motivational-toggle:checked + .slider { background-color: #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.7); }
+    input.meme-toggle:checked + .slider { background-color: #ec4899; box-shadow: 0 0 12px rgba(236, 72, 153, 0.7); }
+    input.deepdive-toggle:checked + .slider { background-color: #6366f1; box-shadow: 0 0 12px rgba(99, 102, 241, 0.7); }
+    input.wholesome-toggle:checked + .slider { background-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.7); }
+    input.doom-toggle:checked + .slider { background-color: #f97316; box-shadow: 0 0 12px rgba(249, 115, 22, 0.7); }
+    input.fomo-toggle:checked + .slider { background-color: #eab308; box-shadow: 0 0 12px rgba(234, 179, 8, 0.7); }
+    input.casual-toggle:checked + .slider { background-color: #64748b; box-shadow: 0 0 12px rgba(100, 116, 139, 0.7); }
+    input.custom-toggle:checked + .slider { background-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.7); }
+    input.monk-toggle:checked + .slider { background-color: #0284c7; box-shadow: 0 0 12px rgba(2, 132, 199, 0.7); }
+    input.reels-toggle:checked + .slider { background-color: #06b6d4; box-shadow: 0 0 12px rgba(6, 182, 212, 0.7); }
+    input.rage-toggle:checked + .slider { background-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
+    input.scam-toggle:checked + .slider { background-color: #f97316; box-shadow: 0 0 12px rgba(249, 115, 22, 0.7); }
+    input.seeding-toggle:checked + .slider { background-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.7); }
+    input.pill-toggle:checked + .slider { background-color: #0284c7; box-shadow: 0 0 12px rgba(2, 132, 199, 0.7); }
+    input.focus-toggle:checked + .slider { background-color: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.7); }
 
     /* Custom Labels Chips */
     .custom-label-chip {
@@ -255,6 +325,13 @@
       border: 1px solid rgba(168, 85, 247, 0.22);
       border-radius: var(--radius-md);
       padding: 5px 8px;
+      backdrop-filter: blur(8px);
+      transition: all 0.15s ease;
+    }
+
+    .custom-label-chip:hover {
+      background: rgba(168, 85, 247, 0.14);
+      border-color: rgba(168, 85, 247, 0.35);
     }
 
     .custom-label-chip .remove-btn {
@@ -262,7 +339,7 @@
       cursor: pointer;
       font-size: 11px;
       font-weight: 700;
-      padding: 2px 4px;
+      padding: 2px 5px;
       border-radius: var(--radius-sm);
       transition: color 0.15s, background 0.15s;
     }
@@ -288,6 +365,8 @@
 
     .switch-mini .slider {
       border-radius: var(--radius-pill);
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .switch-mini .slider:before {
@@ -295,6 +374,7 @@
       width: 11px;
       left: 1px;
       bottom: 1px;
+      background-color: #f8fafc;
     }
 
     .switch-mini input:checked + .slider:before {
@@ -345,57 +425,70 @@
     .range-wrap {
       margin-top: 8px;
       padding-top: 8px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     input[type=range] {
       width: 100%;
       accent-color: #38bdf8;
       cursor: pointer;
-      background: #27272a;
-      height: 4px;
-      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.08);
+      height: 5px;
+      border-radius: 3px;
+      outline: none;
+      transition: background 0.2s;
     }
 
     .range-val {
       display: flex;
       justify-content: space-between;
-      font-size: 10px;
+      font-size: 9.5px;
       color: var(--dim);
       margin-top: 4px;
     }
 
-    /* Stats Grid */
+    /* Metric Counters Bento Grid */
     .stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 5px;
+      gap: 6px;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .stat-card {
-      padding: 7px 4px;
-      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 5px;
+      background: rgba(255, 255, 255, 0.025);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-1px);
     }
 
     .stat-num {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.03em;
     }
 
     .stat-lbl {
       font-size: 9px;
       color: var(--dim);
       margin-top: 2px;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
     .footer {
@@ -405,6 +498,7 @@
       font-size: 10.5px;
       color: var(--dim);
       padding-top: 4px;
+      border-top: 1px solid var(--border);
     }
 
     .btn-reset {
@@ -416,21 +510,119 @@
       transition: color 0.15s;
     }
 
-    .btn-reset:hover {
-      color: #f87171;
+    .vault-hero-card {
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.16) 0%, rgba(16, 18, 27, 0.92) 100%);
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .vault-hero-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), transparent);
+    }
+
+    .btn-vault {
+      width: 100%;
+      height: 34px;
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      color: #fff;
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 11.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      box-shadow: 0 0 14px rgba(2, 132, 199, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      transition: all 0.2s var(--ease);
+    }
+
+    .btn-vault:hover {
+      background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+      border-color: #38bdf8;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-vault:active {
+      transform: translateY(0);
+    }
+
+    .input-text {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 6px 9px;
+      color: #fff;
+      font-size: 11px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .input-text:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+    }
+
+    .btn-action-purple {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-weight: 600;
+      font-size: 11px;
+      padding: 0 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-action-purple:hover {
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+    }
+
+    .mini-number-input {
+      width: 100%;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--fg);
+      padding: 0 8px;
+      font-size: 11px;
+      outline: none;
+      font-variant-numeric: tabular-nums;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .mini-number-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
     }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
       </svg>
     </div>
     <div class="title">
-      <h1>Social Shield</h1>
-      <p>AI Protective Guardian • Jev Zero-shot</p>
+      <div class="title-row">
+        <h1>Social Shield</h1>
+        <span class="status-badge"><span class="status-dot"></span>ACTIVE</span>
+      </div>
+      <p>All-in-One Guardian • Jev Zero-shot</p>
     </div>
   </div>
 
@@ -443,25 +635,25 @@
   </div>
 
   <!-- Hook Vault & Viral Intelligence Hero Card -->
-  <div class="section" style="border-color: rgba(2, 132, 199, 0.4); background: linear-gradient(135deg, rgba(2, 132, 199, 0.16) 0%, rgba(24, 24, 27, 0.85) 100%); margin-bottom: 12px;">
+  <div class="section vault-hero-card">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
       <div style="display: flex; align-items: center; gap: 6px;">
-        <span style="background: #38bdf8; color: #082f49; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px;">PRO</span>
-        <span style="font-weight: 700; color: #f0f9ff; font-size: 12px;">Hook Vault & Viral Scanner</span>
+        <span style="background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); color: #082f49; font-size: 9px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.04em;">PRO</span>
+        <span style="font-weight: 700; color: #f0f9ff; font-size: 12px; letter-spacing: -0.01em;">Hook Vault & Viral Scanner</span>
       </div>
-      <span style="font-size: 10px; color: #38bdf8; font-weight: 600;">X (Twitter)</span>
+      <span style="font-size: 9.5px; color: #38bdf8; font-weight: 600; background: rgba(56, 189, 248, 0.1); padding: 1.5px 6px; border-radius: var(--radius-pill); border: 1px solid rgba(56, 189, 248, 0.2);">X • Threads</span>
     </div>
-    <div style="font-size: 11px; color: var(--muted); margin-bottom: 10px;">
-      Tự động phát hiện bài viral trên X, 1-click lưu Hook và phân tích công thức biến hóa theo Niche.
+    <div style="font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.4;">
+      Tự động phát hiện bài viral & outlier, 1-click lưu Hook và phân tích công thức biến hóa theo Niche.
     </div>
-    <button id="btnOpenVaultDashboard" type="button" style="width: 100%; height: 32px; background: #0284c7; color: #fff; border: 1px solid #38bdf8; border-radius: 6px; font-weight: 600; font-size: 11.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 0 12px rgba(2, 132, 199, 0.4); transition: all 0.18s;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    <button id="btnOpenVaultDashboard" type="button" class="btn-vault">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       <span>Mở Hook Vault Dashboard</span>
     </button>
   </div>
 
   <!-- Focus Feed Mode -->
-  <div class="section" style="border-color: rgba(56, 189, 248, 0.28); background: rgba(15, 23, 42, 0.65);">
+  <div class="section" style="border-color: rgba(56, 189, 248, 0.3); background: rgba(14, 21, 37, 0.72);">
     <div class="row">
       <div>
         <div class="label" style="color: #38bdf8;">Chế Độ Focus (Lọc Tag)</div>
@@ -474,7 +666,7 @@
     </div>
 
     <div id="focusTagSelection" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(56, 189, 248, 0.18); opacity: 0.4; transition: opacity 0.2s;">
-      <div style="font-size: 10px; color: var(--muted); margin-bottom: 6px;">Giữ lại bài viết thuộc các tag sau:</div>
+      <div style="font-size: 9.5px; color: var(--muted); margin-bottom: 6px; font-weight: 500;">Giữ lại bài viết thuộc các tag sau:</div>
       <div class="focus-tag-grid">
         <label class="focus-tag-label">
           <input type="checkbox" id="focusTagMotivational" checked>
@@ -514,7 +706,11 @@
 
   <!-- AI Taxonomy Section -->
   <div class="section">
-    <div class="section-title">Phân Loại & Gắn Tag (AI Taxonomy)</div>
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Phân Loại & Gắn Tag (AI Taxonomy)</span>
+    </div>
+
     <div class="row">
       <div>
         <div class="label" style="color: #fbbf24;">Động lực / Mindset</div>
@@ -526,7 +722,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #f472b6;">Meme / Giải trí</div>
         <div class="sublabel">Hài hước, ảnh chế, giải trí vui tươi</div>
@@ -537,7 +733,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #818cf8;">Mổ xẻ / Deep Dive</div>
         <div class="sublabel">Phân tích chuyên sâu, nội bộ ngành</div>
@@ -548,7 +744,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #34d399;">Wholesome / Tích cực</div>
         <div class="sublabel">Ấm áp, nhân văn, câu chuyện tích cực</div>
@@ -559,7 +755,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #fb923c;">Doom / Gieo rắc sợ hãi</div>
         <div class="sublabel">Cảnh báo tin tức tận thế, tiêu cực giật gân</div>
@@ -570,7 +766,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #fde047;">FOMO / Hype</div>
         <div class="sublabel">Thổi phồng tài chính, lùa gà, sợ bỏ lỡ</div>
@@ -581,7 +777,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #94a3b8;">Thảo luận thường nhật (Casual)</div>
         <div class="sublabel">Hiện tag bài viết thông thường</div>
@@ -593,14 +789,14 @@
     </div>
 
     <!-- Custom Labels -->
-    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <div class="label" style="color: #c084fc;">Nhãn Tự Điền (Custom)</div>
-        <span style="font-size: 10px; color: var(--dim);">Auto Prompt</span>
+        <span style="font-size: 9.5px; color: var(--dim); background: rgba(168, 85, 247, 0.1); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.2);">Auto Prompt</span>
       </div>
-      <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-        <input type="text" id="customLabelInput" maxlength="40" placeholder="Nhập nhãn (vd: anime, ai)..." style="flex: 1; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 5px 8px; color: #fff; font-size: 11px; outline: none;">
-        <button id="addCustomLabelBtn" type="button" style="background: #8b5cf6; border: none; border-radius: var(--radius-md); color: #fff; font-weight: 600; font-size: 11px; padding: 0 10px; cursor: pointer;">Thêm</button>
+      <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+        <input type="text" id="customLabelInput" class="input-text" maxlength="40" placeholder="Nhập nhãn (vd: anime, ai)..." style="flex: 1;">
+        <button id="addCustomLabelBtn" type="button" class="btn-action-purple">Thêm</button>
       </div>
       <div id="customLabelsContainer" style="display: flex; flex-direction: column; gap: 5px;"></div>
     </div>
@@ -608,7 +804,10 @@
 
   <!-- Protective Shields Section -->
   <div class="section">
-    <div class="section-title" style="color: #f87171;">Khiên Bảo Vệ & Cai Nghiện</div>
+    <div class="section-title" style="color: #f87171;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Khiên Bảo Vệ & Cai Nghiện</span>
+    </div>
 
     <div class="row">
       <div>
@@ -621,7 +820,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #67e8f9;">Chặn Reels & Shorts</div>
         <div class="sublabel">Instagram Reels, YouTube Shorts & FB Reels</div>
@@ -632,7 +831,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #f87171;">Làm mờ Ragebait & Toxic</div>
         <div class="sublabel">Chặn bài phốt, kích động thù hận, drama</div>
@@ -643,7 +842,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #fb923c;">Chặn Bẫy Lừa Đảo (Scams)</div>
         <div class="sublabel">Làm mờ bẫy CTV, lùa gà crypto, đa cấp</div>
@@ -654,7 +853,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label" style="color: #c084fc;">Thu gọn Comment Seeding</div>
         <div class="sublabel">Tự động ẩn bot clone, review ảo</div>
@@ -665,7 +864,7 @@
       </label>
     </div>
 
-    <div class="row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div class="row row-divider">
       <div>
         <div class="label">Ẩn thanh trạng thái nổi</div>
         <div class="sublabel">Tắt widget radar ở góc màn hình</div>
@@ -674,8 +873,10 @@
         <input type="checkbox" id="hideFloatingPillToggle" class="pill-toggle">
         <span class="slider"></span>
       </label>
+    </div>
+
     <!-- Viral Post Scanner Settings (X / Twitter) -->
-    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
       <div class="row">
         <div>
           <div class="label" style="color: #fbbf24;">Quét bài viết Viral (X)</div>
@@ -686,23 +887,23 @@
           <span class="slider"></span>
         </label>
       </div>
-      <div style="display: flex; gap: 8px; margin-top: 6px;">
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
         <div style="flex: 1;">
-          <label style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 2px;">Min Views:</label>
-          <input type="number" id="viralMinViewsInput" value="50000" step="5000" style="width: 100%; height: 26px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--fg); padding: 0 6px; font-size: 11px; outline: none;" />
+          <label style="font-size: 9.5px; color: var(--muted); display: block; margin-bottom: 3px; font-weight: 500;">Min Views:</label>
+          <input type="number" id="viralMinViewsInput" class="mini-number-input" value="50000" step="5000" />
         </div>
         <div style="flex: 1;">
-          <label style="font-size: 10px; color: var(--muted); display: block; margin-bottom: 2px;">Min Likes:</label>
-          <input type="number" id="viralMinLikesInput" value="1000" step="100" style="width: 100%; height: 26px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--fg); padding: 0 6px; font-size: 11px; outline: none;" />
+          <label style="font-size: 9.5px; color: var(--muted); display: block; margin-bottom: 3px; font-weight: 500;">Min Likes:</label>
+          <input type="number" id="viralMinLikesInput" class="mini-number-input" value="1000" step="100" />
         </div>
       </div>
     </div>
 
     <!-- Threshold Slider -->
     <div class="range-wrap">
-      <div class="row" style="margin-bottom: 2px;">
+      <div class="row" style="margin-bottom: 4px;">
         <span class="label" style="font-size: 10.5px;">Độ nhạy phân loại (Threshold)</span>
-        <span id="thresholdVal" style="font-weight: 700; color: #38bdf8;">30%</span>
+        <span id="thresholdVal" style="font-weight: 700; color: #38bdf8; font-variant-numeric: tabular-nums;">30%</span>
       </div>
       <input type="range" id="thresholdRange" min="30" max="80" step="5" value="30">
       <div class="range-val">
@@ -712,7 +913,7 @@
     </div>
   </div>
 
-  <!-- Metric Counters -->
+  <!-- Metric Counters Bento Grid -->
   <div class="stats">
     <div class="stat-card">
       <div class="stat-num" id="motivationalCounter" style="color: #fbbf24;">0</div>
@@ -756,16 +957,19 @@
     </div>
     <div class="stat-card">
       <div class="stat-num" id="focusCounter" style="color: #38bdf8;">0</div>
-      <div class="stat-lbl">Thu gọn Focus</div>
+      <div class="stat-lbl">Focus mode</div>
     </div>
-    <div class="stat-card" style="grid-column: span 2; display: flex; flex-direction: row; justify-content: space-between; padding: 6px 10px;">
-      <div class="stat-lbl" style="margin: 0; font-size: 10px; color: #c084fc;">Nhãn Custom</div>
-      <div class="stat-num" id="customCounter" style="color: #c084fc; font-size: 13px;">0</div>
+    <div class="stat-card" style="grid-column: span 2; display: flex; flex-direction: row; justify-content: space-between; padding: 7px 12px;">
+      <div class="stat-lbl" style="margin: 0; font-size: 9.5px; color: #c084fc;">Nhãn Custom</div>
+      <div class="stat-num" id="customCounter" style="color: #c084fc; font-size: 14px;">0</div>
     </div>
   </div>
 
   <div class="footer">
-    <span>Jev AI Engine (~250ms)</span>
+    <span style="display: flex; align-items: center; gap: 5px;">
+      <span class="status-dot"></span>
+      Jev AI Engine (~250ms)
+    </span>
     <button class="btn-reset" id="resetStats">Đặt lại số đếm</button>
   </div>
 

@@ -3,8 +3,10 @@
   'use strict';
 
   const STORAGE_KEY = 'x_hook_vault_v1';
+  const INITIALIZED_KEY = 'x_hook_vault_initialized_v2';
+  const SEED_IDS = new Set(['seed-outlier-1', 'seed-1', 'seed-2', 'seed-3', 'seed-threads-1']);
 
-  // Seed samples if user opens dashboard with 0 items (for instant trial)
+  // Seed samples for on-demand trial
   const SEED_SAMPLES = [
     {
       id: 'seed-outlier-1',
@@ -98,6 +100,7 @@
   const btnExportMd = document.getElementById('btnExportMd');
   const btnExportJson = document.getElementById('btnExportJson');
   const btnClearAll = document.getElementById('btnClearAll');
+  const btnLoadSamples = document.getElementById('btnLoadSamples');
 
   // Stats DOM
   const statTotalHooks = document.getElementById('statTotalHooks');
@@ -154,27 +157,50 @@
   // Load from storage
   function loadVaultData(callback) {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get([STORAGE_KEY], (res) => {
+      chrome.storage.local.get([STORAGE_KEY, INITIALIZED_KEY], (res) => {
+        const isInit = !!res[INITIALIZED_KEY];
         let items = res[STORAGE_KEY];
-        if (!items || !Array.isArray(items) || items.length === 0) {
-          // Initialize with seed samples so dashboard looks great immediately
-          items = SEED_SAMPLES;
-          chrome.storage.local.set({ [STORAGE_KEY]: items });
+
+        if (!isInit) {
+          // Fresh migration/upgrade: purge auto-seeded fake samples so user gets a clean slate
+          chrome.storage.local.set({ [INITIALIZED_KEY]: true });
+          if (Array.isArray(items)) {
+            items = items.filter((item) => !SEED_IDS.has(item.id));
+            chrome.storage.local.set({ [STORAGE_KEY]: items });
+          } else {
+            items = [];
+            chrome.storage.local.set({ [STORAGE_KEY]: [] });
+          }
+        } else {
+          if (!items || !Array.isArray(items)) {
+            items = [];
+          }
         }
         callback(items);
       });
     } else {
       // LocalStorage fallback for standalone preview
       try {
+        const isInit = localStorage.getItem(INITIALIZED_KEY);
         const raw = localStorage.getItem(STORAGE_KEY);
         let items = raw ? JSON.parse(raw) : null;
-        if (!items || items.length === 0) {
-          items = SEED_SAMPLES;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        if (!isInit) {
+          localStorage.setItem(INITIALIZED_KEY, 'true');
+          if (Array.isArray(items)) {
+            items = items.filter((item) => !SEED_IDS.has(item.id));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+          } else {
+            items = [];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+          }
+        } else {
+          if (!items || !Array.isArray(items)) {
+            items = [];
+          }
         }
         callback(items);
       } catch (e) {
-        callback(SEED_SAMPLES);
+        callback([]);
       }
     }
   }
@@ -711,6 +737,17 @@
     }
   };
 
+  // Load Sample Hooks on demand
+  if (btnLoadSamples) {
+    btnLoadSamples.onclick = () => {
+      saveVaultData(SEED_SAMPLES, () => {
+        updateStats(currentHooks);
+        renderHookList();
+        showToast('✓ Đã nạp 5 bài mẫu thử nghiệm thành công!');
+      });
+    };
+  };
+
   // Search & Filters Listeners
   searchInput.oninput = () => renderHookList();
   btnClearSearch.onclick = () => {
@@ -722,6 +759,32 @@
   if (filterOutlier) filterOutlier.onchange = () => renderHookList();
   filterFormula.onchange = () => renderHookList();
   sortOrder.onchange = () => renderHookList();
+
+  // Segmented Control Switchers
+  function setupSegmentedControl(containerId, selectEl) {
+    const container = document.getElementById(containerId);
+    if (!container || !selectEl) return;
+    const buttons = container.querySelectorAll('.segment-btn');
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        buttons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectEl.value = btn.getAttribute('data-val') || 'all';
+        renderHookList();
+      });
+    });
+  }
+
+  setupSegmentedControl('segmentedPlatform', filterPlatform);
+  setupSegmentedControl('segmentedOutlier', filterOutlier);
+
+  // Keyboard shortcut '/' to focus search
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== searchInput && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
 
   // Initialize
   loadVaultData((items) => {

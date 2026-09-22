@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="dashboard.css" />
 </head>
 <body>
+  <div class="ambient-glow"></div>
   <div class="vault-app">
     <!-- Top Navigation Bar -->
     <header class="vault-header">
@@ -90,55 +91,70 @@
 
     <!-- Filter & Search Toolbar -->
     <section class="toolbar-section">
-      <div class="search-box">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="searchInput" placeholder="Tìm kiếm nội dung hook, tác giả (@handle), hoặc từ khóa..." />
-        <button id="btnClearSearch" class="btn-clear-search hidden">&times;</button>
+      <div class="toolbar-primary-row">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Tìm kiếm nội dung hook, tác giả (@handle), hoặc từ khóa..." />
+          <kbd class="search-kbd">/</kbd>
+          <button id="btnClearSearch" class="btn-clear-search hidden">&times;</button>
+        </div>
+
+        <div class="segmented-control" id="segmentedPlatform">
+          <button type="button" class="segment-btn active" data-val="all">🌐 Tất cả</button>
+          <button type="button" class="segment-btn" data-val="x">𝕏 X</button>
+          <button type="button" class="segment-btn" data-val="threads">🧵 Threads</button>
+        </div>
+
+        <!-- Hidden select for complete backward-compatibility -->
+        <select id="filterPlatform" class="sr-only" style="display:none;">
+          <option value="all" selected>all</option>
+          <option value="x">x</option>
+          <option value="threads">threads</option>
+        </select>
       </div>
 
-      <div class="filter-controls">
-        <div class="select-wrapper">
-          <label for="filterPlatform">Nền tảng:</label>
-          <select id="filterPlatform">
-            <option value="all">🌐 Tất cả nền tảng</option>
-            <option value="x">𝕏 X (Twitter)</option>
-            <option value="threads">🧵 Threads (Jev AI)</option>
-          </select>
+      <div class="toolbar-secondary-row">
+        <div class="segmented-control" id="segmentedOutlier">
+          <button type="button" class="segment-btn active" data-val="all">⚡ Tất cả bài</button>
+          <button type="button" class="segment-btn" data-val="outliers_only">🔥 Outlier (≥3x)</button>
+          <button type="button" class="segment-btn" data-val="super_outliers">🚀 Siêu Outlier (≥10x)</button>
         </div>
 
-        <div class="select-wrapper">
-          <label for="filterFormula">Công thức:</label>
-          <select id="filterFormula">
-            <option value="all">⚡ Tất cả công thức</option>
-            <option value="curiosity">🔍 Curiosity Gap (Khoảng trống tò mò)</option>
-            <option value="contrarian">🔥 Contrarian (Ý kiến ngược chiều)</option>
-            <option value="cheatsheet">📚 Cheatsheet / Framework</option>
-            <option value="story">📖 Story / Transformation</option>
-            <option value="proof">🏆 Social Proof / Authority</option>
-            <option value="challenge">🎯 Direct Challenge / Question</option>
-            <option value="other">💬 Khác / Đa dạng</option>
-          </select>
-        </div>
+        <!-- Hidden select for complete backward-compatibility -->
+        <select id="filterOutlier" class="sr-only" style="display:none;">
+          <option value="all" selected>all</option>
+          <option value="outliers_only">outliers_only</option>
+          <option value="super_outliers">super_outliers</option>
+        </select>
 
-        <div class="select-wrapper">
-          <label for="filterOutlier">Loại bài:</label>
-          <select id="filterOutlier">
-            <option value="all">⚡ Tất cả bài viết</option>
-            <option value="outliers_only">🔥 Chỉ Outlier (&gt;= 3x)</option>
-            <option value="super_outliers">🚀 Siêu Outlier (&gt;= 10x)</option>
-          </select>
-        </div>
+        <div class="filter-dropdowns">
+          <div class="custom-select-box">
+            <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+            <select id="filterFormula">
+              <option value="all">⚡ Tất cả công thức</option>
+              <option value="curiosity">🔍 Curiosity Gap (Tò mò)</option>
+              <option value="contrarian">🔥 Contrarian (Ngược chiều)</option>
+              <option value="cheatsheet">📚 Cheatsheet / Framework</option>
+              <option value="story">📖 Story / Transformation</option>
+              <option value="proof">🏆 Social Proof / Authority</option>
+              <option value="challenge">🎯 Direct Challenge / Question</option>
+              <option value="other">💬 Khác / Đa dạng</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
 
-        <div class="select-wrapper">
-          <label for="sortOrder">Sắp xếp:</label>
-          <select id="sortOrder">
-            <option value="multiplier_desc">🔥 Outlier Multiplier (Cao → Thấp)</option>
-            <option value="views_desc">👁️ Views cao nhất</option>
-            <option value="likes_desc">❤️ Likes nhiều nhất</option>
-            <option value="bookmarks_desc">🔖 Bookmarks nhiều nhất</option>
-            <option value="date_desc">🕒 Mới lưu gần nhất</option>
-            <option value="date_asc">⏳ Cũ nhất</option>
-          </select>
+          <div class="custom-select-box">
+            <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16"/></svg>
+            <select id="sortOrder">
+              <option value="multiplier_desc">🔥 Outlier Multiplier (Cao → Thấp)</option>
+              <option value="views_desc">👁️ Views cao nhất</option>
+              <option value="likes_desc">❤️ Likes nhiều nhất</option>
+              <option value="bookmarks_desc">🔖 Bookmarks nhiều nhất</option>
+              <option value="date_desc">🕒 Mới lưu gần nhất</option>
+              <option value="date_asc">⏳ Cũ nhất</option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
         </div>
       </div>
     </section>
@@ -159,11 +175,17 @@
           </svg>
         </div>
         <h3>Chưa có Hook nào trong Vault</h3>
-        <p>Lướt X (Twitter) và bấm nút <strong>[⚡ Save Hook]</strong> trên thanh công cụ của bất kỳ bài viết nào để tự động gom vào đây.</p>
-        <a href="https://x.com" target="_blank" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          <span>Mở X.com để tìm Hook</span>
-        </a>
+        <p>Lướt X (Twitter) hoặc Threads và bấm nút <strong>[⚡ Save Hook]</strong> trên bài viết để tự động gom vào đây.</p>
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+          <a href="https://x.com" target="_blank" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            <span>Mở X.com để tìm Hook</span>
+          </a>
+          <button id="btnLoadSamples" type="button" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            <span>Nạp 5 bài mẫu thử nghiệm</span>
+          </button>
+        </div>
       </div>
     </main>
 

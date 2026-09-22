@@ -359,5 +359,278 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
       expect(res.isOutlier).toBe(false);
     });
   });
+
+  describe("Header & Navigation Post Exclusion", () => {
+    function isHeaderOrNavigation(el) {
+      if (!el) return false;
+      if (el.closest && el.closest('header, nav, [role="banner"], [role="navigation"], [aria-label*="navigation" i], [aria-label*="header" i], [data-testid*="header" i], [data-testid*="topbar" i], [data-testid*="nav" i]')) {
+        return true;
+      }
+      let curr = el;
+      let depth = 0;
+      while (curr && depth < 6) {
+        if (curr.style && (curr.style.position === 'sticky' || curr.style.position === 'fixed')) {
+          return true;
+        }
+        curr = curr.parentElement;
+        depth++;
+      }
+      return false;
+    }
+
+    test("Identifies and rejects sticky top navigation header", () => {
+      const headerEl = {
+        tagName: 'DIV',
+        style: { position: 'sticky' },
+        parentElement: null,
+        closest: (sel) => null,
+      };
+      const childBtn = {
+        tagName: 'DIV',
+        style: {},
+        parentElement: headerEl,
+        closest: (sel) => null,
+      };
+      expect(isHeaderOrNavigation(childBtn)).toBe(true);
+    });
+
+    test("Identifies and rejects elements inside semantic header or navigation", () => {
+      const childInNav = {
+        tagName: 'DIV',
+        style: {},
+        parentElement: null,
+        closest: (sel) => sel.includes('nav') ? true : null,
+      };
+      expect(isHeaderOrNavigation(childInNav)).toBe(true);
+    });
+
+    test("Permits genuine feed post elements", () => {
+      const feedPost = {
+        tagName: 'DIV',
+        style: { position: 'static' },
+        parentElement: { tagName: 'DIV', style: {}, parentElement: null },
+        closest: (sel) => null,
+      };
+      expect(isHeaderOrNavigation(feedPost)).toBe(false);
+    });
+
+    test("Rejects processing when on Activity or Notifications page", () => {
+      function shouldProcessHookAndViral(pathname) {
+        if (!pathname) return false;
+        if (pathname.includes('/activity') || pathname.includes('/notifications')) return false;
+        return true;
+      }
+
+      expect(shouldProcessHookAndViral('/activity')).toBe(false);
+      expect(shouldProcessHookAndViral('/@jeff_vu/activity')).toBe(false);
+      expect(shouldProcessHookAndViral('/notifications')).toBe(false);
+      expect(shouldProcessHookAndViral('/')).toBe(true);
+      expect(shouldProcessHookAndViral('/@jeff_vu/post/123')).toBe(true);
+    });
+
+    test("Preserves purple border highlighting on normal feed for viral and outlier posts", () => {
+      function evaluateThreadsHighlight(pathname, metrics, outlierResult, viralEnabled = true) {
+        if (pathname.includes('/activity') || pathname.includes('/notifications')) {
+          return { highlighted: false, border: 'none' };
+        }
+        const isViral = !!(viralEnabled && (metrics.likes >= 500 || metrics.replies >= 50));
+        const shouldHighlight = outlierResult.isOutlier || isViral;
+        return {
+          highlighted: shouldHighlight,
+          border: shouldHighlight ? '1px solid rgba(168, 85, 247, 0.3)' : 'none',
+        };
+      }
+
+      // Normal feed: viral post
+      const feedViral = evaluateThreadsHighlight('/', { likes: 520, replies: 12 }, { isOutlier: false });
+      expect(feedViral.highlighted).toBe(true);
+      expect(feedViral.border).toContain('168, 85, 247');
+
+      // Normal feed: outlier post
+      const feedOutlier = evaluateThreadsHighlight('/', { likes: 300, replies: 5 }, { isOutlier: true });
+      expect(feedOutlier.highlighted).toBe(true);
+      expect(feedOutlier.border).toContain('168, 85, 247');
+
+      // Activity page: even if metrics look high, highlight must be false
+      const activityPost = evaluateThreadsHighlight('/activity', { likes: 678, replies: 90 }, { isOutlier: true });
+      expect(activityPost.highlighted).toBe(false);
+      expect(activityPost.border).toBe('none');
+    });
+  });
+
+  describe("Repost & Retweet Exclusion from Viral & Outlier Intelligence", () => {
+    const X_REPOST_REGEX = /(?:reposted|retweeted|đã đăng lại|đã retweet|reposteó|republicou|reposté|repostet|リポスト|リツイート|转推|轉推|재게시|retwit|ripubblic)/i;
+    const THREADS_REPOST_REGEX = /(?:reposted|reshared|đã đăng lại|đã chia sẻ lại|reposteó|ha reposteado|republicou|a republié|hat repostet|再投稿|リポスト|转帖|轉發|재게시|перепостил)/i;
+
+    function isXRepostTest(postEl, tweetDataCache = new Map()) {
+      if (!postEl) return false;
+      const socialContext = postEl.querySelector ? postEl.querySelector('div[data-testid="socialContext"]') : null;
+      if (socialContext) {
+        const text = (socialContext.innerText || '').trim();
+        if (X_REPOST_REGEX.test(text)) return true;
+      }
+      const permalink = postEl.querySelector ? postEl.querySelector('a[href*="/status/"]') : null;
+      if (permalink && permalink.href) {
+        const idMatch = permalink.href.match(/status\/(\d+)/);
+        if (idMatch && idMatch[1]) {
+          const cached = tweetDataCache.get(idMatch[1]);
+          if (cached && (cached.isRetweet || cached.isRepost)) return true;
+        }
+      }
+      return false;
+    }
+
+    function isThreadsRepostTest(postEl, contentEl, tweetDataCache = new Map()) {
+      if (!postEl) return false;
+      const postLink = postEl.querySelector ? postEl.querySelector('a[href*="/post/"], a[href*="/t/"]') : null;
+      if (postLink && postLink.href) {
+        const idMatch = postLink.href.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
+        if (idMatch && idMatch[1]) {
+          const cached = tweetDataCache.get(idMatch[1]);
+          if (cached && (cached.isRepost || cached.isRetweet)) return true;
+        }
+      }
+      const authorLinks = postEl.querySelectorAll ? postEl.querySelectorAll('a[href*="/@"]') : [];
+      for (const link of authorLinks) {
+        if (contentEl && contentEl.contains && contentEl.contains(link)) continue;
+        let curr = link.parentElement;
+        for (let i = 0; i < 3; i++) {
+          if (!curr || curr === postEl) break;
+          const text = (curr.innerText || '').trim();
+          if (text.length > 0 && text.length < 120 && THREADS_REPOST_REGEX.test(text)) {
+            if (!contentEl || !contentEl.contains || !contentEl.contains(curr)) {
+              return true;
+            }
+          }
+          curr = curr.parentElement;
+        }
+      }
+      return false;
+    }
+
+    test("Accurately detects X retweets across multiple languages via socialContext", () => {
+      const mockRetweetEN = {
+        querySelector: (sel) => sel.includes('socialContext') ? { innerText: 'Elon Musk reposted' } : null
+      };
+      expect(isXRepostTest(mockRetweetEN)).toBe(true);
+
+      const mockRetweetVN = {
+        querySelector: (sel) => sel.includes('socialContext') ? { innerText: 'Lê Văn An đã đăng lại' } : null
+      };
+      expect(isXRepostTest(mockRetweetVN)).toBe(true);
+
+      const mockRetweetSelf = {
+        querySelector: (sel) => sel.includes('socialContext') ? { innerText: 'You reposted' } : null
+      };
+      expect(isXRepostTest(mockRetweetSelf)).toBe(true);
+
+      const mockRetweetJA = {
+        querySelector: (sel) => sel.includes('socialContext') ? { innerText: '田中さんがリポストしました' } : null
+      };
+      expect(isXRepostTest(mockRetweetJA)).toBe(true);
+    });
+
+    test("Does NOT flag normal tweets or pinned tweets as reposts on X", () => {
+      const mockPinnedTweet = {
+        querySelector: (sel) => sel.includes('socialContext') ? { innerText: 'Pinned Tweet' } : null
+      };
+      expect(isXRepostTest(mockPinnedTweet)).toBe(false);
+
+      const mockPinnedTweetVN = {
+        querySelector: (sel) => sel.includes('socialContext') ? { innerText: 'Bài viết đã ghim' } : null
+      };
+      expect(isXRepostTest(mockPinnedTweetVN)).toBe(false);
+
+      const mockNormalTweet = {
+        querySelector: (sel) => null
+      };
+      expect(isXRepostTest(mockNormalTweet)).toBe(false);
+    });
+
+    test("Detects X retweets via intercepted GraphQL cache", () => {
+      const tweetDataCache = new Map();
+      tweetDataCache.set('18920192', { isRetweet: true, viewsCount: 150000 });
+
+      const mockCachedTweet = {
+        querySelector: (sel) => sel.includes('/status/') ? { href: 'https://x.com/someone/status/18920192' } : null
+      };
+      expect(isXRepostTest(mockCachedTweet, tweetDataCache)).toBe(true);
+    });
+
+    test("Accurately detects Threads reposts via top reposter banner", () => {
+      const mockParent = {
+        innerText: 'dang_khoa đã đăng lại',
+        parentElement: null
+      };
+      const mockLink = {
+        parentElement: mockParent
+      };
+      const mockThreadsRepost = {
+        querySelector: () => null,
+        querySelectorAll: (sel) => sel.includes('/@') ? [mockLink] : []
+      };
+
+      expect(isThreadsRepostTest(mockThreadsRepost, null)).toBe(true);
+    });
+
+    test("Does NOT flag regular Threads posts when 'đã đăng lại' is in the post body", () => {
+      const mockContentEl = {
+        innerText: 'Tôi đã đăng lại video này trên Youtube hôm qua, mọi người xem thử nhé.',
+        contains: (node) => node === mockLink || node === mockParent
+      };
+      const mockParent = {
+        innerText: 'Tôi đã đăng lại video này trên Youtube hôm qua',
+        parentElement: null
+      };
+      const mockLink = {
+        parentElement: mockParent
+      };
+      const mockRegularThread = {
+        querySelector: () => null,
+        querySelectorAll: (sel) => sel.includes('/@') ? [mockLink] : []
+      };
+
+      // Since the link/text is inside contentEl (post body), it should NOT be flagged as a repost
+      expect(isThreadsRepostTest(mockRegularThread, mockContentEl)).toBe(false);
+    });
+
+    test("Completely excludes reposted posts from Viral & Outlier tagging and purple border", () => {
+      function evaluatePostHighlights(isRepost, metrics, authorFollowers, platform = 'x') {
+        if (isRepost) {
+          return {
+            isOutlier: false,
+            isViral: false,
+            highlighted: false,
+            badge: null
+          };
+        }
+
+        const multiplier = authorFollowers > 0 ? (metrics.views / authorFollowers) : 0;
+        const isOutlier = multiplier >= 3.0 && metrics.views >= 3000;
+        const isViral = metrics.views >= 50000 || metrics.likes >= 1000;
+        const highlighted = isOutlier || isViral;
+
+        return {
+          isOutlier,
+          isViral,
+          highlighted,
+          badge: highlighted ? 'rendered' : null
+        };
+      }
+
+      // Scenario: Reposter has 10 followers, but the original reposted tweet has 100,000 views
+      const repostEvaluation = evaluatePostHighlights(true, { views: 100000, likes: 2500 }, 10, 'x');
+      expect(repostEvaluation.highlighted).toBe(false);
+      expect(repostEvaluation.isOutlier).toBe(false);
+      expect(repostEvaluation.isViral).toBe(false);
+      expect(repostEvaluation.badge).toBeNull();
+
+      // Same metrics on an original non-repost: correctly recognized as Outlier + Viral
+      const originalEvaluation = evaluatePostHighlights(false, { views: 100000, likes: 2500 }, 10, 'x');
+      expect(originalEvaluation.highlighted).toBe(true);
+      expect(originalEvaluation.isOutlier).toBe(true);
+      expect(originalEvaluation.badge).toBe('rendered');
+    });
+  });
 });
 

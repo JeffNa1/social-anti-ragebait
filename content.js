@@ -1217,6 +1217,26 @@
     return !href.includes('/post/') && !href.includes('/t/');
   }
 
+  function isHeaderOrNavigation(el) {
+    if (!el || el === document.body || el === document.documentElement) return false;
+    if (el.closest && el.closest('header, nav, [role="banner"], [role="navigation"], [aria-label*="navigation" i], [aria-label*="header" i], [data-testid*="header" i], [data-testid*="topbar" i], [data-testid*="nav" i]')) {
+      return true;
+    }
+    let curr = el;
+    let depth = 0;
+    while (curr && curr !== document.body && curr !== document.documentElement && depth < 6) {
+      try {
+        const style = window.getComputedStyle(curr);
+        if (style && (style.position === 'sticky' || style.position === 'fixed')) {
+          return true;
+        }
+      } catch (e) {}
+      curr = curr.parentElement;
+      depth++;
+    }
+    return false;
+  }
+
   function syncRevealState(targetEl, isRevealed, text) {
     if (text) {
       if (isRevealed) revealedTexts.add(text);
@@ -2586,8 +2606,48 @@
     return { authorName, authorHandle, authorAvatar };
   }
 
+  const X_REPOST_REGEX = /(?:reposted|retweeted|đã đăng lại|đã retweet|reposteó|republicou|reposté|repostet|リポスト|リツイート|转推|轉推|재게시|retwit|ripubblic)/i;
+
+  function isXRepost(post) {
+    if (!post) return false;
+
+    // 1. Check data-testid="socialContext"
+    const socialContext = post.querySelector('div[data-testid="socialContext"]');
+    if (socialContext) {
+      const text = (socialContext.innerText || '').trim();
+      if (X_REPOST_REGEX.test(text)) {
+        return true;
+      }
+    }
+
+    // 2. Check tweetDataCache from interceptor if permalink exists
+    const permalink = post.querySelector('a[href*="/status/"]');
+    if (permalink && permalink.href) {
+      const idMatch = permalink.href.match(/status\/(\d+)/);
+      if (idMatch && idMatch[1]) {
+        const cached = tweetDataCache.get(idMatch[1]);
+        if (cached && (cached.isRetweet || cached.isRepost)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   function processXTweetHookAndViral(post, fullText) {
     if (!config.viralDetectionEnabled && !config.outlierDetectionEnabled) return;
+    if (window.location.pathname.includes('/notifications')) return;
+
+    // Reposted tweets must never be tagged or highlighted as viral/outlier
+    if (isXRepost(post)) {
+      post.classList.remove('x-shield-outlier-post', 'x-shield-viral-post');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+      const oldBtn = post.querySelector('.x-shield-hook-btn');
+      if (oldBtn) oldBtn.remove();
+      return;
+    }
 
     const group = post.querySelector('div[role="group"]');
     if (!group) return;
@@ -2688,6 +2748,10 @@
     let reposts = 0;
     let views = 0;
 
+    if (isHeaderOrNavigation(postEl)) {
+      return { views: 0, likes: 0, replies: 0, reposts: 0, bookmarks: 0 };
+    }
+
     // 1. Check if post permalink has ID and look up in tweetDataCache (from interceptor)
     const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
     if (postLink && postLink.href) {
@@ -2770,13 +2834,82 @@
     return { views, likes, replies, reposts, bookmarks: 0 };
   }
 
+  const THREADS_REPOST_REGEX = /(?:reposted|reshared|đã đăng lại|đã chia sẻ lại|reposteó|ha reposteado|republicou|a republié|hat repostet|再投稿|リポスト|转帖|轉發|재게시|перепостил)/i;
+
+  function isThreadsRepost(postEl, contentEl) {
+    if (!postEl) return false;
+
+    // 1. Check tweetDataCache from interceptor if permalink exists
+    const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
+    if (postLink && postLink.href) {
+      const idMatch = postLink.href.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
+      if (idMatch && idMatch[1]) {
+        const cached = tweetDataCache.get(idMatch[1]);
+        if (cached && (cached.isRepost || cached.isRetweet)) {
+          return true;
+        }
+      }
+    }
+
+    // 2. Check author links near top of postEl (reposter banner)
+    const authorLinks = postEl.querySelectorAll('a[href*="/@"]');
+    for (const link of authorLinks) {
+      if (contentEl && contentEl.contains(link)) continue;
+      let curr = link.parentElement;
+      for (let i = 0; i < 3; i++) {
+        if (!curr || curr === postEl) break;
+        const text = (curr.innerText || '').trim();
+        if (text.length > 0 && text.length < 120 && THREADS_REPOST_REGEX.test(text)) {
+          if (!contentEl || !contentEl.contains(curr)) {
+            return true;
+          }
+        }
+        curr = curr.parentElement;
+      }
+    }
+
+    // 3. Check for any top header row with repost text outside contentEl
+    const topElements = postEl.querySelectorAll('div[dir="auto"], span[dir="auto"], header');
+    for (const el of topElements) {
+      if (contentEl && contentEl.contains(el)) continue;
+      const t = (el.innerText || '').trim();
+      if (t.length > 0 && t.length < 80 && THREADS_REPOST_REGEX.test(t)) {
+        if (!contentEl || (el.compareDocumentPosition && (el.compareDocumentPosition(contentEl) & Node.DOCUMENT_POSITION_FOLLOWING))) {
+          return true;
+        }
+      }
+    }
+
+    // 4. Check for reshare / repost SVG icons in upper header outside action bar
+    const actionBar = findThreadsActionBar(postEl);
+    const allSvgs = postEl.querySelectorAll('svg');
+    for (const svg of allSvgs) {
+      if (actionBar && actionBar.contains(svg)) continue;
+      if (contentEl && contentEl.contains(svg)) continue;
+      const ariaLabel = (svg.getAttribute('aria-label') || svg.parentElement?.getAttribute('aria-label') || '').toLowerCase();
+      if (THREADS_REPOST_REGEX.test(ariaLabel)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   function extractThreadsAuthor(postEl) {
     let authorName = '';
     let authorHandle = '';
     let authorAvatar = '';
     let permalink = window.location.href;
 
-    const handleLink = postEl.querySelector('a[href*="/@"]');
+    const allLinks = Array.from(postEl.querySelectorAll('a[href*="/@"]'));
+    let handleLink = allLinks[0];
+    if (allLinks.length > 1) {
+      const firstParentText = (allLinks[0].parentElement?.innerText || '').trim();
+      if (THREADS_REPOST_REGEX.test(firstParentText)) {
+        handleLink = allLinks[1];
+      }
+    }
+
     if (handleLink) {
       const raw = handleLink.getAttribute('href') || '';
       const match = raw.match(/@([a-zA-Z0-9_\.]+)/);
@@ -2861,14 +2994,33 @@
 
   function processThreadsHookAndViral(post, fullText, contentEl) {
     if (!config.viralDetectionEnabled && !config.outlierDetectionEnabled) return;
+    if (isHeaderOrNavigation(post)) return;
+    if (window.location.pathname.includes('/activity')) return;
+
+    // Reposted threads must never be tagged or highlighted as viral/outlier
+    if (isThreadsRepost(post, contentEl)) {
+      post.classList.remove('x-shield-outlier-post', 'is-threads', 'x-shield-threads-viral');
+      const oldBadge = post.querySelector('.x-shield-outlier-badge, .x-shield-viral-badge');
+      if (oldBadge) oldBadge.remove();
+      const oldBtn = post.querySelector('.x-shield-threads-hook-btn');
+      if (oldBtn) oldBtn.remove();
+      return;
+    }
+
+    const authorInfo = extractThreadsAuthor(post);
+    if (!authorInfo.authorHandle) return;
 
     const metrics = extractThreadsMetrics(post);
-    const authorInfo = extractThreadsAuthor(post);
     const outlier = evaluateOutlierStatus(metrics, authorInfo.authorHandle, post, 'threads');
     const actionBar = findThreadsActionBar(post);
 
-    if (outlier.isOutlier) {
+    const isViral = !!(config.viralDetectionEnabled && (metrics.likes >= 500 || metrics.replies >= 50));
+
+    if (outlier.isOutlier || isViral) {
       post.classList.add('x-shield-outlier-post', 'is-threads');
+      if (isViral && !outlier.isOutlier) {
+        post.classList.add('x-shield-threads-viral');
+      }
       let badge = post.querySelector('.x-shield-outlier-badge');
       if (!badge) {
         badge = document.createElement('div');
@@ -2884,7 +3036,7 @@
           actionBar.parentElement.insertBefore(badge, actionBar);
         }
       }
-      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : 'Breakout Outlier';
+      const multStr = outlier.multiplier > 0 ? `${outlier.multiplier.toFixed(1)}x Outlier` : (isViral && !outlier.isOutlier ? 'Viral Post' : 'Breakout Outlier');
       const folsStr = outlier.followers > 0 ? `${formatMetricNumber(outlier.followers)} fols → ` : '';
       const reachStr = `${formatMetricNumber(metrics.likes)} likes`;
       const timeStr = outlier.ageHours < 1 ? '<1h trước' : `${Math.round(outlier.ageHours)}h trước`;
@@ -3076,16 +3228,35 @@
     const platform = getPlatform();
 
     if (platform === 'threads') {
+      const isActivity = window.location.pathname.includes('/activity');
+      if (document.body) document.body.classList.toggle('is-activity-page', isActivity);
+
+      if (isActivity) {
+        document.querySelectorAll('.x-shield-outlier-post, .x-shield-threads-viral, .x-shield-threads-hook-btn, .x-shield-outlier-badge').forEach((el) => {
+          el.classList.remove('x-shield-outlier-post', 'is-threads', 'x-shield-threads-viral');
+          if (el.classList.contains('x-shield-threads-hook-btn') || el.classList.contains('x-shield-outlier-badge')) {
+            el.remove();
+          }
+        });
+      }
+
+      // Cleanup any lingering badges mistakenly injected into header or navigation
+      document.querySelectorAll('header .x-jev-badge-container, nav .x-jev-badge-container, [role="banner"] .x-jev-badge-container, [role="navigation"] .x-jev-badge-container, header .x-shield-outlier-badge, nav .x-shield-outlier-badge').forEach((b) => b.remove());
+
       const postContainers = new Set();
       document.querySelectorAll('div[data-pressable-container="true"], div[role="article"], article, div[data-testid*="post"], div[data-testid*="thread"]').forEach((el) => {
-        postContainers.add(el);
+        if (!isHeaderOrNavigation(el)) {
+          postContainers.add(el);
+        }
       });
       document.querySelectorAll('a[href*="/post/"], a[href*="/t/"]').forEach((link) => {
+        if (isHeaderOrNavigation(link)) return;
         let container = link.closest('article') || link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]');
         if (!container) {
           let curr = link.parentElement;
           let depth = 0;
           while (curr && curr !== document.body && depth < 6) {
+            if (isHeaderOrNavigation(curr)) break;
             if (curr.querySelector('span[dir="auto"], div[dir="auto"]') && curr.querySelectorAll('svg').length >= 1) {
               container = curr;
               break;
@@ -3094,17 +3265,25 @@
             depth++;
           }
         }
-        if (container) {
+        if (container && !isHeaderOrNavigation(container)) {
           postContainers.add(container);
         }
       });
 
       // Filter to keep top-level containers (discard elements contained by another candidate)
       const candidateContainers = Array.from(postContainers).filter((el) => {
+        if (isHeaderOrNavigation(el)) return false;
         return !Array.from(postContainers).some((other) => other !== el && other.contains(el));
       });
 
       candidateContainers.forEach((post) => {
+        if (isHeaderOrNavigation(post)) return;
+
+        // A valid Threads post must have an author handle/link or action bar or be an article
+        const hasAuthor = !!post.querySelector('a[href*="/@"]');
+        const hasActionBar = !!findThreadsActionBar(post);
+        const isArticle = post.tagName === 'ARTICLE' || post.getAttribute('role') === 'article';
+        if (!hasAuthor && !hasActionBar && !isArticle) return;
         const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         const candidateEls = [];
 
@@ -3135,8 +3314,8 @@
 
         const cleanText = targetItem ? targetItem.text : (post.innerText || '').slice(0, 300);
 
-        // Threads Hook Vault & Jev AI Viral Scanner runs unconditionally on ALL visible posts
-        if (cleanText) {
+        // Threads Hook Vault & Jev AI Viral Scanner runs on visible posts, never on Activity notifications
+        if (cleanText && !isActivity) {
           processThreadsHookAndViral(post, cleanText, targetItem ? targetItem.el : null);
         }
 
