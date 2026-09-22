@@ -1,513 +1,131 @@
-// Popup script for Social Shield All-in-One + Monk Mode
+// Popup Controller for Viral Outlier & Hook Vault
 document.addEventListener('DOMContentLoaded', () => {
-  const filterMotivationalToggle = document.getElementById('filterMotivationalToggle');
-  const filterMemeToggle = document.getElementById('filterMemeToggle');
-  const filterDeepDiveToggle = document.getElementById('filterDeepDiveToggle');
-  const filterWholesomeToggle = document.getElementById('filterWholesomeToggle');
-  const filterDoomToggle = document.getElementById('filterDoomToggle');
-  const filterFomoToggle = document.getElementById('filterFomoToggle');
-  const filterCasualToggle = document.getElementById('filterCasualToggle');
-  const monkModeToggle = document.getElementById('monkModeToggle');
-  const blockReelsToggle = document.getElementById('blockReelsToggle');
-  const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
-  const blockScamsToggle = document.getElementById('blockScamsToggle');
-  const collapseSeedingToggle = document.getElementById('collapseSeedingToggle');
-  const hideFloatingPillToggle = document.getElementById('hideFloatingPillToggle');
-  const thresholdRange = document.getElementById('thresholdRange');
-  const thresholdVal = document.getElementById('thresholdVal');
-  const btnOpenVaultDashboard = document.getElementById('btnOpenVaultDashboard');
-  const viralDetectionToggle = document.getElementById('viralDetectionToggle');
-  const viralMinViewsInput = document.getElementById('viralMinViewsInput');
-  const viralMinLikesInput = document.getElementById('viralMinLikesInput');
+  const toggleOutlier = document.getElementById('toggleOutlier');
+  const selectMultiplier = document.getElementById('selectMultiplier');
+  const selectViewsFloor = document.getElementById('selectViewsFloor');
+  const statSavedHooks = document.getElementById('statSavedHooks');
+  const btnOpenDashboard = document.getElementById('btnOpenDashboard');
 
-  if (btnOpenVaultDashboard) {
-    btnOpenVaultDashboard.onclick = () => {
-      chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' });
-    };
-  }
+  // Custom Dropdown Popover Controller
+  function initCustomDropdown(triggerId, menuId, hiddenSelectId) {
+    const trigger = document.getElementById(triggerId);
+    const menu = document.getElementById(menuId);
+    const hiddenSelect = document.getElementById(hiddenSelectId);
+    if (!trigger || !menu || !hiddenSelect) return { syncUI: () => {} };
 
-  const motivationalCounter = document.getElementById('motivationalCounter');
-  const memeCounter = document.getElementById('memeCounter');
-  const deepDiveCounter = document.getElementById('deepDiveCounter');
-  const rageCounter = document.getElementById('rageCounter');
-  const scamCounter = document.getElementById('scamCounter');
-  const monkCounter = document.getElementById('monkCounter');
-  const wholesomeCounter = document.getElementById('wholesomeCounter');
-  const doomCounter = document.getElementById('doomCounter');
-  const fomoCounter = document.getElementById('fomoCounter');
-  const casualCounter = document.getElementById('casualCounter');
-  const customCounter = document.getElementById('customCounter');
-  const resetStats = document.getElementById('resetStats');
+    const triggerText = trigger.querySelector('.trigger-text');
+    const items = menu.querySelectorAll('.custom-select-item');
 
-  const focusModeToggle = document.getElementById('focusModeToggle');
-  const focusTagSelection = document.getElementById('focusTagSelection');
-  const focusTagMotivational = document.getElementById('focusTagMotivational');
-  const focusTagMeme = document.getElementById('focusTagMeme');
-  const focusTagDeepDive = document.getElementById('focusTagDeepDive');
-  const focusTagWholesome = document.getElementById('focusTagWholesome');
-  const focusTagCasual = document.getElementById('focusTagCasual');
-  const focusTagDoom = document.getElementById('focusTagDoom');
-  const focusTagFomo = document.getElementById('focusTagFomo');
-  const focusTagCustom = document.getElementById('focusTagCustom');
-  const focusCounter = document.getElementById('focusCounter');
-
-  const customLabelInput = document.getElementById('customLabelInput');
-  const addCustomLabelBtn = document.getElementById('addCustomLabelBtn');
-  const customLabelsContainer = document.getElementById('customLabelsContainer');
-
-  function getFocusWhitelistTags() {
-    const tags = [];
-    if (focusTagMotivational && focusTagMotivational.checked) tags.push('motivational');
-    if (focusTagMeme && focusTagMeme.checked) tags.push('meme');
-    if (focusTagDeepDive && focusTagDeepDive.checked) tags.push('deepdive');
-    if (focusTagWholesome && focusTagWholesome.checked) tags.push('wholesome');
-    if (focusTagCasual && focusTagCasual.checked) tags.push('casual');
-    if (focusTagDoom && focusTagDoom.checked) tags.push('doom');
-    if (focusTagFomo && focusTagFomo.checked) tags.push('fomo');
-    if (focusTagCustom && focusTagCustom.checked) tags.push('custom');
-    return tags;
-  }
-
-  function updateFocusUI(enabled) {
-    if (focusTagSelection) {
-      focusTagSelection.style.opacity = enabled ? '1' : '0.4';
-      focusTagSelection.style.pointerEvents = enabled ? 'auto' : 'none';
-    }
-  }
-
-  let customLabels = [];
-
-  function renderCustomLabels() {
-    if (!customLabelsContainer) return;
-    customLabelsContainer.innerHTML = '';
-    if (customLabels.length === 0) {
-      const emptyMsg = document.createElement('div');
-      emptyMsg.style.fontSize = '10.5px';
-      emptyMsg.style.color = '#64748b';
-      emptyMsg.style.fontStyle = 'italic';
-      emptyMsg.textContent = 'Chưa có nhãn tự điền nào';
-      customLabelsContainer.appendChild(emptyMsg);
-      return;
-    }
-
-    customLabels.forEach((item, index) => {
-      const chip = document.createElement('div');
-      chip.className = 'custom-label-chip';
-
-      const name = typeof item === 'string' ? item : item?.name || '';
-      const enabled = typeof item === 'string' ? true : item?.enabled !== false;
-
-      const labelText = document.createElement('span');
-      labelText.style.color = '#c084fc';
-      labelText.style.fontWeight = '600';
-      labelText.style.fontSize = '11px';
-      labelText.textContent = `🏷️ ${name}`;
-
-      const actions = document.createElement('div');
-      actions.style.display = 'flex';
-      actions.style.alignItems = 'center';
-      actions.style.gap = '8px';
-
-      const switchLabel = document.createElement('label');
-      switchLabel.className = 'switch-mini';
-
-      const toggleInput = document.createElement('input');
-      toggleInput.type = 'checkbox';
-      toggleInput.className = 'custom-toggle';
-      toggleInput.checked = enabled;
-      toggleInput.addEventListener('change', () => {
-        if (typeof customLabels[index] === 'string') {
-          customLabels[index] = { name: customLabels[index], enabled: toggleInput.checked };
+    function syncUI(val) {
+      items.forEach((item) => {
+        if (item.getAttribute('data-val') === String(val)) {
+          item.classList.add('selected');
+          if (triggerText) triggerText.textContent = item.querySelector('span')?.textContent || '';
         } else {
-          customLabels[index].enabled = toggleInput.checked;
+          item.classList.remove('selected');
         }
-        saveAndNotify();
       });
+    }
 
-      const sliderSpan = document.createElement('span');
-      sliderSpan.className = 'slider';
-
-      switchLabel.appendChild(toggleInput);
-      switchLabel.appendChild(sliderSpan);
-
-      const removeBtn = document.createElement('span');
-      removeBtn.className = 'remove-btn';
-      removeBtn.textContent = '✕';
-      removeBtn.title = 'Xóa nhãn này';
-      removeBtn.addEventListener('click', () => {
-        customLabels.splice(index, 1);
-        renderCustomLabels();
-        saveAndNotify();
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = menu.classList.contains('open');
+      document.querySelectorAll('.custom-select-menu').forEach((m) => m.classList.remove('open'));
+      document.querySelectorAll('.custom-select-trigger').forEach((t) => {
+        t.classList.remove('open');
+        t.setAttribute('aria-expanded', 'false');
       });
-
-      actions.appendChild(switchLabel);
-      actions.appendChild(removeBtn);
-
-      chip.appendChild(labelText);
-      chip.appendChild(actions);
-
-      customLabelsContainer.appendChild(chip);
+      if (!isOpen) {
+        menu.classList.add('open');
+        trigger.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
     });
+
+    items.forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = item.getAttribute('data-val');
+        syncUI(val);
+        hiddenSelect.value = val;
+        hiddenSelect.dispatchEvent(new Event('change'));
+        menu.classList.remove('open');
+        trigger.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    return { syncUI };
   }
 
-  const BUILTIN_KEYS = [
-    'self-improvement / motivational',
-    'meme / humor / satire',
-    'deep dive / technical breakdown / industry insider',
-    'wholesome / positive',
-    'fearmongering / doom',
-    'fomo / hype',
-    'other / casual discussion',
-    'rage bait / toxic / hostile / dismissive negativity',
-    'scam / fraudulent scheme',
-    'bot seeding / affiliate spam / fake review',
-  ];
+  const ddMultiplier = initCustomDropdown('triggerMultiplier', 'menuMultiplier', 'selectMultiplier');
+  const ddViewsFloor = initCustomDropdown('triggerViewsFloor', 'menuViewsFloor', 'selectViewsFloor');
 
-  function handleAddCustomLabel() {
-    if (!customLabelInput) return;
-    let val = customLabelInput.value.replace(/["\r\n\t]/g, '').slice(0, 40).trim();
-    if (!val || BUILTIN_KEYS.some((k) => k.toLowerCase() === val.toLowerCase())) {
-      customLabelInput.value = '';
-      return;
-    }
-    const exists = customLabels.some(
-      (c) => (typeof c === 'string' ? c : c?.name || '').trim().toLowerCase() === val.toLowerCase()
+  // Close dropdowns on click outside
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select-menu').forEach((m) => m.classList.remove('open'));
+    document.querySelectorAll('.custom-select-trigger').forEach((t) => {
+      t.classList.remove('open');
+      t.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Load existing settings
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(
+      ['outlierDetectionEnabled', 'outlierThresholdMultiplier', 'minViewsFloor', 'x_hook_vault_v1'],
+      (res) => {
+        if (typeof res.outlierDetectionEnabled === 'boolean') {
+          toggleOutlier.checked = res.outlierDetectionEnabled;
+        }
+        if (typeof res.outlierThresholdMultiplier === 'number') {
+          selectMultiplier.value = res.outlierThresholdMultiplier.toString();
+          ddMultiplier.syncUI(res.outlierThresholdMultiplier);
+        }
+        if (typeof res.minViewsFloor === 'number') {
+          selectViewsFloor.value = res.minViewsFloor.toString();
+          ddViewsFloor.syncUI(res.minViewsFloor);
+        }
+        if (Array.isArray(res.x_hook_vault_v1)) {
+          statSavedHooks.textContent = res.x_hook_vault_v1.length.toString();
+        }
+      }
     );
-    if (!exists) {
-      customLabels.push({ name: val, enabled: true });
-      customLabelInput.value = '';
-      renderCustomLabels();
-      saveAndNotify();
+  }
+
+  // Handle Outlier toggle
+  toggleOutlier.addEventListener('change', () => {
+    chrome.storage.local.set({ outlierDetectionEnabled: toggleOutlier.checked });
+  });
+
+  // Handle Multiplier select
+  selectMultiplier.addEventListener('change', () => {
+    const val = parseFloat(selectMultiplier.value) || 3.0;
+    chrome.storage.local.set({ outlierThresholdMultiplier: val });
+  });
+
+  // Handle Views floor select
+  selectViewsFloor.addEventListener('change', () => {
+    const val = parseInt(selectViewsFloor.value, 10) || 1000;
+    chrome.storage.local.set({ minViewsFloor: val });
+  });
+
+  // Open Dashboard
+  btnOpenDashboard.addEventListener('click', () => {
+    const dashboardUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+      ? chrome.runtime.getURL('dashboard.html')
+      : 'dashboard.html';
+
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: dashboardUrl });
+    } else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' }, (res) => {
+        if (chrome.runtime?.lastError || !res?.success) {
+          window.open(dashboardUrl, '_blank');
+        }
+      });
     } else {
-      customLabelInput.value = '';
+      window.open(dashboardUrl, '_blank');
     }
-  }
-
-  if (addCustomLabelBtn) addCustomLabelBtn.addEventListener('click', handleAddCustomLabel);
-  if (customLabelInput) {
-    customLabelInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleAddCustomLabel();
-      }
-    });
-  }
-
-  // Load saved settings
-  chrome.storage.local.get(
-    [
-      'filterMotivationalEnabled',
-      'filterMemeEnabled',
-      'filterDeepDiveEnabled',
-      'filterWholesomeEnabled',
-      'filterDoomEnabled',
-      'filterFomoEnabled',
-      'filterCasualEnabled',
-      'customLabels',
-      'monkModeEnabled',
-      'blockReelsEnabled',
-      'autoBlurRageEnabled',
-      'blockScamsEnabled',
-      'collapseSeedingEnabled',
-      'hideFloatingPill',
-      'confidenceThreshold',
-      'motivationalCount',
-      'memeCount',
-      'deepDiveCount',
-      'blockedRageCount',
-      'blockedScamCount',
-      'monkModeBlockedCount',
-      'wholesomeCount',
-      'doomCount',
-      'fomoCount',
-      'casualCount',
-      'customCount',
-      'focusModeEnabled',
-      'focusWhitelistTags',
-      'focusCollapsedCount',
-      'viralDetectionEnabled',
-      'viralMinViews',
-      'viralMinLikes',
-    ],
-    (res) => {
-      if (typeof res.viralDetectionEnabled === 'boolean' && viralDetectionToggle) {
-        viralDetectionToggle.checked = res.viralDetectionEnabled;
-      }
-      if (typeof res.viralMinViews === 'number' && viralMinViewsInput) {
-        viralMinViewsInput.value = res.viralMinViews;
-      }
-      if (typeof res.viralMinLikes === 'number' && viralMinLikesInput) {
-        viralMinLikesInput.value = res.viralMinLikes;
-      }
-
-      if (Array.isArray(res.customLabels)) {
-        customLabels = res.customLabels
-          .map((c) => (typeof c === 'string' ? { name: c.trim(), enabled: true } : { name: (c?.name || '').trim(), enabled: c?.enabled !== false }))
-          .filter((c) => c.name);
-      }
-      renderCustomLabels();
-
-      if (typeof res.focusModeEnabled === 'boolean' && focusModeToggle) {
-        focusModeToggle.checked = res.focusModeEnabled;
-      }
-      updateFocusUI(focusModeToggle ? focusModeToggle.checked : false);
-
-      const savedTags = Array.isArray(res.focusWhitelistTags)
-        ? res.focusWhitelistTags
-        : ['motivational', 'meme', 'deepdive', 'wholesome', 'custom'];
-
-      if (focusTagMotivational) focusTagMotivational.checked = savedTags.includes('motivational');
-      if (focusTagMeme) focusTagMeme.checked = savedTags.includes('meme');
-      if (focusTagDeepDive) focusTagDeepDive.checked = savedTags.includes('deepdive');
-      if (focusTagWholesome) focusTagWholesome.checked = savedTags.includes('wholesome');
-      if (focusTagCasual) focusTagCasual.checked = savedTags.includes('casual');
-      if (focusTagDoom) focusTagDoom.checked = savedTags.includes('doom');
-      if (focusTagFomo) focusTagFomo.checked = savedTags.includes('fomo');
-      if (focusTagCustom) focusTagCustom.checked = savedTags.includes('custom');
-
-      if (typeof res.focusCollapsedCount === 'number' && focusCounter) {
-        focusCounter.textContent = res.focusCollapsedCount;
-      }
-      if (typeof res.filterMotivationalEnabled === 'boolean' && filterMotivationalToggle) {
-        filterMotivationalToggle.checked = res.filterMotivationalEnabled;
-      }
-      if (typeof res.filterMemeEnabled === 'boolean' && filterMemeToggle) {
-        filterMemeToggle.checked = res.filterMemeEnabled;
-      }
-      if (typeof res.filterDeepDiveEnabled === 'boolean' && filterDeepDiveToggle) {
-        filterDeepDiveToggle.checked = res.filterDeepDiveEnabled;
-      }
-      if (typeof res.filterWholesomeEnabled === 'boolean' && filterWholesomeToggle) {
-        filterWholesomeToggle.checked = res.filterWholesomeEnabled;
-      }
-      if (typeof res.filterDoomEnabled === 'boolean' && filterDoomToggle) {
-        filterDoomToggle.checked = res.filterDoomEnabled;
-      }
-      if (typeof res.filterFomoEnabled === 'boolean' && filterFomoToggle) {
-        filterFomoToggle.checked = res.filterFomoEnabled;
-      }
-      if (typeof res.filterCasualEnabled === 'boolean' && filterCasualToggle) {
-        filterCasualToggle.checked = res.filterCasualEnabled;
-      }
-      if (typeof res.monkModeEnabled === 'boolean') {
-        monkModeToggle.checked = res.monkModeEnabled;
-      }
-      if (typeof res.blockReelsEnabled === 'boolean') {
-        blockReelsToggle.checked = res.blockReelsEnabled;
-      }
-      if (typeof res.autoBlurRageEnabled === 'boolean') {
-        autoBlurRageToggle.checked = res.autoBlurRageEnabled;
-      }
-      if (typeof res.blockScamsEnabled === 'boolean') {
-        blockScamsToggle.checked = res.blockScamsEnabled;
-      }
-      if (typeof res.collapseSeedingEnabled === 'boolean') {
-        collapseSeedingToggle.checked = res.collapseSeedingEnabled;
-      }
-      if (typeof res.hideFloatingPill === 'boolean') {
-        hideFloatingPillToggle.checked = res.hideFloatingPill;
-      }
-      if (typeof res.confidenceThreshold === 'number') {
-        thresholdRange.value = Math.round(res.confidenceThreshold * 100);
-        thresholdVal.textContent = `${thresholdRange.value}%`;
-      }
-
-      if (typeof res.motivationalCount === 'number' && motivationalCounter) {
-        motivationalCounter.textContent = res.motivationalCount;
-      }
-      if (typeof res.memeCount === 'number' && memeCounter) {
-        memeCounter.textContent = res.memeCount;
-      }
-      if (typeof res.deepDiveCount === 'number' && deepDiveCounter) {
-        deepDiveCounter.textContent = res.deepDiveCount;
-      }
-      if (typeof res.blockedRageCount === 'number' && rageCounter) {
-        rageCounter.textContent = res.blockedRageCount;
-      }
-      if (typeof res.blockedScamCount === 'number' && scamCounter) {
-        scamCounter.textContent = res.blockedScamCount;
-      }
-      if (typeof res.monkModeBlockedCount === 'number' && monkCounter) {
-        monkCounter.textContent = res.monkModeBlockedCount;
-      }
-      if (typeof res.wholesomeCount === 'number' && wholesomeCounter) {
-        wholesomeCounter.textContent = res.wholesomeCount;
-      }
-      if (typeof res.doomCount === 'number' && doomCounter) {
-        doomCounter.textContent = res.doomCount;
-      }
-      if (typeof res.fomoCount === 'number' && fomoCounter) {
-        fomoCounter.textContent = res.fomoCount;
-      }
-      if (typeof res.casualCount === 'number' && casualCounter) {
-        casualCounter.textContent = res.casualCount;
-      }
-      if (typeof res.customCount === 'number' && customCounter) {
-        customCounter.textContent = res.customCount;
-      }
-    }
-  );
-
-  function saveAndNotify() {
-    const config = {
-      filterMotivationalEnabled: filterMotivationalToggle ? filterMotivationalToggle.checked : true,
-      filterMemeEnabled: filterMemeToggle ? filterMemeToggle.checked : true,
-      filterDeepDiveEnabled: filterDeepDiveToggle ? filterDeepDiveToggle.checked : true,
-      filterWholesomeEnabled: filterWholesomeToggle ? filterWholesomeToggle.checked : true,
-      filterDoomEnabled: filterDoomToggle ? filterDoomToggle.checked : true,
-      filterFomoEnabled: filterFomoToggle ? filterFomoToggle.checked : true,
-      filterCasualEnabled: filterCasualToggle ? filterCasualToggle.checked : true,
-      customLabels: customLabels,
-      focusModeEnabled: focusModeToggle ? focusModeToggle.checked : false,
-      focusWhitelistTags: getFocusWhitelistTags(),
-      monkModeEnabled: monkModeToggle.checked,
-      blockReelsEnabled: blockReelsToggle.checked,
-      autoBlurRageEnabled: autoBlurRageToggle.checked,
-      blockScamsEnabled: blockScamsToggle.checked,
-      collapseSeedingEnabled: collapseSeedingToggle.checked,
-      hideFloatingPill: hideFloatingPillToggle.checked,
-      confidenceThreshold: parseInt(thresholdRange.value, 10) / 100,
-      viralDetectionEnabled: viralDetectionToggle ? viralDetectionToggle.checked : true,
-      viralMinViews: viralMinViewsInput ? (parseInt(viralMinViewsInput.value, 10) || 50000) : 50000,
-      viralMinLikes: viralMinLikesInput ? (parseInt(viralMinLikesInput.value, 10) || 1000) : 1000,
-    };
-
-    updateFocusUI(config.focusModeEnabled);
-
-    chrome.storage.local.set(config);
-
-    // Broadcast config to all active tabs
-    chrome.tabs.query({}, (tabs) => {
-      if (tabs) {
-        tabs.forEach((tab) => {
-          chrome.tabs.sendMessage(tab.id, {
-            type: 'UPDATE_CONFIG',
-            config: config,
-          }).catch(() => {});
-        });
-      }
-    });
-  }
-
-  if (focusModeToggle) focusModeToggle.addEventListener('change', saveAndNotify);
-  [
-    focusTagMotivational,
-    focusTagMeme,
-    focusTagDeepDive,
-    focusTagWholesome,
-    focusTagCasual,
-    focusTagDoom,
-    focusTagFomo,
-    focusTagCustom,
-  ].forEach((chk) => {
-    if (chk) chk.addEventListener('change', saveAndNotify);
   });
-
-  if (filterMotivationalToggle) filterMotivationalToggle.addEventListener('change', saveAndNotify);
-  if (filterMemeToggle) filterMemeToggle.addEventListener('change', saveAndNotify);
-  if (filterDeepDiveToggle) filterDeepDiveToggle.addEventListener('change', saveAndNotify);
-  if (filterWholesomeToggle) filterWholesomeToggle.addEventListener('change', saveAndNotify);
-  if (filterDoomToggle) filterDoomToggle.addEventListener('change', saveAndNotify);
-  if (filterFomoToggle) filterFomoToggle.addEventListener('change', saveAndNotify);
-  if (filterCasualToggle) filterCasualToggle.addEventListener('change', saveAndNotify);
-  monkModeToggle.addEventListener('change', saveAndNotify);
-  blockReelsToggle.addEventListener('change', saveAndNotify);
-  autoBlurRageToggle.addEventListener('change', saveAndNotify);
-  blockScamsToggle.addEventListener('change', saveAndNotify);
-  collapseSeedingToggle.addEventListener('change', saveAndNotify);
-  hideFloatingPillToggle.addEventListener('change', saveAndNotify);
-  if (viralDetectionToggle) viralDetectionToggle.addEventListener('change', saveAndNotify);
-  if (viralMinViewsInput) viralMinViewsInput.addEventListener('change', saveAndNotify);
-  if (viralMinLikesInput) viralMinLikesInput.addEventListener('change', saveAndNotify);
-
-  thresholdRange.addEventListener('input', () => {
-    thresholdVal.textContent = `${thresholdRange.value}%`;
-  });
-
-  thresholdRange.addEventListener('change', saveAndNotify);
-
-  resetStats.addEventListener('click', () => {
-    chrome.storage.local.set({
-      motivationalCount: 0,
-      memeCount: 0,
-      deepDiveCount: 0,
-      monkModeBlockedCount: 0,
-      blockedRageCount: 0,
-      blockedScamCount: 0,
-      cleanedSeedingCount: 0,
-      wholesomeCount: 0,
-      doomCount: 0,
-      fomoCount: 0,
-      casualCount: 0,
-      customCount: 0,
-      focusCollapsedCount: 0,
-    });
-    if (motivationalCounter) motivationalCounter.textContent = '0';
-    if (memeCounter) memeCounter.textContent = '0';
-    if (deepDiveCounter) deepDiveCounter.textContent = '0';
-    if (rageCounter) rageCounter.textContent = '0';
-    if (scamCounter) scamCounter.textContent = '0';
-    if (monkCounter) monkCounter.textContent = '0';
-    if (wholesomeCounter) wholesomeCounter.textContent = '0';
-    if (doomCounter) doomCounter.textContent = '0';
-    if (fomoCounter) fomoCounter.textContent = '0';
-    if (casualCounter) casualCounter.textContent = '0';
-    if (customCounter) customCounter.textContent = '0';
-    if (focusCounter) focusCounter.textContent = '0';
-
-    chrome.tabs.query({}, (tabs) => {
-      if (tabs) {
-        tabs.forEach((tab) => {
-          chrome.tabs.sendMessage(tab.id, { type: 'RESET_STATS' }).catch(() => {});
-        });
-      }
-    });
-  });
-
-  if (chrome.storage && chrome.storage.onChanged) {
-    chrome.storage.onChanged.addListener((changes) => {
-      if (changes.motivationalCount && motivationalCounter) {
-        motivationalCounter.textContent = changes.motivationalCount.newValue || 0;
-      }
-      if (changes.memeCount && memeCounter) {
-        memeCounter.textContent = changes.memeCount.newValue || 0;
-      }
-      if (changes.deepDiveCount && deepDiveCounter) {
-        deepDiveCounter.textContent = changes.deepDiveCount.newValue || 0;
-      }
-      if (changes.blockedRageCount && rageCounter) {
-        rageCounter.textContent = changes.blockedRageCount.newValue || 0;
-      }
-      if (changes.blockedScamCount && scamCounter) {
-        scamCounter.textContent = changes.blockedScamCount.newValue || 0;
-      }
-      if (changes.monkModeBlockedCount && monkCounter) {
-        monkCounter.textContent = changes.monkModeBlockedCount.newValue || 0;
-      }
-      if (changes.wholesomeCount && wholesomeCounter) {
-        wholesomeCounter.textContent = changes.wholesomeCount.newValue || 0;
-      }
-      if (changes.doomCount && doomCounter) {
-        doomCounter.textContent = changes.doomCount.newValue || 0;
-      }
-      if (changes.fomoCount && fomoCounter) {
-        fomoCounter.textContent = changes.fomoCount.newValue || 0;
-      }
-      if (changes.casualCount && casualCounter) {
-        casualCounter.textContent = changes.casualCount.newValue || 0;
-      }
-      if (changes.customCount && customCounter) {
-        customCounter.textContent = changes.customCount.newValue || 0;
-      }
-      if (changes.focusCollapsedCount && focusCounter) {
-        focusCounter.textContent = changes.focusCollapsedCount.newValue || 0;
-      }
-      if (changes.customLabels && Array.isArray(changes.customLabels.newValue)) {
-        customLabels = changes.customLabels.newValue
-          .map((c) => (typeof c === 'string' ? { name: c.trim(), enabled: true } : { name: (c?.name || '').trim(), enabled: c?.enabled !== false }))
-          .filter((c) => c.name);
-        renderCustomLabels();
-      }
-    });
-  }
 });

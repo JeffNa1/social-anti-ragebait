@@ -3444,21 +3444,63 @@ body.is-activity-page .x-shield-threads-hook-btn {
     return 'other';
   }
 
-  function showShieldToast(msg) {
+  function openVaultDashboard() {
+    const dashboardUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+      ? chrome.runtime.getURL('dashboard.html')
+      : 'dashboard.html';
+
+    let msgSent = false;
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' }, (res) => {
+          if (chrome.runtime?.lastError || !res?.success) {
+            window.open(dashboardUrl, '_blank');
+          }
+        });
+        msgSent = true;
+      } catch (err) {
+        window.open(dashboardUrl, '_blank');
+        return;
+      }
+    }
+    if (!msgSent) {
+      window.open(dashboardUrl, '_blank');
+    }
+  }
+
+  function showShieldToast(msg, withVaultBtn = false) {
     const existing = document.querySelector('.x-shield-page-toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
     toast.className = 'x-shield-page-toast';
-    toast.innerHTML = `${ICONS.zap} <span>${msg}</span>`;
+    toast.innerHTML = `
+      ${ICONS.zap}
+      <span>${msg}</span>
+      ${withVaultBtn ? `<button type="button" class="x-shield-toast-vault-btn" id="toastOpenVaultBtn">Mở Vault ↗</button>` : ''}
+    `;
     document.body.appendChild(toast);
 
+    if (withVaultBtn) {
+      const openBtn = toast.querySelector('#toastOpenVaultBtn');
+      if (openBtn) {
+        openBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        openBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+        openBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openVaultDashboard();
+        });
+      }
+    }
+
+    const duration = withVaultBtn ? 4200 : 2500;
     setTimeout(() => {
       toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
       toast.style.opacity = '0';
-      toast.style.transform = 'translateY(10px)';
+      toast.style.transform = 'translateX(-50%) translateY(10px)';
       setTimeout(() => toast.remove(), 300);
-    }, 2500);
+    }, duration);
   }
 
   function getPostAgeHours(postEl) {
@@ -3540,7 +3582,7 @@ body.is-activity-page .x-shield-threads-hook-btn {
       localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
       hookBtn.classList.add('is-saved');
       hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-      showShieldToast(`✓ Jev AI đã phân tích (${Math.round(confidence * 100)}%) & lưu Hook Outlier vào Vault!`);
+      showShieldToast(`✓ Đã lưu Hook Outlier của ${itemToSave.authorHandle || itemToSave.authorName || 'bài viết'} vào Vault!`);
     } catch (e) {
       hookBtn.classList.add('is-saved');
       hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
@@ -3822,33 +3864,21 @@ body.is-activity-page .x-shield-threads-hook-btn {
     const hookBtn = document.createElement('button');
     hookBtn.type = 'button';
     hookBtn.className = 'x-shield-threads-hook-btn';
-    hookBtn.setAttribute('title', 'Phân tích ngữ nghĩa bằng Jev AI và lưu Hook vào Vault');
-    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook (Jev AI)</span>`;
+    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
+    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook</span>`;
 
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (hookBtn.classList.contains('is-loading')) return;
-      hookBtn.classList.add('is-loading');
-      hookBtn.innerHTML = `${ICONS.scan} <span>Jev AI Đang Bóc Tách...</span>`;
+      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
+      const formula = classifyHookFormula(hookText);
       const idMatch = authorInfo.permalink.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
       const threadId = idMatch ? 'threads-' + idMatch[1] : 'threads-' + Date.now();
 
-      const HOOK_LABELS = [
-        'Curiosity Gap hook: creates intense mystery or withholds key information',
-        'Contrarian / Hot Take hook: boldly challenges conventional wisdom',
-        'Cheatsheet / Framework hook: curated list, tools, step-by-step blueprint',
-        'Personal Story transformation hook: vulnerability, from zero to success',
-        'Social Proof authority hook: big numbers, case study, expert credibility',
-        'Direct Provocation challenge hook: tough wake-up call, sharp question',
-      ];
-      const HOOK_INSTRUCTIONS =
-        'Analyze the opening hook or message of this Threads post. Classify its primary hook formula, copywriting technique, and engagement mechanism into exactly one category.';
-
-      const baseItem = {
+      const itemToSave = {
         id: threadId,
         platform: 'threads',
         authorName: authorInfo.authorName,
@@ -3860,56 +3890,12 @@ body.is-activity-page .x-shield-threads-hook-btn {
         hook: hookText,
         fullText: fullText,
         metrics: metrics,
-        formula: classifyHookFormula(hookText),
-        jevConfidence: 0.88,
-        jevLabel: 'Heuristic',
+        formula: formula,
         url: authorInfo.permalink,
         savedAt: new Date().toISOString(),
       };
 
-      if (typeof GM_xmlhttpRequest !== 'undefined') {
-        GM_xmlhttpRequest({
-          method: 'POST',
-          url: CONFIG.apiEndpoint,
-          headers: { 'Content-Type': 'application/json' },
-          data: JSON.stringify({
-            labels: HOOK_LABELS,
-            inputs: [hookText],
-            instructions: HOOK_INSTRUCTIONS,
-            multi: false,
-          }),
-          onload: (response) => {
-            hookBtn.classList.remove('is-loading');
-            let formula = classifyHookFormula(hookText);
-            let score = 0.88;
-            let rawLabel = '';
-            try {
-              const resData = JSON.parse(response.responseText);
-              const item = resData?.results?.[0];
-              rawLabel = typeof item === 'string' ? item : (item?.label || (Array.isArray(item?.labels) ? item.labels[0] : ''));
-              score = typeof item?.score === 'number' ? item.score : (typeof item?.confidence === 'number' ? item.confidence : 0.88);
-              const lower = rawLabel.toLowerCase();
-              if (lower.includes('curiosity')) formula = 'curiosity';
-              else if (lower.includes('contrarian')) formula = 'contrarian';
-              else if (lower.includes('cheatsheet') || lower.includes('framework')) formula = 'cheatsheet';
-              else if (lower.includes('story') || lower.includes('personal')) formula = 'story';
-              else if (lower.includes('social proof') || lower.includes('authority')) formula = 'proof';
-              else if (lower.includes('challenge') || lower.includes('provocation')) formula = 'challenge';
-            } catch (err) {}
-            baseItem.formula = formula;
-            baseItem.jevConfidence = score;
-            baseItem.jevLabel = rawLabel;
-            saveHookToVaultUserscript(baseItem, hookBtn, score);
-          },
-          onerror: () => {
-            hookBtn.classList.remove('is-loading');
-            saveHookToVaultUserscript(baseItem, hookBtn, 0.75);
-          },
-        });
-      } else {
-        hookBtn.classList.remove('is-loading');
-        saveHookToVaultUserscript(baseItem, hookBtn, 0.75);
-      }
+      saveHookToVaultUserscript(itemToSave, hookBtn);
     });
 
     actionBar.appendChild(hookBtn);
@@ -4035,15 +4021,13 @@ body.is-activity-page .x-shield-threads-hook-btn {
     const hookBtn = document.createElement('button');
     hookBtn.type = 'button';
     hookBtn.className = 'x-shield-hook-btn';
-    hookBtn.setAttribute('title', 'Phân tích ngữ nghĩa bằng Jev AI và lưu Hook vào Vault');
+    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
     hookBtn.innerHTML = `${ICONS.zap} <span>Save Hook</span>`;
 
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (hookBtn.classList.contains('is-loading')) return;
-      hookBtn.classList.add('is-loading');
-      hookBtn.innerHTML = `${ICONS.scan} <span>Jev AI...</span>`;
+      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
       const permalinkEl = post.querySelector('a[href*="/status/"]');
@@ -4098,6 +4082,10 @@ body.is-activity-page .x-shield-threads-hook-btn {
         <span>${ICONS.scan}</span>
         <span>Quét Outlier Feed</span>
       </button>
+      <button type="button" class="scanner-btn scanner-btn-vault" id="btnOpenVaultDock" title="Mở Threads & X Hook Vault Dashboard">
+        <span>${ICONS.zap}</span>
+        <span>Hook Vault</span>
+      </button>
     `;
 
     document.body.appendChild(dock);
@@ -4106,6 +4094,7 @@ body.is-activity-page .x-shield-threads-hook-btn {
     const stopBtn = dock.querySelector('#btnStopRealtimeScan');
     const liveHud = dock.querySelector('#scannerLiveHud');
     const hudStatus = dock.querySelector('#scannerHudStatus');
+    const vaultBtn = dock.querySelector('#btnOpenVaultDock');
 
     triggerBtn.addEventListener('click', () => {
       startRealtimeScanning(triggerBtn, liveHud, hudStatus);
@@ -4114,6 +4103,16 @@ body.is-activity-page .x-shield-threads-hook-btn {
     stopBtn.addEventListener('click', () => {
       stopRealtimeScanning(triggerBtn, liveHud);
     });
+
+    if (vaultBtn) {
+      vaultBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      vaultBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+      vaultBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openVaultDashboard();
+      });
+    }
   }
 
   function startRealtimeScanning(triggerBtn, liveHud, hudStatus) {

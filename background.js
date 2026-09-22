@@ -61,20 +61,34 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'OPEN_DASHBOARD') {
     const dashboardUrl = chrome.runtime.getURL('dashboard.html');
-    chrome.tabs.query({}, (tabs) => {
-      const existingTab = tabs.find((t) => t.url && t.url.startsWith(dashboardUrl));
-      if (existingTab && existingTab.id) {
-        chrome.tabs.update(existingTab.id, { active: true });
-        if (existingTab.windowId) {
-          chrome.windows.update(existingTab.windowId, { focused: true });
+    if (chrome.tabs && chrome.tabs.query) {
+      chrome.tabs.query({}, (tabs) => {
+        if (chrome.runtime?.lastError || !tabs) {
+          chrome.tabs.create({ url: dashboardUrl }, (newTab) => {
+            sendResponse({ success: true, tabId: newTab ? newTab.id : null });
+          });
+          return;
         }
-        sendResponse({ success: true, tabId: existingTab.id });
-      } else {
-        chrome.tabs.create({ url: dashboardUrl }, (newTab) => {
-          sendResponse({ success: true, tabId: newTab ? newTab.id : null });
-        });
-      }
-    });
+        const existingTab = tabs.find((t) => t.url && t.url.startsWith(dashboardUrl));
+        if (existingTab && existingTab.id) {
+          chrome.tabs.update(existingTab.id, { active: true });
+          if (existingTab.windowId) {
+            chrome.windows.update(existingTab.windowId, { focused: true });
+          }
+          sendResponse({ success: true, tabId: existingTab.id });
+        } else {
+          chrome.tabs.create({ url: dashboardUrl }, (newTab) => {
+            sendResponse({ success: true, tabId: newTab ? newTab.id : null });
+          });
+        }
+      });
+    } else if (chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: dashboardUrl }, (newTab) => {
+        sendResponse({ success: true, tabId: newTab ? newTab.id : null });
+      });
+    } else {
+      sendResponse({ success: false });
+    }
     return true;
   }
 

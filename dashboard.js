@@ -78,15 +78,27 @@
       fullText: 'The future of open-source AI is moving significantly faster than closed models. Here is what we learned deploying Llama across 500M users:\n\n1. Community fine-tunes beat general frontier models on niche benchmarks.\n2. On-device inference cost dropped by 10x.\n3. The ecosystem effect creates faster feedback loops than proprietary APIs.',
       metrics: { views: 0, likes: 48500, retweets: 6200, replies: 3400, bookmarks: 0 },
       formula: 'proof',
-      jevConfidence: 0.94,
-      jevLabel: 'Social Proof authority hook',
       url: 'https://threads.net/@zuck',
       savedAt: new Date(Date.now() - 3600000 * 12).toISOString()
+    },
+    {
+      id: 'seed-threads-2',
+      platform: 'threads',
+      authorName: 'Adam Mosseri',
+      authorHandle: '@mosseri',
+      authorAvatar: '',
+      authorFollowers: 2800000,
+      outlierMultiplier: 4.8,
+      hook: 'If you want to reach new audiences on Threads in 2026 without paid ads, here is the exact algorithm ranking breakdown:',
+      fullText: 'If you want to reach new audiences on Threads in 2026 without paid ads, here is the exact algorithm ranking breakdown:\n\n1. Meaningful replies and conversations carry 3x more weight than simple likes.\n2. Original media sparks longer dwell time.\n3. Topic tags connect your post directly to interest graphs.\n4. Avoid engagement bait—it gets demoted in For You feed.',
+      metrics: { views: 420000, likes: 28900, retweets: 4100, replies: 3120, bookmarks: 0 },
+      formula: 'cheatsheet',
+      url: 'https://threads.net/@mosseri',
+      savedAt: new Date(Date.now() - 3600000 * 6).toISOString()
     }
   ];
 
   let currentHooks = [];
-  let selectedHookForAdaptation = null;
 
   // DOM Elements
   const hookList = document.getElementById('hookList');
@@ -109,17 +121,10 @@
   const statTopFormula = document.getElementById('statTopFormula');
   const statTopFormulaPct = document.getElementById('statTopFormulaPct');
   const statAvgLikes = document.getElementById('statAvgLikes');
-
-  // Modal DOM
-  const adaptorModal = document.getElementById('adaptorModal');
-  const btnCloseModal = document.getElementById('btnCloseModal');
-  const modalRefFormula = document.getElementById('modalRefFormula');
-  const modalRefAuthor = document.getElementById('modalRefAuthor');
-  const modalRefHookText = document.getElementById('modalRefHookText');
-  const nicheInput = document.getElementById('nicheInput');
-  const btnGenerateVariations = document.getElementById('btnGenerateVariations');
-  const variationsContainer = document.getElementById('variationsContainer');
-  const variationsList = document.getElementById('variationsList');
+  const statHooksMeter = document.getElementById('statHooksMeter');
+  const statReachMeter = document.getElementById('statReachMeter');
+  const statFormulaMeter = document.getElementById('statFormulaMeter');
+  const statEngageMeter = document.getElementById('statEngageMeter');
 
   // Toast DOM
   const vaultToast = document.getElementById('vaultToast');
@@ -143,15 +148,42 @@
     return Number(num).toLocaleString('vi-VN');
   }
 
-  // Formula label mapping
   const FORMULA_META = {
-    curiosity: { label: 'Curiosity Gap', class: 'badge-curiosity', icon: '🔍' },
-    contrarian: { label: 'Contrarian / Hot Take', class: 'badge-contrarian', icon: '🔥' },
-    cheatsheet: { label: 'Cheatsheet / Framework', class: 'badge-cheatsheet', icon: '📚' },
-    story: { label: 'Story / Transformation', class: 'badge-story', icon: '📖' },
-    proof: { label: 'Social Proof / Authority', class: 'badge-proof', icon: '🏆' },
-    challenge: { label: 'Direct Challenge', class: 'badge-challenge', icon: '🎯' },
-    other: { label: 'Đa dạng', class: 'badge-other', icon: '💬' }
+    curiosity: {
+      label: 'Curiosity Gap',
+      class: 'badge-curiosity',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>'
+    },
+    contrarian: {
+      label: 'Contrarian / Hot Take',
+      class: 'badge-contrarian',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>'
+    },
+    cheatsheet: {
+      label: 'Cheatsheet / Framework',
+      class: 'badge-cheatsheet',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/></svg>'
+    },
+    story: {
+      label: 'Story / Transformation',
+      class: 'badge-story',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>'
+    },
+    proof: {
+      label: 'Social Proof / Authority',
+      class: 'badge-proof',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>'
+    },
+    challenge: {
+      label: 'Direct Challenge',
+      class: 'badge-challenge',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>'
+    },
+    other: {
+      label: 'Đa dạng',
+      class: 'badge-other',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+    }
   };
 
   // Load from storage
@@ -176,6 +208,34 @@
             items = [];
           }
         }
+
+        // Also check if localStorage has saved items to merge
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const localItems = JSON.parse(raw);
+            if (Array.isArray(localItems) && localItems.length > 0) {
+              const existingIds = new Set(items.map((it) => it.id));
+              let added = false;
+              for (const it of localItems) {
+                if (!existingIds.has(it.id)) {
+                  items.push(it);
+                  existingIds.add(it.id);
+                  added = true;
+                }
+              }
+              if (added) {
+                chrome.storage.local.set({ [STORAGE_KEY]: items });
+              }
+            }
+          }
+        } catch (e) {}
+
+        // Mirror to localStorage so preview mode stays in sync
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        } catch (e) {}
+
         callback(items);
       });
     } else {
@@ -208,29 +268,175 @@
   // Save to storage
   function saveVaultData(items, callback) {
     currentHooks = items;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch (e) {}
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       chrome.storage.local.set({ [STORAGE_KEY]: items }, () => {
         if (callback) callback();
       });
     } else {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-      } catch (e) {}
       if (callback) callback();
     }
   }
 
+  // Smooth Raycast Animated Counter (odometer roll - CountUp)
+  function animateCounter(element, target, duration = 650) {
+    if (!element) return;
+    const targetNum = Number(target) || 0;
+    if (targetNum === 0) {
+      element.textContent = '0';
+      element.setAttribute('data-raw-val', '0');
+      return;
+    }
+    const startNum = Number(element.getAttribute('data-raw-val')) || 0;
+    if (startNum === targetNum) {
+      element.textContent = formatMetric(targetNum);
+      return;
+    }
+    element.setAttribute('data-raw-val', String(targetNum));
+    const startTime = performance.now();
+
+    function update(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic: 1 - (1 - t)^3
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(startNum + (targetNum - startNum) * ease);
+      element.textContent = formatMetric(current);
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      } else {
+        element.textContent = formatMetric(targetNum);
+      }
+    }
+    requestAnimationFrame(update);
+  }
+
+  // DecryptedText Matrix Hacker Scramble Animation (React Bits)
+  let scrambleAnimId = null;
+  function scrambleDecryptedText(element, iconHtml, targetText, duration = 600) {
+    if (!element) return;
+    if (scrambleAnimId) cancelAnimationFrame(scrambleAnimId);
+
+    const GLYPHS = 'ABCDEF0123456789!@#$%^&*<>~+=/?';
+    const cleanTarget = String(targetText || '');
+    const startTime = performance.now();
+    const len = cleanTarget.length;
+
+    function frame(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const resolvedCount = Math.floor(progress * len);
+
+      let scrambled = '';
+      for (let i = 0; i < len; i++) {
+        if (i < resolvedCount) {
+          scrambled += cleanTarget[i];
+        } else if (cleanTarget[i] === ' ' || cleanTarget[i] === '/' || cleanTarget[i] === '-') {
+          scrambled += cleanTarget[i];
+        } else {
+          scrambled += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+        }
+      }
+
+      element.innerHTML = `${iconHtml ? iconHtml + ' ' : ''}<span>${scrambled}</span>`;
+
+      if (progress < 1) {
+        scrambleAnimId = requestAnimationFrame(frame);
+      } else {
+        element.innerHTML = `${iconHtml ? iconHtml + ' ' : ''}<span>${cleanTarget}</span>`;
+        scrambleAnimId = null;
+      }
+    }
+
+    scrambleAnimId = requestAnimationFrame(frame);
+  }
+
+  // SpotlightCard Cursor-following Radial Glow (React Bits)
+  function initSpotlightCards() {
+    const cards = document.querySelectorAll('.spotlight-card');
+    cards.forEach((card) => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.setProperty('--mouse-x', '-1000px');
+        card.style.setProperty('--mouse-y', '-1000px');
+      });
+    });
+  }
+
+  // ClickSpark Micro Particle Burst (React Bits)
+  function initClickSparks() {
+    const SPARK_COLORS = ['#ff6161', '#ff8585', '#ffb340', '#ffffff', '#a855f7'];
+
+    document.addEventListener('click', (e) => {
+      const target = e.target.closest('button, .btn, .chip, .segment-btn, .custom-dropdown-btn, .custom-dropdown-item, .formula-badge');
+      if (!target) return;
+
+      const x = e.clientX;
+      const y = e.clientY;
+      const count = 7;
+
+      for (let i = 0; i < count; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'click-spark-particle';
+
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+        const distance = 20 + Math.random() * 26;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+        const size = 3 + Math.random() * 2.5;
+        const color = SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)];
+
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.backgroundColor = color;
+        particle.style.boxShadow = `0 0 6px ${color}`;
+        particle.style.setProperty('--spark-tx', `${tx}px`);
+        particle.style.setProperty('--spark-ty', `${ty}px`);
+
+        document.body.appendChild(particle);
+
+        setTimeout(() => {
+          particle.remove();
+        }, 480);
+      }
+    });
+  }
+
   // Update Stats Cards
   function updateStats(items) {
-    statTotalHooks.textContent = items.length;
-
     if (items.length === 0) {
+      statTotalHooks.textContent = '0';
+      statTotalHooks.setAttribute('data-raw-val', '0');
       statMaxViews.textContent = '0';
+      statMaxViews.setAttribute('data-raw-val', '0');
       statMaxViewsAuthor.textContent = 'Chưa có dữ liệu';
       statTopFormula.textContent = 'Chưa đủ dữ liệu';
       statTopFormulaPct.textContent = '0% tỷ trọng';
       statAvgLikes.textContent = '0';
+      statAvgLikes.setAttribute('data-raw-val', '0');
+      if (statHooksMeter) statHooksMeter.style.width = '0%';
+      if (statReachMeter) statReachMeter.style.width = '0%';
+      if (statFormulaMeter) statFormulaMeter.style.width = '0%';
+      if (statEngageMeter) statEngageMeter.style.width = '0%';
       return;
+    }
+
+    animateCounter(statTotalHooks, items.length);
+    if (statHooksMeter) {
+      const hooksPct = Math.min(100, Math.round((items.length / 30) * 100));
+      statHooksMeter.style.width = `${hooksPct}%`;
     }
 
     // 1. Max Views
@@ -249,8 +455,13 @@
       formulaCounts[f] = (formulaCounts[f] || 0) + 1;
     });
 
-    statMaxViews.textContent = formatMetric(maxItem.metrics?.views || 0);
+    const maxViews = maxItem.metrics?.views || 0;
+    animateCounter(statMaxViews, maxViews);
     statMaxViewsAuthor.textContent = `Bởi ${maxItem.authorName || maxItem.authorHandle || 'Tác giả'}`;
+    if (statReachMeter) {
+      const reachPct = maxViews > 0 ? Math.min(100, Math.round((Math.log10(maxViews + 1) / 6) * 100)) : 0;
+      statReachMeter.style.width = `${reachPct}%`;
+    }
 
     // 2. Dominant Formula
     let topFormula = 'curiosity';
@@ -264,12 +475,19 @@
 
     const meta = FORMULA_META[topFormula] || FORMULA_META.other;
     const pct = Math.round((topCount / items.length) * 100);
-    statTopFormula.textContent = `${meta.icon} ${meta.label}`;
+    scrambleDecryptedText(statTopFormula, meta.icon, meta.label);
     statTopFormulaPct.textContent = `${pct}% tổng số bài (${topCount}/${items.length})`;
+    if (statFormulaMeter) {
+      statFormulaMeter.style.width = `${pct}%`;
+    }
 
     // 3. Avg Likes
     const avg = Math.round(totalLikes / items.length);
-    statAvgLikes.textContent = formatMetric(avg);
+    animateCounter(statAvgLikes, avg);
+    if (statEngageMeter) {
+      const engagePct = avg > 0 ? Math.min(100, Math.round((avg / 500) * 100)) : 0;
+      statEngageMeter.style.width = `${engagePct}%`;
+    }
   }
 
   // Render hook feed
@@ -348,7 +566,7 @@
     const mult = item.outlierMultiplier || 0;
     const fols = item.authorFollowers || 0;
     const outlierBadge = mult >= 3.0
-      ? `<span class="outlier-chip" title="Reach gấp ${mult.toFixed(1)} lần lượng followers">🔥 ${mult.toFixed(1)}x Outlier ${fols > 0 ? `(${formatMetric(fols)} fols)` : ''}</span>`
+      ? `<span class="outlier-chip" title="Reach gấp ${mult.toFixed(1)} lần lượng followers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>${mult.toFixed(1)}x Outlier ${fols > 0 ? `(${formatMetric(fols)} fols)` : ''}</span>`
       : '';
 
     card.innerHTML = `
@@ -368,9 +586,16 @@
           ${outlierBadge}
           ${
             item.platform === 'threads'
-              ? `<span class="platform-badge threads">🧵 Threads</span>
-                 <span class="jev-ai-chip" title="Phân tích ngữ nghĩa chuyên sâu bởi Jev AI">🤖 Jev AI: ${Math.round((item.jevConfidence || 0.9) * 100)}%</span>`
-              : `<span class="platform-badge x-twitter">𝕏 X</span>`
+              ? `<span class="platform-badge threads">
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;">
+                     <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3.3 11.2c-.3 1.8-1.5 2.8-3.3 2.8-2 0-3.3-1.4-3.3-3.7 0-2.4 1.4-3.8 3.5-3.8 1.9 0 3.1 1.2 3.2 2.9h-1.6c-.1-1-.7-1.5-1.6-1.5-1.1 0-1.8.8-1.8 2.4 0 1.5.7 2.3 1.8 2.3 1 0 1.5-.6 1.6-1.4z"/>
+                   </svg>Threads
+                 </span>`
+              : `<span class="platform-badge x-twitter">
+                   <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10" style="display:inline-block; vertical-align:-1px; margin-right:3px;">
+                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                   </svg>X
+                 </span>`
           }
           <span class="formula-badge ${meta.class}" title="Công thức Hook">
             ${meta.icon} ${meta.label}
@@ -387,11 +612,13 @@
           item.fullText && item.fullText !== item.hook
             ? `
           <button class="btn-toggle-accordion">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             <span>Xem toàn bộ bài viết</span>
           </button>
           <div class="full-text-accordion collapsed">
-            ${escapeHtml(item.fullText).replace(/\n/g, '<br/>')}
+            <div class="full-text-inner">
+              ${escapeHtml(item.fullText).replace(/\n/g, '<br/>')}
+            </div>
           </div>
         `
             : ''
@@ -403,33 +630,33 @@
           item.platform === 'threads'
             ? `
           <div class="metric-item likes" title="Lượt thích (Likes)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/><path d="M7 10h2.5l1.5-3 2 6 1.5-3H17" stroke-width="1.5"/></svg>
             <strong>${formatMetric(item.metrics?.likes)}</strong>
           </div>
-          <div class="metric-item views" title="Lượt phản hồi (Replies)" style="color:#c084fc;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <div class="metric-item views" title="Lượt phản hồi (Replies)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             <strong>${formatMetric(item.metrics?.replies)}</strong>
           </div>
           <div class="metric-item retweets" title="Lượt chia sẻ (Reposts)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
             <strong>${formatMetric(item.metrics?.reposts || item.metrics?.retweets)}</strong>
           </div>
         `
             : `
           <div class="metric-item views" title="Lượt xem (Views)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12c2.5-5 6.5-8 9-8s6.5 3 9 8c-2.5 5-6.5 8-9 8s-6.5-3-9-8z"/></svg>
             <strong>${formatMetric(item.metrics?.views)}</strong>
           </div>
           <div class="metric-item likes" title="Lượt thích (Likes)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/><path d="M7 10h2.5l1.5-3 2 6 1.5-3H17" stroke-width="1.5"/></svg>
             <strong>${formatMetric(item.metrics?.likes)}</strong>
           </div>
           <div class="metric-item retweets" title="Lượt chia sẻ (Reposts)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>
             <strong>${formatMetric(item.metrics?.retweets)}</strong>
           </div>
           <div class="metric-item bookmarks" title="Lượt Bookmark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
             <strong>${formatMetric(item.metrics?.bookmarks)}</strong>
           </div>
         `
@@ -437,29 +664,24 @@
       </div>
 
       <div class="card-actions">
-        <div class="card-actions-left">
-          <button class="btn btn-secondary btn-card btn-copy-hook" title="Sao chép câu Hook mở đầu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-            <span>Copy Hook</span>
-          </button>
-          <button class="btn btn-primary btn-card btn-adapt-niche" title="Mở bộ biến hóa sang niche của bạn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>Biến Hóa Niche</span>
-          </button>
-        </div>
+        <button class="btn btn-secondary btn-card btn-copy-hook" title="Sao chép câu Hook mở đầu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>Copy Hook</span>
+        </button>
 
         <button class="btn btn-destructive-subtle btn-card btn-delete-hook" title="Xóa hook này khỏi Vault">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>
         </button>
       </div>
     `;
 
-    // Accordion toggle
+    // Accordion toggle with smooth arrow rotation
     const toggleBtn = card.querySelector('.btn-toggle-accordion');
     if (toggleBtn) {
       toggleBtn.onclick = () => {
         const acc = card.querySelector('.full-text-accordion');
         const isCollapsed = acc.classList.toggle('collapsed');
+        toggleBtn.classList.toggle('open', !isCollapsed);
         toggleBtn.querySelector('span').textContent = isCollapsed ? 'Xem toàn bộ bài viết' : 'Thu gọn nội dung';
       };
     }
@@ -471,12 +693,6 @@
       navigator.clipboard.writeText(textToCopy).then(() => {
         showToast('✓ Đã sao chép Hook vào clipboard!');
       });
-    };
-
-    // Adapt to Niche
-    const adaptBtn = card.querySelector('.btn-adapt-niche');
-    adaptBtn.onclick = () => {
-      openAdaptorModal(item);
     };
 
     // Delete hook
@@ -495,185 +711,6 @@
     return card;
   }
 
-  // AI Niche Adaptor Modal Logic
-  function openAdaptorModal(item) {
-    selectedHookForAdaptation = item;
-    const meta = FORMULA_META[item.formula] || FORMULA_META.other;
-
-    modalRefFormula.textContent = `${meta.icon} ${meta.label}`;
-    modalRefAuthor.textContent = item.authorHandle || item.authorName || '@creator';
-    modalRefHookText.textContent = `"${item.hook || item.fullText || ''}"`;
-
-    variationsContainer.classList.add('hidden');
-    variationsList.innerHTML = '';
-
-    adaptorModal.classList.remove('hidden');
-    nicheInput.focus();
-  }
-
-  function closeModal() {
-    adaptorModal.classList.add('hidden');
-    selectedHookForAdaptation = null;
-  }
-
-  // Niche Adaptor Engine
-  function generateNicheVariations(hookText, formula, niche) {
-    const cleanNiche = niche.trim() || 'lĩnh vực của bạn';
-
-    const generators = {
-      contrarian: [
-        {
-          type: 'Góc Nhìn Lật Ngược (The Lie)',
-          text: `Hầu hết mọi người trong ngành ${cleanNiche} đều đang tin vào lời khuyên lỗi thời này. Sự thật là nó đang kìm hãm 99% sự tiến bộ của bạn.`
-        },
-        {
-          type: 'Thực Tế Phũ Phàng (The Unpopular Truth)',
-          text: `Ý kiến trái chiều: ${cleanNiche} không hề phức tạp như các "chuyên gia" cố tỏ ra nguy hiểm. Bạn chỉ cần làm chủ đúng 2 nguyên lý cốt lõi này:`
-        },
-        {
-          type: 'Lệnh Dừng Ngay Lập Tức (Stop Doing X)',
-          text: `Nếu bạn muốn bứt phá trong ${cleanNiche} năm nay, hãy DỪNG NGAY việc lãng phí công sức vào việc này. Đây là lý do tại sao:`
-        }
-      ],
-      curiosity: [
-        {
-          type: 'Quy Luật Ngầm (The Hidden Rule)',
-          text: `Quy luật ngầm trong giới ${cleanNiche} mà người trong cuộc đố ai dám công khai nói cho bạn biết:`
-        },
-        {
-          type: 'Mẫu Số Chung Duy Nhất (The Secret Factor)',
-          text: `Sự khác biệt duy nhất giữa top 1% trong ${cleanNiche} và những người chật vật còn lại chỉ nằm ở 1 thói quen này:`
-        },
-        {
-          type: 'Góc Khuất Hậu Trường (Behind The Scenes)',
-          text: `Tôi đã âm thầm quan sát những người giỏi nhất ngành ${cleanNiche} suốt 12 tháng qua. Đây là 3 điều họ làm mỗi ngày mà không bao giờ đăng lên mạng:`
-        }
-      ],
-      cheatsheet: [
-        {
-          type: 'Cẩm Nang Tinh Gọn (Time Saver)',
-          text: `Tôi đã tốn hơn 100 giờ thử nghiệm mọi phương pháp trong ${cleanNiche}. Đây là bản tóm gọn bạn có thể áp dụng ngay trong 10 phút:`
-        },
-        {
-          type: 'Kho Tài Liệu Triệu Đô (The Ultimate Stack)',
-          text: `Bộ công cụ & khung sườn giúp bạn làm chủ ${cleanNiche} từ con số 0 (hãy Bookmark lại trước khi bài viết này bị trôi):`
-        },
-        {
-          type: 'Lộ Trình Từng Bước (Step-by-Step Blueprint)',
-          text: `Lộ trình 5 bước chinh phục ${cleanNiche} mà trường lớp hay các khóa học đắt tiền không bao giờ dạy bạn:`
-        }
-      ],
-      story: [
-        {
-          type: 'Từ Số 0 Đến Thành Tựu (Zero to Hero)',
-          text: `Cách đây 2 năm, tôi hoàn toàn mù tịt về ${cleanNiche}. Hôm nay, đây là hệ thống tinh gọn đã thay đổi toàn bộ kết quả của tôi:`
-        },
-        {
-          type: 'Bài Học Xương Máu (Hardest Lesson)',
-          text: `Sai lầm ngớ ngẩn và đắt giá nhất của tôi khi bắt đầu với ${cleanNiche} (và cách bạn có thể né nó mà không mất 1 xu):`
-        },
-        {
-          type: 'Khoảnh Khắc Bước Ngoặt (Turning Point)',
-          text: `Khoảnh khắc tôi nhận ra mình đã tiếp cận ${cleanNiche} hoàn toàn sai lầm — và cách tôi xoay chuyển tình thế trong 30 ngày:`
-        }
-      ],
-      proof: [
-        {
-          type: 'Phân Tích Chuyên Gia (Top Performers Audit)',
-          text: `Tôi đã phân tích hơn 50 case-study xuất sắc nhất trong lĩnh vực ${cleanNiche}. Đây là 4 chiến lược chung giúp họ thống trị:`
-        },
-        {
-          type: 'Nếu Bắt Đầu Lại Từ Đầu (Starting From Scratch)',
-          text: `Nếu bị tước bỏ mọi tài nguyên và phải bắt đầu lại từ con số 0 với ${cleanNiche}, đây là kế hoạch chi tiết tôi sẽ thực hiện trong 30 ngày tới:`
-        },
-        {
-          type: 'Số Liệu Thực Chiến (Data-Backed Findings)',
-          text: `Chúng tôi đã áp dụng thử nghiệm chiến lược này trên thực tế trong mảng ${cleanNiche}. Kết quả cho thấy tỷ lệ thành công tăng vượt trội:`
-        }
-      ],
-      challenge: [
-        {
-          type: 'Thức Tỉnh Trực Diện (Reality Check)',
-          text: `Bạn đã dành bao nhiêu thời gian cho ${cleanNiche} mà vẫn dậm chân tại chỗ? 3 phút đọc bài viết này sẽ chỉ rõ nút thắt của bạn:`
-        },
-        {
-          type: 'Giả Định Đổi Đời (What If)',
-          text: `Điều gì sẽ xảy ra nếu bạn chỉ tập trung vào đúng 20% nỗ lực mang lại 80% kết quả trong ${cleanNiche}? Hãy thử bài test này:`
-        },
-        {
-          type: 'Bộ Câu Hỏi Tự Vấn (Checklist Provocation)',
-          text: `3 câu hỏi bạn bắt buộc phải trả lời dc trước khi quyết định dấn thân sâu hơn vào ${cleanNiche}:`
-        }
-      ]
-    };
-
-    const targetList = generators[formula] || generators.curiosity;
-    return targetList;
-  }
-
-  // Handle Generate Button
-  btnGenerateVariations.onclick = () => {
-    const niche = nicheInput.value.trim();
-    if (!niche) {
-      alert('Vui lòng nhập niche hoặc chọn 1 chip gợi ý bên dưới!');
-      nicheInput.focus();
-      return;
-    }
-
-    if (!selectedHookForAdaptation) return;
-
-    const variations = generateNicheVariations(
-      selectedHookForAdaptation.hook,
-      selectedHookForAdaptation.formula,
-      niche
-    );
-
-    variationsList.innerHTML = '';
-    variations.forEach((v) => {
-      const itemEl = document.createElement('div');
-      itemEl.className = 'variation-item';
-      itemEl.innerHTML = `
-        <div class="variation-header">
-          <span class="variation-type">${escapeHtml(v.type)}</span>
-          <button class="btn btn-secondary btn-card btn-copy-var">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-            <span>Sao chép</span>
-          </button>
-        </div>
-        <div class="variation-text">${escapeHtml(v.text)}</div>
-      `;
-
-      itemEl.querySelector('.btn-copy-var').onclick = () => {
-        navigator.clipboard.writeText(v.text).then(() => {
-          showToast('✓ Đã chép biến thể Hook vào clipboard!');
-        });
-      };
-
-      variationsList.appendChild(itemEl);
-    });
-
-    variationsContainer.classList.remove('hidden');
-  };
-
-  // Niche chips click
-  document.querySelectorAll('.niche-chips .chip').forEach((chip) => {
-    chip.onclick = () => {
-      nicheInput.value = chip.getAttribute('data-niche');
-      btnGenerateVariations.click();
-    };
-  });
-
-  // Modal events
-  btnCloseModal.onclick = closeModal;
-  adaptorModal.onclick = (e) => {
-    if (e.target === adaptorModal) closeModal();
-  };
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !adaptorModal.classList.contains('hidden')) {
-      closeModal();
-    }
-  });
-
   // Export Markdown
   btnExportMd.onclick = () => {
     if (currentHooks.length === 0) {
@@ -681,16 +718,17 @@
       return;
     }
 
-    let md = `# ⚡ X Hook Vault Export (${new Date().toLocaleDateString('vi-VN')})\n\n`;
+    let md = `# ⚡ Threads & X Hook Vault Export (${new Date().toLocaleDateString('vi-VN')})\n\n`;
     md += `*Tổng số hook đã lưu: ${currentHooks.length} bài viết*\n\n---\n\n`;
 
     currentHooks.forEach((item, index) => {
       const meta = FORMULA_META[item.formula] || FORMULA_META.other;
       md += `### ${index + 1}. ${item.authorName || 'Tác giả'} (${item.authorHandle || ''})\n\n`;
       md += `> **Hook**: ${item.hook || item.fullText || ''}\n\n`;
+      md += `- **Nền tảng**: ${item.platform === 'threads' ? 'Threads' : 'X (Twitter)'}\n`;
       md += `- **Công thức**: ${meta.label}\n`;
-      md += `- **Chỉ số**: ${formatMetric(item.metrics?.views)} Views | ${formatMetric(item.metrics?.likes)} Likes | ${formatMetric(item.metrics?.bookmarks)} Bookmarks\n`;
-      md += `- **Link bài viết**: [Xem trên X](${item.url || '#'})\n`;
+      md += `- **Chỉ số**: ${formatMetric(item.metrics?.views)} Views | ${formatMetric(item.metrics?.likes)} Likes | ${formatMetric(item.metrics?.bookmarks || item.metrics?.replies)} ${item.platform === 'threads' ? 'Replies' : 'Bookmarks'}\n`;
+      md += `- **Link bài viết**: [Xem trên ${item.platform === 'threads' ? 'Threads' : 'X'}](${item.url || '#'})\n`;
       md += `- **Ngày lưu**: ${item.savedAt ? new Date(item.savedAt).toLocaleString('vi-VN') : 'N/A'}\n\n`;
       if (item.fullText && item.fullText !== item.hook) {
         md += `<details><summary>Nội dung đầy đủ</summary>\n\n${item.fullText}\n\n</details>\n\n`;
@@ -702,7 +740,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `x-hook-vault-${new Date().toISOString().slice(0, 10)}.md`;
+    a.download = `threads-hook-vault-${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('✓ Đã xuất file Markdown thành công!');
@@ -720,7 +758,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `x-hook-vault-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `threads-hook-vault-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('✓ Đã xuất file JSON thành công!');
@@ -778,6 +816,65 @@
   setupSegmentedControl('segmentedPlatform', filterPlatform);
   setupSegmentedControl('segmentedOutlier', filterOutlier);
 
+  // Custom Floating Popover Dropdown Setup
+  function setupCustomDropdown(dropdownId, triggerId, menuId, selectEl, onChangeCallback) {
+    const dropdown = document.getElementById(dropdownId);
+    const trigger = document.getElementById(triggerId);
+    const menu = document.getElementById(menuId);
+    if (!dropdown || !trigger || !menu || !selectEl) return;
+
+    const triggerIcon = trigger.querySelector('.dropdown-trigger-icon');
+    const triggerLabel = trigger.querySelector('.dropdown-trigger-label');
+    const items = menu.querySelectorAll('.custom-dropdown-item');
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = menu.classList.contains('open');
+      document.querySelectorAll('.custom-dropdown-menu').forEach((m) => m.classList.remove('open'));
+      document.querySelectorAll('.custom-dropdown-trigger').forEach((t) => {
+        t.classList.remove('open');
+        t.setAttribute('aria-expanded', 'false');
+      });
+      if (!isOpen) {
+        menu.classList.add('open');
+        trigger.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    items.forEach((item) => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = item.getAttribute('data-val');
+        items.forEach((it) => it.classList.remove('selected'));
+        item.classList.add('selected');
+
+        const itemSvg = item.querySelector('.item-content svg');
+        const itemText = item.querySelector('.item-content span')?.textContent || '';
+        if (triggerIcon && itemSvg) triggerIcon.innerHTML = itemSvg.outerHTML;
+        if (triggerLabel) triggerLabel.textContent = itemText;
+
+        selectEl.value = val;
+        menu.classList.remove('open');
+        trigger.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (typeof onChangeCallback === 'function') onChangeCallback(val);
+      });
+    });
+  }
+
+  setupCustomDropdown('dropdownFormula', 'triggerFormula', 'menuFormula', filterFormula, () => renderHookList());
+  setupCustomDropdown('dropdownSort', 'triggerSort', 'menuSort', sortOrder, () => renderHookList());
+
+  // Close custom dropdowns on click outside
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-dropdown-menu').forEach((m) => m.classList.remove('open'));
+    document.querySelectorAll('.custom-dropdown-trigger').forEach((t) => {
+      t.classList.remove('open');
+      t.setAttribute('aria-expanded', 'false');
+    });
+  });
+
   // Keyboard shortcut '/' to focus search
   window.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== searchInput && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
@@ -787,9 +884,37 @@
   });
 
   // Initialize
+
+  initSpotlightCards();
+  initClickSparks();
+
   loadVaultData((items) => {
     currentHooks = items;
     updateStats(currentHooks);
     renderHookList();
+  });
+
+  // Real-time synchronization when a hook is saved in another tab (Threads or X)
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes[STORAGE_KEY]) {
+        loadVaultData((items) => {
+          currentHooks = items;
+          updateStats(currentHooks);
+          renderHookList();
+        });
+      }
+    });
+  }
+
+  // Cross-tab synchronization for localStorage
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) {
+      loadVaultData((items) => {
+        currentHooks = items;
+        updateStats(currentHooks);
+        renderHookList();
+      });
+    }
   });
 })();

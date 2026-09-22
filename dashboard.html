@@ -3,88 +3,160 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚡ Hook Vault & Viral Intelligence - Social Shield</title>
+  <title>⚡ Threads Hook Vault & Viral Intelligence - Social Shield</title>
   <link rel="stylesheet" href="dashboard.css" />
 </head>
 <body>
-  <div class="ambient-glow"></div>
   <div class="vault-app">
     <!-- Top Navigation Bar -->
     <header class="vault-header">
       <div class="header-left">
         <div class="brand-badge">
+          <!-- Custom Geometric Shield-Lightning Icon -->
           <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z"/>
+            <path d="M13 7l-4 5h6l-3 5"/>
           </svg>
           <span class="brand-title">Social Shield</span>
-          <span class="brand-tag">PRO</span>
+          <span class="brand-tag">THREADS FIRST</span>
         </div>
         <div class="header-divider"></div>
         <div class="header-titles">
-          <h1>Hook Vault & Viral Intelligence</h1>
-          <p class="subtitle">Kho tàng Hook triệu views trên X & Bộ phân tích biến hóa theo Niche</p>
+          <h1 class="shiny-text">Threads & X Hook Vault</h1>
+          <p class="subtitle">Kho tàng Hook triệu views trên Threads & X • Trích xuất & phân tích công thức viral</p>
         </div>
       </div>
 
       <div class="header-right">
         <button id="btnExportMd" class="btn btn-secondary" title="Xuất toàn bộ Hook ra định dạng Markdown (hỗ trợ Obsidian/Notion)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <!-- Custom Folded Document Export Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6a2 2 0 0 0-2 2z"/>
+            <path d="M14 2v6h6"/>
+            <path d="M9 13l3 3 3-3M12 16V10"/>
+          </svg>
           <span>Xuất Markdown</span>
         </button>
         <button id="btnExportJson" class="btn btn-secondary" title="Xuất dữ liệu thô JSON để sao lưu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <!-- Custom Matrix Bracket Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 6c-2 0-3 1-3 3v2c0 1-1 2-2 2 1 0 2 1 2 2v2c0 2 1 3 3 3"/>
+            <path d="M16 6c2 0 3 1 3 3v2c0 1 1 2 2 2-1 0-2 1-2 2v2c0 2-1 3-3 3"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
           <span>Xuất JSON</span>
         </button>
         <button id="btnClearAll" class="btn btn-destructive-subtle" title="Xóa sạch toàn bộ Hook đã lưu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          <!-- Custom Industrial Purge Icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h16"/>
+            <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>
+          </svg>
           <span>Dọn sạch</span>
         </button>
       </div>
     </header>
 
+
     <!-- Stats Overview Section -->
     <section class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon-wrapper blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+      <div class="stat-card spotlight-card stat-card-red" data-spotlight="rgba(255, 97, 97, 0.16)">
+        <div class="stat-card-top">
+          <div class="stat-badge-pulse pulse-red">
+            <span class="pulse-dot"></span>
+            <span class="stat-label">Tổng Hook Đã Lưu</span>
+          </div>
+          <div class="stat-watermark-icon">
+            <!-- Custom Vault Ledger Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="16" rx="3"/>
+              <path d="M7 8h10"/>
+              <path d="M7 12h6"/>
+              <path d="M15 11a2.5 2.5 0 0 1 2.5 2.5v1a1.5 1.5 0 0 1-3 0v-1"/>
+            </svg>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-label">Tổng Hook Đã Lưu</div>
+        <div class="stat-card-body">
           <div class="stat-value" id="statTotalHooks">0</div>
           <div class="stat-hint">Sẵn sàng để học hỏi & mài sắc</div>
         </div>
+        <div class="stat-meter-track">
+          <div class="stat-meter-fill meter-red" id="statHooksMeter" style="width: 0%;"></div>
+        </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon-wrapper amber">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <div class="stat-card spotlight-card stat-card-amber" data-spotlight="rgba(255, 179, 64, 0.16)">
+        <div class="stat-card-top">
+          <div class="stat-badge-pulse pulse-amber">
+            <span class="pulse-dot"></span>
+            <span class="stat-label">Kỷ Lục Reach (Views)</span>
+          </div>
+          <div class="stat-watermark-icon">
+            <!-- Custom Breakout Trajectory Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 20h18"/>
+              <path d="M5 16l5-5 4 4 7-9"/>
+              <path d="M17 6h4v4"/>
+              <circle cx="10" cy="11" r="1.5" fill="currentColor"/>
+              <circle cx="14" cy="15" r="1.5" fill="currentColor"/>
+            </svg>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-label">Kỷ Lục Reach (Views)</div>
+        <div class="stat-card-body">
           <div class="stat-value" id="statMaxViews">0</div>
           <div class="stat-hint" id="statMaxViewsAuthor">Chưa có dữ liệu</div>
         </div>
+        <div class="stat-meter-track">
+          <div class="stat-meter-fill meter-amber" id="statReachMeter" style="width: 0%;"></div>
+        </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon-wrapper purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+      <div class="stat-card spotlight-card stat-card-purple" data-spotlight="rgba(168, 85, 247, 0.18)">
+        <div class="stat-card-top">
+          <div class="stat-badge-pulse pulse-purple">
+            <span class="pulse-dot"></span>
+            <span class="stat-label">Công Thức Thống Trị</span>
+          </div>
+          <div class="stat-watermark-icon">
+            <!-- Custom Formula Alchemy Radiance Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3.5"/>
+              <path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>
+              <path d="M4.93 4.93l2.12 2.12m9.9 9.9l2.12 2.12M4.93 19.07l2.12-2.12m9.9-9.9l2.12-2.12"/>
+            </svg>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-label">Công Thức Thống Trị</div>
+        <div class="stat-card-body">
           <div class="stat-value text-base" id="statTopFormula">Chưa đủ dữ liệu</div>
           <div class="stat-hint" id="statTopFormulaPct">0% tỷ trọng</div>
         </div>
+        <div class="stat-meter-track">
+          <div class="stat-meter-fill meter-purple" id="statFormulaMeter" style="width: 0%;"></div>
+        </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon-wrapper emerald">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+      <div class="stat-card spotlight-card stat-card-green" data-spotlight="rgba(52, 211, 153, 0.16)">
+        <div class="stat-card-top">
+          <div class="stat-badge-pulse pulse-green">
+            <span class="pulse-dot"></span>
+            <span class="stat-label">Trung Bình Tương Tác</span>
+          </div>
+          <div class="stat-watermark-icon">
+            <!-- Custom Pulse Wave Engagement Heart Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              <path d="M7 10h2.5l1.5-3 2 6 1.5-3H17" stroke-width="1.5"/>
+            </svg>
+          </div>
         </div>
-        <div class="stat-content">
-          <div class="stat-label">Trung Bình Tương Tác</div>
+        <div class="stat-card-body">
           <div class="stat-value" id="statAvgLikes">0</div>
-          <div class="stat-hint">Lượt thích / bài viết</div>
+          <div class="stat-hint">Lượt thích & phản hồi / bài</div>
+        </div>
+        <div class="stat-meter-track">
+          <div class="stat-meter-fill meter-green" id="statEngageMeter" style="width: 0%;"></div>
         </div>
       </div>
     </section>
@@ -93,31 +165,72 @@
     <section class="toolbar-section">
       <div class="toolbar-primary-row">
         <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="searchInput" placeholder="Tìm kiếm nội dung hook, tác giả (@handle), hoặc từ khóa..." />
+          <!-- Custom Crosshair Lens Search Icon -->
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="M11 8v6M8 11h6"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Tìm kiếm nội dung hook Threads, tác giả (@handle), niche, hoặc từ khóa..." />
           <kbd class="search-kbd">/</kbd>
           <button id="btnClearSearch" class="btn-clear-search hidden">&times;</button>
         </div>
 
         <div class="segmented-control" id="segmentedPlatform">
-          <button type="button" class="segment-btn active" data-val="all">🌐 Tất cả</button>
-          <button type="button" class="segment-btn" data-val="x">𝕏 X</button>
-          <button type="button" class="segment-btn" data-val="threads">🧵 Threads</button>
+          <!-- Defaults to Threads first -->
+          <button type="button" class="segment-btn active" data-val="threads">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block; vertical-align:-1px; margin-right:4px;">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3.3 11.2c-.3 1.8-1.5 2.8-3.3 2.8-2 0-3.3-1.4-3.3-3.7 0-2.4 1.4-3.8 3.5-3.8 1.9 0 3.1 1.2 3.2 2.9h-1.6c-.1-1-.7-1.5-1.6-1.5-1.1 0-1.8.8-1.8 2.4 0 1.5.7 2.3 1.8 2.3 1 0 1.5-.6 1.6-1.4z"/>
+            </svg>
+            Threads
+          </button>
+          <button type="button" class="segment-btn" data-val="x">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11" style="display:inline-block; vertical-align:-1px; margin-right:4px;">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            X (Twitter)
+          </button>
+          <button type="button" class="segment-btn" data-val="all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block; vertical-align:-1px; margin-right:4px;">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            Tất cả
+          </button>
         </div>
 
         <!-- Hidden select for complete backward-compatibility -->
         <select id="filterPlatform" class="sr-only" style="display:none;">
-          <option value="all" selected>all</option>
+          <option value="threads" selected>threads</option>
           <option value="x">x</option>
-          <option value="threads">threads</option>
+          <option value="all">all</option>
         </select>
       </div>
 
       <div class="toolbar-secondary-row">
         <div class="segmented-control" id="segmentedOutlier">
-          <button type="button" class="segment-btn active" data-val="all">⚡ Tất cả bài</button>
-          <button type="button" class="segment-btn" data-val="outliers_only">🔥 Outlier (≥3x)</button>
-          <button type="button" class="segment-btn" data-val="super_outliers">🚀 Siêu Outlier (≥10x)</button>
+          <button type="button" class="segment-btn active" data-val="all">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block; vertical-align:-1px; margin-right:4px;">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            Tất cả bài
+          </button>
+          <button type="button" class="segment-btn" data-val="outliers_only">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block; vertical-align:-1px; margin-right:4px;">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+            </svg>
+            Outlier (≥3x)
+          </button>
+          <button type="button" class="segment-btn" data-val="super_outliers">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block; vertical-align:-1px; margin-right:4px;">
+              <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+              <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+              <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+              <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+            </svg>
+            Siêu Outlier (≥10x)
+          </button>
         </div>
 
         <!-- Hidden select for complete backward-compatibility -->
@@ -128,32 +241,148 @@
         </select>
 
         <div class="filter-dropdowns">
-          <div class="custom-select-box">
-            <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
-            <select id="filterFormula">
-              <option value="all">⚡ Tất cả công thức</option>
-              <option value="curiosity">🔍 Curiosity Gap (Tò mò)</option>
-              <option value="contrarian">🔥 Contrarian (Ngược chiều)</option>
-              <option value="cheatsheet">📚 Cheatsheet / Framework</option>
-              <option value="story">📖 Story / Transformation</option>
-              <option value="proof">🏆 Social Proof / Authority</option>
-              <option value="challenge">🎯 Direct Challenge / Question</option>
-              <option value="other">💬 Khác / Đa dạng</option>
+          <!-- Custom Floating Popover: Formula -->
+          <div class="custom-dropdown" id="dropdownFormula">
+            <button type="button" class="custom-dropdown-trigger" id="triggerFormula" aria-haspopup="listbox" aria-expanded="false">
+              <span class="dropdown-trigger-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </span>
+              <span class="dropdown-trigger-label">Tất cả công thức</span>
+              <svg class="dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="custom-dropdown-menu" id="menuFormula" role="listbox">
+              <div class="custom-dropdown-item selected" data-val="all">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Tất cả công thức</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="curiosity">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="M21 21l-4.35-4.35"/></svg>
+                  <span>Curiosity Gap (Tò mò)</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="contrarian">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                  <span>Contrarian (Ngược chiều)</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="cheatsheet">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/></svg>
+                  <span>Cheatsheet / Framework</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="story">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <span>Story / Transformation</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="proof">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                  <span>Social Proof / Authority</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="challenge">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                  <span>Direct Challenge / Question</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="other">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <span>Khác / Đa dạng</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+            </div>
+            <!-- Hidden Select for script backward compatibility -->
+            <select id="filterFormula" style="display:none;">
+              <option value="all" selected>all</option>
+              <option value="curiosity">curiosity</option>
+              <option value="contrarian">contrarian</option>
+              <option value="cheatsheet">cheatsheet</option>
+              <option value="story">story</option>
+              <option value="proof">proof</option>
+              <option value="challenge">challenge</option>
+              <option value="other">other</option>
             </select>
-            <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
           </div>
 
-          <div class="custom-select-box">
-            <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16"/></svg>
-            <select id="sortOrder">
-              <option value="multiplier_desc">🔥 Outlier Multiplier (Cao → Thấp)</option>
-              <option value="views_desc">👁️ Views cao nhất</option>
-              <option value="likes_desc">❤️ Likes nhiều nhất</option>
-              <option value="bookmarks_desc">🔖 Bookmarks nhiều nhất</option>
-              <option value="date_desc">🕒 Mới lưu gần nhất</option>
-              <option value="date_asc">⏳ Cũ nhất</option>
+          <!-- Custom Floating Popover: Sort Order -->
+          <div class="custom-dropdown" id="dropdownSort">
+            <button type="button" class="custom-dropdown-trigger" id="triggerSort" aria-haspopup="listbox" aria-expanded="false">
+              <span class="dropdown-trigger-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+              </span>
+              <span class="dropdown-trigger-label">Outlier Multiplier (Cao → Thấp)</span>
+              <svg class="dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="custom-dropdown-menu" id="menuSort" role="listbox">
+              <div class="custom-dropdown-item selected" data-val="multiplier_desc">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                  <span>Outlier Multiplier (Cao → Thấp)</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="views_desc">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12c2.5-5 6.5-8 9-8s6.5 3 9 8c-2.5 5-6.5 8-9 8s-6.5-3-9-8z"/></svg>
+                  <span>Reach / Views cao nhất</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="likes_desc">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  <span>Likes & Tim nhiều nhất</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="bookmarks_desc">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                  <span>Bookmarks / Lưu nhiều nhất</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="date_desc">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Mới lưu gần nhất</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+              <div class="custom-dropdown-item" data-val="date_asc">
+                <div class="item-content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
+                  <span>Cũ nhất</span>
+                </div>
+                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>
+            </div>
+            <!-- Hidden Select for script backward compatibility -->
+            <select id="sortOrder" style="display:none;">
+              <option value="multiplier_desc" selected>multiplier_desc</option>
+              <option value="views_desc">views_desc</option>
+              <option value="likes_desc">likes_desc</option>
+              <option value="bookmarks_desc">bookmarks_desc</option>
+              <option value="date_desc">date_desc</option>
+              <option value="date_asc">date_asc</option>
             </select>
-            <svg class="select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
           </div>
         </div>
       </div>
@@ -165,89 +394,41 @@
         <!-- Dynamic Cards Injected via JS -->
       </div>
 
-      <!-- Empty State -->
       <div id="emptyState" class="empty-state hidden">
-        <div class="empty-icon-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
-            <path d="M6 6h10"/>
-            <path d="M6 10h10"/>
+        <div class="empty-header-row">
+          <!-- Custom Radar Scanning for Signal Icon -->
+          <svg class="empty-inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 3a9 9 0 0 1 9 9"/>
+            <path d="M12 7a5 5 0 0 1 5 5"/>
+            <circle cx="12" cy="12" r="2" fill="currentColor"/>
           </svg>
+          <h2 class="empty-title">Chưa có Hook Threads nào trong Vault</h2>
         </div>
-        <h3>Chưa có Hook nào trong Vault</h3>
-        <p>Lướt X (Twitter) hoặc Threads và bấm nút <strong>[⚡ Save Hook]</strong> trên bài viết để tự động gom vào đây.</p>
-        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-          <a href="https://x.com" target="_blank" class="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            <span>Mở X.com để tìm Hook</span>
+        <p class="empty-desc">Lướt Threads (hoặc X) và bấm nút <strong>[⚡ Save Hook]</strong> dưới bài viết để tự động gom vào kho lưu trữ.</p>
+        <div class="empty-actions">
+          <a href="https://www.threads.net" target="_blank" class="btn btn-primary">
+            <!-- Custom Threads loop icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3.3 11.2c-.3 1.8-1.5 2.8-3.3 2.8-2 0-3.3-1.4-3.3-3.7 0-2.4 1.4-3.8 3.5-3.8 1.9 0 3.1 1.2 3.2 2.9h-1.6c-.1-1-.7-1.5-1.6-1.5-1.1 0-1.8.8-1.8 2.4 0 1.5.7 2.3 1.8 2.3 1 0 1.5-.6 1.6-1.4z"/>
+            </svg>
+            <span>Mở Threads.net để gom Hook</span>
           </a>
           <button id="btnLoadSamples" type="button" class="btn btn-secondary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-            <span>Nạp 5 bài mẫu thử nghiệm</span>
+            <!-- Custom Spark Alchemy Icon -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v18M3 12h18M6.5 6.5l11 11M6.5 17.5l11-11"/>
+            </svg>
+            <span>Nạp bài mẫu thử nghiệm</span>
           </button>
         </div>
       </div>
     </main>
 
-    <!-- Niche Adaptor Modal -->
-    <div id="adaptorModal" class="modal-backdrop hidden">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div class="modal-title-group">
-            <div class="modal-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span>AI Niche Adaptor</span>
-            </div>
-            <h2>Biến Hóa Hook Theo Niche Của Bạn</h2>
-          </div>
-          <button id="btnCloseModal" class="btn-close-modal">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <!-- Original Hook Reference -->
-          <div class="ref-box">
-            <div class="ref-meta">
-              <span class="ref-label">Hook Gốc:</span>
-              <span id="modalRefFormula" class="formula-pill">Curiosity Gap</span>
-              <span id="modalRefAuthor" class="ref-author">@elonmusk</span>
-            </div>
-            <div id="modalRefHookText" class="ref-hook-text">...</div>
-          </div>
-
-          <!-- Niche Input Form -->
-          <div class="niche-input-group">
-            <label for="nicheInput">Niche / Chủ đề bạn muốn áp dụng:</label>
-            <div class="input-with-button">
-              <input type="text" id="nicheInput" placeholder="Ví dụ: Học lập trình Python, Gym & Tăng cơ, Đầu tư Crypto, Bán hàng B2B, v.v." />
-              <button id="btnGenerateVariations" class="btn btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                <span>Tạo Biến Thể</span>
-              </button>
-            </div>
-            <div class="niche-chips">
-              <span class="chip" data-niche="Lập trình & Kỹ thuật AI">💻 Lập trình AI</span>
-              <span class="chip" data-niche="Phát triển bản thân & Đọc sách">🌱 Self-help</span>
-              <span class="chip" data-niche="Kinh doanh Online & Dropshipping">💼 E-commerce</span>
-              <span class="chip" data-niche="Gym, Sức khỏe & Dinh dưỡng">💪 Gym & Fitness</span>
-              <span class="chip" data-niche="Tài chính cá nhân & Đầu tư">💰 Đầu tư</span>
-            </div>
-          </div>
-
-          <!-- Generated Variations Container -->
-          <div id="variationsContainer" class="variations-container hidden">
-            <h3>3 Biến Thể Hook Tối Ưu Cho Niche Của Bạn:</h3>
-            <div id="variationsList" class="variations-list">
-              <!-- Dynamically populated -->
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Toast Notification -->
     <div id="vaultToast" class="vault-toast hidden">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-      <span id="toastMsg">Đã sao chép thành công!</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      <span id="toastMsg"></span>
     </div>
   </div>
 

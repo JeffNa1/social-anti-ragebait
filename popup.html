@@ -1,977 +1,410 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Social Shield: All-in-One Guardian</title>
+  <meta charset="UTF-8">
+  <title>Viral Outlier & Hook Vault</title>
   <style>
-    :root {
-      --bg: #07080a;
-      --card: rgba(16, 18, 27, 0.75);
-      --card-highlight: rgba(255, 255, 255, 0.05);
-      --border: rgba(255, 255, 255, 0.07);
-      --border-hover: rgba(255, 255, 255, 0.16);
-      --fg: #f8fafc;
-      --muted: #94a3b8;
-      --dim: #64748b;
-      --primary: #38bdf8;
-      --primary-glow: rgba(56, 189, 248, 0.35);
-      --destructive: #ef4444;
-      --radius-sm: 5px;
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --radius-pill: 9999px;
-      --ease: cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "SF Pro Display", "Segoe UI", Roboto, sans-serif;
-      -webkit-font-smoothing: antialiased;
     }
-
     body {
-      width: 350px;
-      max-height: 600px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      background:
-        radial-gradient(ellipse 90% 45% at 50% -5%, rgba(56, 189, 248, 0.18), transparent),
-        radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.08), transparent 50%),
-        var(--bg);
-      color: var(--fg);
+      width: 340px;
+      background: #07080a;
+      color: #cdcdcd;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-feature-settings: "calt", "kern", "liga", "ss03";
       padding: 16px;
-      font-size: 12px;
-      line-height: 1.45;
-      letter-spacing: -0.01em;
+      user-select: none;
+      animation: raycastPopIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
     }
-
-    body::-webkit-scrollbar {
-      width: 5px;
+    @keyframes raycastPopIn {
+      from {
+        opacity: 0;
+        transform: scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
-    body::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.15);
-    }
-    body::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.14);
-      border-radius: var(--radius-pill);
-    }
-    body::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
-
     .header {
       display: flex;
       align-items: center;
-      gap: 11px;
-      margin-bottom: 12px;
+      justify-content: space-between;
+      margin-bottom: 14px;
       padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-      position: relative;
+      border-bottom: 1px solid #242728;
     }
-
-    .header::after {
-      content: "";
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      width: 48px;
-      height: 1px;
-      background: linear-gradient(90deg, #38bdf8, transparent);
-    }
-
-    .logo {
-      width: 34px;
-      height: 34px;
-      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-      border-radius: var(--radius-md);
+    .header-title {
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: #fff;
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-      flex-shrink: 0;
-      animation: pulse-shield-glow 3.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse-shield-glow {
-      0%, 100% {
-        box-shadow: 0 0 14px rgba(2, 132, 199, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-      }
-      50% {
-        box-shadow: 0 0 26px rgba(56, 189, 248, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-      }
-    }
-
-    .logo svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .title {
-      flex: 1;
-    }
-
-    .title-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .title h1 {
+      gap: 8px;
       font-size: 14px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.025em;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 9px;
       font-weight: 600;
-      padding: 1.5px 6px;
-      border-radius: var(--radius-pill);
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #34d399;
+      letter-spacing: -0.01em;
+      color: #f4f4f6;
     }
-
-    .status-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: #34d399;
-      box-shadow: 0 0 6px #34d399;
-      animation: blink-dot 2s ease-in-out infinite;
-    }
-
-    @keyframes blink-dot {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    .title p {
-      font-size: 10.5px;
-      color: var(--muted);
-      margin-top: 1px;
-    }
-
-    .platform-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 12px;
-    }
-
-    .platform-tag {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 2.5px 7.5px;
-      font-size: 9.5px;
-      font-weight: 600;
-      color: var(--muted);
-      letter-spacing: 0.01em;
-      transition: all 0.15s ease;
-    }
-
-    .platform-tag:hover {
-      background: rgba(255, 255, 255, 0.07);
-      color: #e2e8f0;
-      border-color: var(--border-hover);
-    }
-
-    .section {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 12px;
-      margin-bottom: 10px;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 4px 18px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-    }
-
-    .section:hover {
-      border-color: rgba(255, 255, 255, 0.14);
-      box-shadow: 0 6px 22px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    }
-
-    .section-title {
-      font-size: 9.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .section-title svg {
-      width: 13px;
-      height: 13px;
+    .header-icon {
+      width: 20px;
+      height: 20px;
+      color: #ff6161;
       flex-shrink: 0;
     }
-
-    .row {
+    .badge-platforms {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      background: rgba(255, 97, 97, 0.12);
+      border: 1px solid rgba(255, 97, 97, 0.35);
+      color: #ff6161;
+      letter-spacing: 0.03em;
+      box-shadow: 0 0 10px rgba(255, 97, 97, 0.15);
+    }
+    .card {
+      background: #0d0d0d;
+      border: 1px solid #242728;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+      transition: border-color 0.15s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+    .setting-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      margin-bottom: 12px;
+      gap: 12px;
     }
-
-    .label {
-      font-weight: 600;
-      color: #f1f5f9;
-      font-size: 11.5px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      letter-spacing: -0.01em;
+    .setting-row:last-child {
+      margin-bottom: 0;
     }
-
-    .label svg {
-      width: 13px;
-      height: 13px;
-      flex-shrink: 0;
+    .setting-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #f4f4f6;
     }
-
-    .sublabel {
-      font-size: 10px;
-      color: var(--dim);
-      margin-top: 1px;
-      font-weight: 400;
+    .setting-desc {
+      font-size: 12px;
+      color: #9c9c9d;
+      margin-top: 2px;
       line-height: 1.35;
     }
-
-    /* Modern Obsidian Switch Component */
+    /* Switch - Raycast Tactile Style */
     .switch {
       position: relative;
       display: inline-block;
-      width: 34px;
-      height: 20px;
+      width: 38px;
+      height: 22px;
       flex-shrink: 0;
     }
-
     .switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
-
     .slider {
       position: absolute;
       cursor: pointer;
-      inset: 0;
-      background-color: rgba(255, 255, 255, 0.08);
-      transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
-      border-radius: var(--radius-pill);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #1a1b1c;
+      transition: background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 9999px;
+      border: 1px solid #242728;
     }
-
     .slider:before {
       position: absolute;
       content: "";
-      height: 14px;
-      width: 14px;
+      height: 16px;
+      width: 16px;
       left: 2px;
       bottom: 2px;
-      background-color: #f8fafc;
-      transition: transform 0.2s var(--ease), background-color 0.2s;
+      background-color: #9c9c9d;
+      transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
       border-radius: 50%;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
     }
-
     input:checked + .slider {
-      background-color: var(--primary);
-      border-color: transparent;
-      box-shadow: 0 0 12px var(--primary);
+      background-color: #ff6161;
+      border-color: #ff6161;
+      box-shadow: 0 0 12px rgba(255, 97, 97, 0.4);
     }
-
     input:checked + .slider:before {
-      transform: translateX(14px);
+      transform: translateX(16px);
       background-color: #ffffff;
     }
 
-    input.motivational-toggle:checked + .slider { background-color: #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, 0.7); }
-    input.meme-toggle:checked + .slider { background-color: #ec4899; box-shadow: 0 0 12px rgba(236, 72, 153, 0.7); }
-    input.deepdive-toggle:checked + .slider { background-color: #6366f1; box-shadow: 0 0 12px rgba(99, 102, 241, 0.7); }
-    input.wholesome-toggle:checked + .slider { background-color: #10b981; box-shadow: 0 0 12px rgba(16, 185, 129, 0.7); }
-    input.doom-toggle:checked + .slider { background-color: #f97316; box-shadow: 0 0 12px rgba(249, 115, 22, 0.7); }
-    input.fomo-toggle:checked + .slider { background-color: #eab308; box-shadow: 0 0 12px rgba(234, 179, 8, 0.7); }
-    input.casual-toggle:checked + .slider { background-color: #64748b; box-shadow: 0 0 12px rgba(100, 116, 139, 0.7); }
-    input.custom-toggle:checked + .slider { background-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.7); }
-    input.monk-toggle:checked + .slider { background-color: #0284c7; box-shadow: 0 0 12px rgba(2, 132, 199, 0.7); }
-    input.reels-toggle:checked + .slider { background-color: #06b6d4; box-shadow: 0 0 12px rgba(6, 182, 212, 0.7); }
-    input.rage-toggle:checked + .slider { background-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
-    input.scam-toggle:checked + .slider { background-color: #f97316; box-shadow: 0 0 12px rgba(249, 115, 22, 0.7); }
-    input.seeding-toggle:checked + .slider { background-color: #a855f7; box-shadow: 0 0 12px rgba(168, 85, 247, 0.7); }
-    input.pill-toggle:checked + .slider { background-color: #0284c7; box-shadow: 0 0 12px rgba(2, 132, 199, 0.7); }
-    input.focus-toggle:checked + .slider { background-color: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.7); }
-
-    /* Custom Labels Chips */
-    .custom-label-chip {
+    /* Custom Floating Popover Select (Replaces OS native select) */
+    .custom-select-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .custom-select-trigger {
+      background: #101111;
+      border: 1px solid #242728;
+      color: #f4f4f6;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+      outline: none;
+      user-select: none;
+    }
+    .custom-select-trigger:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      background-color: #151618;
+    }
+    .custom-select-trigger:active {
+      transform: scale(0.95);
+    }
+    .custom-select-trigger.open {
+      border-color: #ff6161;
+      box-shadow: 0 0 0 2px rgba(255, 97, 97, 0.18);
+    }
+    .custom-select-trigger svg.chevron {
+      width: 12px;
+      height: 12px;
+      color: #9c9c9d;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+      flex-shrink: 0;
+    }
+    .custom-select-trigger.open svg.chevron {
+      transform: rotate(180deg);
+      color: #ff6161;
+    }
+    .custom-select-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 135px;
+      background: rgba(14, 15, 17, 0.98);
+      border: 1px solid #282a2c;
+      border-radius: 8px;
+      padding: 4px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px) scale(0.97);
+      transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1), transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.15s ease;
+    }
+    .custom-select-menu.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+    .custom-select-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(168, 85, 247, 0.08);
-      border: 1px solid rgba(168, 85, 247, 0.22);
-      border-radius: var(--radius-md);
-      padding: 5px 8px;
-      backdrop-filter: blur(8px);
-      transition: all 0.15s ease;
-    }
-
-    .custom-label-chip:hover {
-      background: rgba(168, 85, 247, 0.14);
-      border-color: rgba(168, 85, 247, 0.35);
-    }
-
-    .custom-label-chip .remove-btn {
-      color: var(--dim);
+      padding: 7px 10px;
+      font-size: 12px;
+      color: #cdcdcd;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 5px;
-      border-radius: var(--radius-sm);
-      transition: color 0.15s, background 0.15s;
+      transition: background-color 0.12s ease, color 0.12s ease, transform 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      white-space: nowrap;
     }
-
-    .custom-label-chip .remove-btn:hover {
-      color: #f87171;
-      background: rgba(239, 68, 68, 0.15);
+    .custom-select-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
     }
-
-    .switch-mini {
-      position: relative;
+    .custom-select-item:active {
+      transform: scale(0.96);
+    }
+    .custom-select-item.selected {
+      color: #ff6161;
+      font-weight: 600;
+      background: rgba(255, 97, 97, 0.12);
+    }
+    .custom-select-item svg.check {
+      width: 12px;
+      height: 12px;
+      color: #ff6161;
+      display: none;
+      margin-left: 8px;
+    }
+    .custom-select-item.selected svg.check {
       display: inline-block;
-      width: 26px;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .stat-box {
+      background: #0d0d0d;
+      border: 1px solid #242728;
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+      transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .stat-box:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-1px);
+      background-color: #111213;
+    }
+    .stat-val {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f4f4f6;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
+    }
+    .stat-name {
+      font-size: 12px;
+      color: #9c9c9d;
+      margin-top: 3px;
+    }
+    /* Raycast Pill CTA button with Tactile Spring */
+    .btn-dashboard {
+      width: 100%;
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #ffffff;
+      border-radius: 9999px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.16s ease;
+      font-family: inherit;
+    }
+    .btn-dashboard:hover {
+      background: #ffffff;
+      border-color: #ff6161;
+      box-shadow: 0 0 16px rgba(255, 97, 97, 0.35);
+      transform: translateY(-1px);
+    }
+    .btn-dashboard:active {
+      transform: scale(0.94);
+    }
+    .btn-dashboard svg {
+      width: 15px;
       height: 15px;
       flex-shrink: 0;
     }
-
-    .switch-mini input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .switch-mini .slider {
-      border-radius: var(--radius-pill);
-      background-color: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .switch-mini .slider:before {
-      height: 11px;
-      width: 11px;
-      left: 1px;
-      bottom: 1px;
-      background-color: #f8fafc;
-    }
-
-    .switch-mini input:checked + .slider:before {
-      transform: translateX(11px);
-    }
-
-    /* Focus Mode Grid */
-    .focus-tag-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px;
-      margin-top: 8px;
-    }
-
-    .focus-tag-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 5px 8px;
-      font-size: 10.5px;
-      color: #cbd5e1;
-      cursor: pointer;
-      user-select: none;
-      transition: all 0.2s var(--ease);
-    }
-
-    .focus-tag-label:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(56, 189, 248, 0.35);
-    }
-
-    .focus-tag-label:has(input:checked) {
-      background: rgba(56, 189, 248, 0.12);
-      border-color: rgba(56, 189, 248, 0.5);
-      color: #38bdf8;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.22);
-    }
-
-    .focus-tag-label input[type="checkbox"] {
-      accent-color: #38bdf8;
-      cursor: pointer;
-    }
-
-    /* Range slider */
-    .range-wrap {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    input[type=range] {
-      width: 100%;
-      accent-color: #38bdf8;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.08);
-      height: 5px;
-      border-radius: 3px;
-      outline: none;
-      transition: background 0.2s;
-    }
-
-    .range-val {
-      display: flex;
-      justify-content: space-between;
-      font-size: 9.5px;
-      color: var(--dim);
-      margin-top: 4px;
-    }
-
-    /* Metric Counters Bento Grid */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      text-align: center;
-      margin-bottom: 12px;
-    }
-
-    .stat-card {
-      padding: 8px 5px;
-      background: rgba(255, 255, 255, 0.025);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-      transition: all 0.2s ease;
-    }
-
-    .stat-card:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: rgba(255, 255, 255, 0.15);
-      transform: translateY(-1px);
-    }
-
-    .stat-num {
-      font-size: 15px;
-      font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.03em;
-    }
-
-    .stat-lbl {
-      font-size: 9px;
-      color: var(--dim);
-      margin-top: 2px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-    }
-
-    .footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 10.5px;
-      color: var(--dim);
-      padding-top: 4px;
-      border-top: 1px solid var(--border);
-    }
-
-    .btn-reset {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 10.5px;
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-
-    .vault-hero-card {
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      background: linear-gradient(135deg, rgba(2, 132, 199, 0.16) 0%, rgba(16, 18, 27, 0.92) 100%);
-      margin-bottom: 12px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .vault-hero-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), transparent);
-    }
-
-    .btn-vault {
-      width: 100%;
-      height: 34px;
-      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
-      color: #fff;
-      border: 1px solid rgba(56, 189, 248, 0.6);
-      border-radius: var(--radius-md);
-      font-weight: 600;
-      font-size: 11.5px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      box-shadow: 0 0 14px rgba(2, 132, 199, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-      transition: all 0.2s var(--ease);
-    }
-
-    .btn-vault:hover {
-      background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
-      border-color: #38bdf8;
-      box-shadow: 0 0 20px rgba(56, 189, 248, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-      transform: translateY(-1px);
-    }
-
-    .btn-vault:active {
-      transform: translateY(0);
-    }
-
-    .input-text {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 6px 9px;
-      color: #fff;
-      font-size: 11px;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .input-text:focus {
-      border-color: #8b5cf6;
-      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
-    }
-
-    .btn-action-purple {
-      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-      border: 1px solid rgba(168, 85, 247, 0.4);
-      border-radius: var(--radius-md);
-      color: #fff;
-      font-weight: 600;
-      font-size: 11px;
-      padding: 0 12px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .btn-action-purple:hover {
-      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-      box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
-    }
-
-    .mini-number-input {
-      width: 100%;
-      height: 28px;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--fg);
-      padding: 0 8px;
-      font-size: 11px;
-      outline: none;
-      font-variant-numeric: tabular-nums;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .mini-number-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+    <div class="header-title">
+      <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z"/>
+        <path d="M13 7l-4 5h6l-3 5"/>
       </svg>
+      <span>Threads & X Hook Vault</span>
     </div>
-    <div class="title">
-      <div class="title-row">
-        <h1>Social Shield</h1>
-        <span class="status-badge"><span class="status-dot"></span>ACTIVE</span>
-      </div>
-      <p>All-in-One Guardian • Jev Zero-shot</p>
-    </div>
+    <span class="badge-platforms">Threads First</span>
   </div>
 
-  <div class="platform-tags">
-    <span class="platform-tag">Facebook</span>
-    <span class="platform-tag">Instagram</span>
-    <span class="platform-tag">YouTube</span>
-    <span class="platform-tag">Threads</span>
-    <span class="platform-tag">X (Twitter)</span>
-  </div>
-
-  <!-- Hook Vault & Viral Intelligence Hero Card -->
-  <div class="section vault-hero-card">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-      <div style="display: flex; align-items: center; gap: 6px;">
-        <span style="background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); color: #082f49; font-size: 9px; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; letter-spacing: 0.04em;">PRO</span>
-        <span style="font-weight: 700; color: #f0f9ff; font-size: 12px; letter-spacing: -0.01em;">Hook Vault & Viral Scanner</span>
-      </div>
-      <span style="font-size: 9.5px; color: #38bdf8; font-weight: 600; background: rgba(56, 189, 248, 0.1); padding: 1.5px 6px; border-radius: var(--radius-pill); border: 1px solid rgba(56, 189, 248, 0.2);">X • Threads</span>
-    </div>
-    <div style="font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.4;">
-      Tự động phát hiện bài viral & outlier, 1-click lưu Hook và phân tích công thức biến hóa theo Niche.
-    </div>
-    <button id="btnOpenVaultDashboard" type="button" class="btn-vault">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      <span>Mở Hook Vault Dashboard</span>
-    </button>
-  </div>
-
-  <!-- Focus Feed Mode -->
-  <div class="section" style="border-color: rgba(56, 189, 248, 0.3); background: rgba(14, 21, 37, 0.72);">
-    <div class="row">
+  <div class="card">
+    <div class="setting-row">
       <div>
-        <div class="label" style="color: #38bdf8;">Chế Độ Focus (Lọc Tag)</div>
-        <div class="sublabel">Chỉ giữ bài khớp tag đã chọn bên dưới</div>
+        <div class="setting-label">Săn Outlier Threads & X</div>
+        <div class="setting-desc">Tự động gắn viền nhận diện bài bùng nổ</div>
       </div>
       <label class="switch">
-        <input type="checkbox" id="focusModeToggle" class="focus-toggle">
+        <input type="checkbox" id="toggleOutlier" checked>
         <span class="slider"></span>
       </label>
     </div>
 
-    <div id="focusTagSelection" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(56, 189, 248, 0.18); opacity: 0.4; transition: opacity 0.2s;">
-      <div style="font-size: 9.5px; color: var(--muted); margin-bottom: 6px; font-weight: 500;">Giữ lại bài viết thuộc các tag sau:</div>
-      <div class="focus-tag-grid">
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagMotivational" checked>
-          <span>Động lực</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagMeme" checked>
-          <span>Meme</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagDeepDive" checked>
-          <span>Deep Dive</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagWholesome" checked>
-          <span>Wholesome</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagCasual">
-          <span>Thảo luận</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagDoom">
-          <span>Doom</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagFomo">
-          <span>FOMO</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagCustom" checked>
-          <span>Custom Tags</span>
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <!-- AI Taxonomy Section -->
-  <div class="section">
-    <div class="section-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-      <span>Phân Loại & Gắn Tag (AI Taxonomy)</span>
-    </div>
-
-    <div class="row">
+    <div class="setting-row" style="margin-top: 12px;">
       <div>
-        <div class="label" style="color: #fbbf24;">Động lực / Mindset</div>
-        <div class="sublabel">Phát triển bản thân, tư duy, năng lượng tích cực</div>
+        <div class="setting-label">Ngưỡng Bùng Nổ</div>
+        <div class="setting-desc">Tỷ lệ Lượt xem / Follower</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterMotivationalToggle" class="motivational-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #f472b6;">Meme / Giải trí</div>
-        <div class="sublabel">Hài hước, ảnh chế, giải trí vui tươi</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="filterMemeToggle" class="meme-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #818cf8;">Mổ xẻ / Deep Dive</div>
-        <div class="sublabel">Phân tích chuyên sâu, nội bộ ngành</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="filterDeepDiveToggle" class="deepdive-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #34d399;">Wholesome / Tích cực</div>
-        <div class="sublabel">Ấm áp, nhân văn, câu chuyện tích cực</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="filterWholesomeToggle" class="wholesome-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #fb923c;">Doom / Gieo rắc sợ hãi</div>
-        <div class="sublabel">Cảnh báo tin tức tận thế, tiêu cực giật gân</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="filterDoomToggle" class="doom-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #fde047;">FOMO / Hype</div>
-        <div class="sublabel">Thổi phồng tài chính, lùa gà, sợ bỏ lỡ</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="filterFomoToggle" class="fomo-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #94a3b8;">Thảo luận thường nhật (Casual)</div>
-        <div class="sublabel">Hiện tag bài viết thông thường</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="filterCasualToggle" class="casual-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <!-- Custom Labels -->
-    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <div class="label" style="color: #c084fc;">Nhãn Tự Điền (Custom)</div>
-        <span style="font-size: 9.5px; color: var(--dim); background: rgba(168, 85, 247, 0.1); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.2);">Auto Prompt</span>
-      </div>
-      <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-        <input type="text" id="customLabelInput" class="input-text" maxlength="40" placeholder="Nhập nhãn (vd: anime, ai)..." style="flex: 1;">
-        <button id="addCustomLabelBtn" type="button" class="btn-action-purple">Thêm</button>
-      </div>
-      <div id="customLabelsContainer" style="display: flex; flex-direction: column; gap: 5px;"></div>
-    </div>
-  </div>
-
-  <!-- Protective Shields Section -->
-  <div class="section">
-    <div class="section-title" style="color: #f87171;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <span>Khiên Bảo Vệ & Cai Nghiện</span>
-    </div>
-
-    <div class="row">
-      <div>
-        <div class="label" style="color: #38bdf8;">Monk Mode (Hardcore)</div>
-        <div class="sublabel">Chặn ảnh/video phụ nữ & Goon-bait</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="monkModeToggle" class="monk-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #67e8f9;">Chặn Reels & Shorts</div>
-        <div class="sublabel">Instagram Reels, YouTube Shorts & FB Reels</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="blockReelsToggle" class="reels-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #f87171;">Làm mờ Ragebait & Toxic</div>
-        <div class="sublabel">Chặn bài phốt, kích động thù hận, drama</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="autoBlurRageToggle" class="rage-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #fb923c;">Chặn Bẫy Lừa Đảo (Scams)</div>
-        <div class="sublabel">Làm mờ bẫy CTV, lùa gà crypto, đa cấp</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="blockScamsToggle" class="scam-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label" style="color: #c084fc;">Thu gọn Comment Seeding</div>
-        <div class="sublabel">Tự động ẩn bot clone, review ảo</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="collapseSeedingToggle" class="seeding-toggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="row row-divider">
-      <div>
-        <div class="label">Ẩn thanh trạng thái nổi</div>
-        <div class="sublabel">Tắt widget radar ở góc màn hình</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="hideFloatingPillToggle" class="pill-toggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <!-- Viral Post Scanner Settings (X / Twitter) -->
-    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
-      <div class="row">
-        <div>
-          <div class="label" style="color: #fbbf24;">Quét bài viết Viral (X)</div>
-          <div class="sublabel">Tự động gắn badge & highlight bài đạt chuẩn</div>
+      <div class="custom-select-wrapper" id="wrapperMultiplier">
+        <button type="button" class="custom-select-trigger" id="triggerMultiplier" aria-haspopup="listbox" aria-expanded="false">
+          <span class="trigger-text">3x Outlier</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="custom-select-menu" id="menuMultiplier" role="listbox">
+          <div class="custom-select-item" data-val="2"><span>2x Outlier</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="custom-select-item selected" data-val="3"><span>3x Outlier</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="custom-select-item" data-val="5"><span>5x Outlier</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="custom-select-item" data-val="10"><span>10x Outlier</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
         </div>
-        <label class="switch">
-          <input type="checkbox" id="viralDetectionToggle" checked>
-          <span class="slider"></span>
-        </label>
+        <select id="selectMultiplier" style="display:none;">
+          <option value="2">2x Outlier</option>
+          <option value="3" selected>3x Outlier</option>
+          <option value="5">5x Outlier</option>
+          <option value="10">10x Outlier</option>
+        </select>
       </div>
-      <div style="display: flex; gap: 8px; margin-top: 8px;">
-        <div style="flex: 1;">
-          <label style="font-size: 9.5px; color: var(--muted); display: block; margin-bottom: 3px; font-weight: 500;">Min Views:</label>
-          <input type="number" id="viralMinViewsInput" class="mini-number-input" value="50000" step="5000" />
+    </div>
+
+    <div class="setting-row" style="margin-top: 12px;">
+      <div>
+        <div class="setting-label">Sàn Lượt Xem</div>
+        <div class="setting-desc">Bỏ qua bài ít tương tác</div>
+      </div>
+      <div class="custom-select-wrapper" id="wrapperViewsFloor">
+        <button type="button" class="custom-select-trigger" id="triggerViewsFloor" aria-haspopup="listbox" aria-expanded="false">
+          <span class="trigger-text">1,000 views</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="custom-select-menu" id="menuViewsFloor" role="listbox">
+          <div class="custom-select-item" data-val="500"><span>500 views</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="custom-select-item selected" data-val="1000"><span>1,000 views</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="custom-select-item" data-val="2500"><span>2,500 views</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+          <div class="custom-select-item" data-val="5000"><span>5,000 views</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
         </div>
-        <div style="flex: 1;">
-          <label style="font-size: 9.5px; color: var(--muted); display: block; margin-bottom: 3px; font-weight: 500;">Min Likes:</label>
-          <input type="number" id="viralMinLikesInput" class="mini-number-input" value="1000" step="100" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Threshold Slider -->
-    <div class="range-wrap">
-      <div class="row" style="margin-bottom: 4px;">
-        <span class="label" style="font-size: 10.5px;">Độ nhạy phân loại (Threshold)</span>
-        <span id="thresholdVal" style="font-weight: 700; color: #38bdf8; font-variant-numeric: tabular-nums;">30%</span>
-      </div>
-      <input type="range" id="thresholdRange" min="30" max="80" step="5" value="30">
-      <div class="range-val">
-        <span>30% (Chặt chẽ)</span>
-        <span>80% (Rõ ràng mới lọc)</span>
+        <select id="selectViewsFloor" style="display:none;">
+          <option value="500">500 views</option>
+          <option value="1000" selected>1,000 views</option>
+          <option value="2500">2,500 views</option>
+          <option value="5000">5,000 views</option>
+        </select>
       </div>
     </div>
   </div>
 
-  <!-- Metric Counters Bento Grid -->
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-num" id="motivationalCounter" style="color: #fbbf24;">0</div>
-      <div class="stat-lbl">Động lực</div>
+  <div class="stats-grid">
+    <div class="stat-box">
+      <div class="stat-val" id="statSavedHooks">0</div>
+      <div class="stat-name">Hook Đã Lưu</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-num" id="memeCounter" style="color: #f472b6;">0</div>
-      <div class="stat-lbl">Meme</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="deepDiveCounter" style="color: #818cf8;">0</div>
-      <div class="stat-lbl">Deep Dive</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="rageCounter" style="color: #f87171;">0</div>
-      <div class="stat-lbl">Ragebait</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="scamCounter" style="color: #ef4444;">0</div>
-      <div class="stat-lbl">Lừa đảo</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="monkCounter" style="color: #38bdf8;">0</div>
-      <div class="stat-lbl">Monk Media</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="wholesomeCounter" style="color: #34d399;">0</div>
-      <div class="stat-lbl">Wholesome</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="doomCounter" style="color: #fb923c;">0</div>
-      <div class="stat-lbl">Doom</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="fomoCounter" style="color: #fde047;">0</div>
-      <div class="stat-lbl">FOMO</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="casualCounter" style="color: #94a3b8;">0</div>
-      <div class="stat-lbl">Thảo luận</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-num" id="focusCounter" style="color: #38bdf8;">0</div>
-      <div class="stat-lbl">Focus mode</div>
-    </div>
-    <div class="stat-card" style="grid-column: span 2; display: flex; flex-direction: row; justify-content: space-between; padding: 7px 12px;">
-      <div class="stat-lbl" style="margin: 0; font-size: 9.5px; color: #c084fc;">Nhãn Custom</div>
-      <div class="stat-num" id="customCounter" style="color: #c084fc; font-size: 14px;">0</div>
+    <div class="stat-box">
+      <div class="stat-val">100%</div>
+      <div class="stat-name">Offline / Client-Side</div>
     </div>
   </div>
 
-  <div class="footer">
-    <span style="display: flex; align-items: center; gap: 5px;">
-      <span class="status-dot"></span>
-      Jev AI Engine (~250ms)
-    </span>
-    <button class="btn-reset" id="resetStats">Đặt lại số đếm</button>
-  </div>
+  <button type="button" class="btn-dashboard" id="btnOpenDashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3.3 11.2c-.3 1.8-1.5 2.8-3.3 2.8-2 0-3.3-1.4-3.3-3.7 0-2.4 1.4-3.8 3.5-3.8 1.9 0 3.1 1.2 3.2 2.9h-1.6c-.1-1-.7-1.5-1.6-1.5-1.1 0-1.8.8-1.8 2.4 0 1.5.7 2.3 1.8 2.3 1 0 1.5-.6 1.6-1.4z"/>
+    </svg>
+    <span>Mở Threads Hook Vault</span>
+  </button>
 
   <script src="popup.js"></script>
 </body>

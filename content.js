@@ -594,6 +594,30 @@
   let queue = [];
   let debounceTimer = null;
 
+  function openVaultDashboard() {
+    const dashboardUrl = (typeof chrome !== 'undefined' && chrome.runtime?.getURL)
+      ? chrome.runtime.getURL('dashboard.html')
+      : 'dashboard.html';
+
+    let msgSent = false;
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' }, (res) => {
+          if (chrome.runtime?.lastError || !res?.success) {
+            window.open(dashboardUrl, '_blank');
+          }
+        });
+        msgSent = true;
+      } catch (err) {
+        window.open(dashboardUrl, '_blank');
+        return;
+      }
+    }
+    if (!msgSent) {
+      window.open(dashboardUrl, '_blank');
+    }
+  }
+
   // Dynamic Island / Radar Status Widget UI (ReactBits Border Beam & Shadcn)
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
@@ -676,10 +700,9 @@
   const btnOpenVault = flyout.querySelector('#x-jev-flyout-open-vault');
   if (btnOpenVault) {
     btnOpenVault.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' });
-      }
+      openVaultDashboard();
     });
   }
 
@@ -2493,21 +2516,39 @@
     return 'other';
   }
 
-  function showShieldToast(msg) {
+  function showShieldToast(msg, withVaultBtn = false) {
     const existing = document.querySelector('.x-shield-page-toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
     toast.className = 'x-shield-page-toast';
-    toast.innerHTML = `${ICONS.zap} <span>${msg}</span>`;
+    toast.innerHTML = `
+      ${ICONS.zap}
+      <span>${msg}</span>
+      ${withVaultBtn ? `<button type="button" class="x-shield-toast-vault-btn" id="toastOpenVaultBtn">Mở Vault ↗</button>` : ''}
+    `;
     document.body.appendChild(toast);
 
+    if (withVaultBtn) {
+      const openBtn = toast.querySelector('#toastOpenVaultBtn');
+      if (openBtn) {
+        openBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        openBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+        openBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openVaultDashboard();
+        });
+      }
+    }
+
+    const duration = withVaultBtn ? 4200 : 2500;
     setTimeout(() => {
       toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
       toast.style.opacity = '0';
-      toast.style.transform = 'translateY(10px)';
+      toast.style.transform = 'translateX(-50%) translateY(10px)';
       setTimeout(() => toast.remove(), 300);
-    }, 2500);
+    }, duration);
   }
 
   function formatMetricNumber(num) {
@@ -2687,9 +2728,14 @@
     hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
     hookBtn.innerHTML = `${ICONS.zap} <span>Save Hook</span>`;
 
+    hookBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    hookBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
       const formula = classifyHookFormula(hookText);
@@ -2711,7 +2757,7 @@
         authorAvatar: author.authorAvatar,
         authorFollowers: outlier.followers || 0,
         outlierMultiplier: outlier.multiplier || 0,
-        postAgeHours: Math.round(outlier.ageHours),
+        postAgeHours: Math.round(outlier.ageHours || 0),
         hook: hookText,
         fullText: fullText,
         metrics: metrics,
@@ -2720,21 +2766,44 @@
         savedAt: new Date().toISOString()
       };
 
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.get(['x_hook_vault_v1'], (res) => {
-          let vault = Array.isArray(res.x_hook_vault_v1) ? res.x_hook_vault_v1 : [];
+      // Instant UI Feedback
+      hookBtn.classList.remove('is-loading');
+      hookBtn.classList.add('is-saved');
+      hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+      showShieldToast(`✓ Đã lưu Hook Outlier của ${author.authorHandle || author.authorName || 'bài viết'} vào Vault!`, true);
+
+      function saveToLocalStorageFallback() {
+        try {
+          const raw = localStorage.getItem('x_hook_vault_v1');
+          let vault = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(vault)) vault = [];
           vault = vault.filter((item) => item.id !== tweetId);
           vault.unshift(itemToSave);
-          chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
-            hookBtn.classList.add('is-saved');
-            hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-            showShieldToast(`✓ Đã lưu Hook Outlier của ${author.authorHandle || author.authorName || 'bài viết'} vào Vault!`);
+          localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
+        } catch (err) {}
+      }
+
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        try {
+          chrome.storage.local.get(['x_hook_vault_v1'], (res) => {
+            if (chrome.runtime?.lastError) {
+              saveToLocalStorageFallback();
+              return;
+            }
+            let vault = Array.isArray(res?.x_hook_vault_v1) ? res.x_hook_vault_v1 : [];
+            vault = vault.filter((item) => item.id !== tweetId);
+            vault.unshift(itemToSave);
+            chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
+              try {
+                localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
+              } catch (e) {}
+            });
           });
-        });
+        } catch (err) {
+          saveToLocalStorageFallback();
+        }
       } else {
-        hookBtn.classList.add('is-saved');
-        hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-        showShieldToast('✓ Đã lưu Hook vào Vault!');
+        saveToLocalStorageFallback();
       }
     });
 
@@ -3055,82 +3124,79 @@
     const hookBtn = document.createElement('button');
     hookBtn.type = 'button';
     hookBtn.className = 'x-shield-threads-hook-btn';
-    hookBtn.setAttribute('title', 'Phân tích ngữ nghĩa bằng Jev AI và lưu Hook vào Vault');
-    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook (Jev AI)</span>`;
+    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
+    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook</span>`;
+
+    hookBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    hookBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (hookBtn.classList.contains('is-loading')) return;
-      hookBtn.classList.add('is-loading');
-      hookBtn.innerHTML = `${ICONS.scan} <span>Jev AI Đang Bóc Tách...</span>`;
+      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
+      const formula = classifyHookFormula(hookText);
 
       const idMatch = authorInfo.permalink.match(/(?:post|t)\/([a-zA-Z0-9_\-]+)/);
       const threadId = idMatch ? 'threads-' + idMatch[1] : 'threads-' + Date.now();
 
-      // Send to background for Jev AI Zero-shot NLP analysis
-      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage(
-          {
-            type: 'ANALYZE_HOOK_JEV',
-            payload: {
-              hookText: hookText,
-              fullText: fullText,
-              authorName: authorInfo.authorName,
-              authorHandle: authorInfo.authorHandle,
-              authorAvatar: authorInfo.authorAvatar,
-              authorFollowers: outlier.followers || 0,
-              outlierMultiplier: outlier.multiplier || 0,
-              postAgeHours: Math.round(outlier.ageHours),
-              metrics: metrics,
-              url: authorInfo.permalink,
-            },
-          },
-          (res) => {
-            hookBtn.classList.remove('is-loading');
-            const formula = res?.formula || classifyHookFormula(hookText);
-            const confidence = res?.confidence || 0.88;
-            const rawLabel = res?.rawLabel || '';
+      const itemToSave = {
+        id: threadId,
+        platform: 'threads',
+        authorName: authorInfo.authorName,
+        authorHandle: authorInfo.authorHandle,
+        authorAvatar: authorInfo.authorAvatar,
+        authorFollowers: outlier.followers || 0,
+        outlierMultiplier: outlier.multiplier || 0,
+        postAgeHours: Math.round(outlier.ageHours || 0),
+        hook: hookText,
+        fullText: fullText,
+        metrics: metrics,
+        formula: formula,
+        url: authorInfo.permalink,
+        savedAt: new Date().toISOString(),
+      };
 
-            const itemToSave = {
-              id: threadId,
-              platform: 'threads',
-              authorName: authorInfo.authorName,
-              authorHandle: authorInfo.authorHandle,
-              authorAvatar: authorInfo.authorAvatar,
-              authorFollowers: outlier.followers || 0,
-              outlierMultiplier: outlier.multiplier || 0,
-              postAgeHours: Math.round(outlier.ageHours),
-              hook: hookText,
-              fullText: fullText,
-              metrics: metrics,
-              formula: formula,
-              jevConfidence: confidence,
-              jevLabel: rawLabel,
-              url: authorInfo.permalink,
-              savedAt: new Date().toISOString(),
-            };
+      // Instant UI Feedback
+      hookBtn.classList.remove('is-loading');
+      hookBtn.classList.add('is-saved');
+      hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+      showShieldToast(`✓ Đã lưu Hook Outlier của ${authorInfo.authorHandle || authorInfo.authorName} vào Vault!`, true);
 
-            chrome.storage.local.get(['x_hook_vault_v1'], (vaultRes) => {
-              let vault = Array.isArray(vaultRes.x_hook_vault_v1) ? vaultRes.x_hook_vault_v1 : [];
-              vault = vault.filter((item) => item.id !== threadId);
-              vault.unshift(itemToSave);
-              chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
-                hookBtn.classList.add('is-saved');
-                hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-                showShieldToast(`✓ Jev AI đã phân tích (${Math.round(confidence * 100)}%) & lưu Hook Outlier vào Vault!`);
-              });
+      function saveToLocalStorageFallback() {
+        try {
+          const raw = localStorage.getItem('x_hook_vault_v1');
+          let vault = raw ? JSON.parse(raw) : [];
+          if (!Array.isArray(vault)) vault = [];
+          vault = vault.filter((item) => item.id !== threadId);
+          vault.unshift(itemToSave);
+          localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
+        } catch (err) {}
+      }
+
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        try {
+          chrome.storage.local.get(['x_hook_vault_v1'], (vaultRes) => {
+            if (chrome.runtime?.lastError) {
+              saveToLocalStorageFallback();
+              return;
+            }
+            let vault = Array.isArray(vaultRes?.x_hook_vault_v1) ? vaultRes.x_hook_vault_v1 : [];
+            vault = vault.filter((item) => item.id !== threadId);
+            vault.unshift(itemToSave);
+            chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
+              try {
+                localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
+              } catch (e) {}
             });
-          }
-        );
+          });
+        } catch (err) {
+          saveToLocalStorageFallback();
+        }
       } else {
-        hookBtn.classList.remove('is-loading');
-        hookBtn.classList.add('is-saved');
-        hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-        showShieldToast('✓ Đã lưu Hook vào Vault!');
+        saveToLocalStorageFallback();
       }
     });
 
@@ -3159,6 +3225,10 @@
         <span>${ICONS.scan}</span>
         <span>Quét Outlier Feed</span>
       </button>
+      <button type="button" class="scanner-btn scanner-btn-vault" id="btnOpenVaultDock" title="Mở Threads & X Hook Vault Dashboard">
+        <span>${ICONS.zap}</span>
+        <span>Hook Vault</span>
+      </button>
     `;
 
     document.body.appendChild(dock);
@@ -3167,6 +3237,7 @@
     const stopBtn = dock.querySelector('#btnStopRealtimeScan');
     const liveHud = dock.querySelector('#scannerLiveHud');
     const hudStatus = dock.querySelector('#scannerHudStatus');
+    const vaultBtn = dock.querySelector('#btnOpenVaultDock');
 
     triggerBtn.addEventListener('click', () => {
       startRealtimeScanning(triggerBtn, liveHud, hudStatus);
@@ -3175,6 +3246,16 @@
     stopBtn.addEventListener('click', () => {
       stopRealtimeScanning(triggerBtn, liveHud);
     });
+
+    if (vaultBtn) {
+      vaultBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      vaultBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+      vaultBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openVaultDashboard();
+      });
+    }
   }
 
   function startRealtimeScanning(triggerBtn, liveHud, hudStatus) {
