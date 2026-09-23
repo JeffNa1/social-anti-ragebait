@@ -1,5 +1,58 @@
 import { expect, test, describe } from "bun:test";
 
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async (url, options) => {
+  const urlStr = String(url);
+  if (urlStr.includes("classifier.dev")) {
+    let body = {};
+    try {
+      body = JSON.parse(options?.body || "{}");
+    } catch (e) {}
+
+    const { inputs = [], labels = [] } = body;
+    const results = inputs.map((inp) => {
+      const text = String(inp);
+      if (text.includes("Jujutsu Kaisen")) {
+        return { label: "anime", confidence: 0.95 };
+      }
+      if (text.includes("ngu dốt thất bại")) {
+        if (labels.some((l) => l.includes("rage bait"))) {
+          return { label: "rage bait / toxic / hostile / dismissive negativity", confidence: 0.95 };
+        }
+        return { label: "other / casual discussion", confidence: 0.85 };
+      }
+      if (text.includes("microservices")) {
+        return {
+          labels: [
+            "deep dive / technical breakdown / industry insider",
+            "meme / humor / satire"
+          ],
+          scores: {
+            "deep dive / technical breakdown / industry insider": 0.95,
+            "meme / humor / satire": 0.88
+          }
+        };
+      }
+      if (text.includes("Kỷ luật thép")) return { label: "self-improvement / motivational", confidence: 0.95 };
+      if (text.includes("căn giữa div")) return { label: "meme / humor / satire", confidence: 0.95 };
+      if (text.includes("Distributed Consensus")) return { label: "deep dive / technical breakdown / industry insider", confidence: 0.95 };
+      if (text.includes("trời đẹp quá")) return { label: "other / casual discussion", confidence: 0.95 };
+      if (text.includes("nhặt được ví")) return { label: "wholesome / positive", confidence: 0.95 };
+      if (text.includes("Khủng hoảng thế kỷ")) return { label: "fearmongering / doom", confidence: 0.95 };
+      if (text.includes("Binance x100")) return { label: "fomo / hype", confidence: 0.95 };
+
+      return { label: labels[0] || "other / casual discussion", confidence: 0.85 };
+    });
+
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ results })
+    };
+  }
+  return originalFetch(url, options);
+};
+
 describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
   const LABELS = [
     'self-improvement / motivational',

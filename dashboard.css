@@ -208,32 +208,30 @@ body {
   line-height: 1.25;
 }
 
-/* ShinyText Shimmer Micro-Animation (React Bits) */
+/* ShinyText Shimmer Micro-Animation (Continuous Seamless Sweep) */
 .shiny-text {
   background: linear-gradient(
-    115deg,
+    120deg,
     var(--color-ink) 0%,
-    var(--color-ink) 35%,
-    #ff8585 48%,
-    #ffffff 52%,
-    #ff8585 56%,
-    var(--color-ink) 68%,
+    var(--color-ink) 25%,
+    #ff8585 45%,
+    #ffffff 50%,
+    #ff8585 55%,
+    var(--color-ink) 75%,
     var(--color-ink) 100%
   );
-  background-size: 250% 100%;
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shinySweep 6s ease-in-out infinite;
+  animation: shinySweep 3.5s linear infinite;
   display: inline-block;
+  will-change: background-position;
 }
 
 @keyframes shinySweep {
   0% {
     background-position: 100% 0;
-  }
-  60% {
-    background-position: -100% 0;
   }
   100% {
     background-position: -100% 0;
@@ -1399,6 +1397,8 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
 /* ClickSpark Particle Micro-Animation (React Bits) */
 .click-spark-particle {
   position: fixed;

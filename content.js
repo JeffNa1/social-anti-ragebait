@@ -1,10 +1,9 @@
 // Universal Social Shield (Threads, Facebook, X) - Anti-Rage, Anti-Scam, Anti-Seeding, Monk Mode
-// Powered by Jev Zero-shot AI (classifier.dev) & Client-side Vision Metadata
+// Powered by Local Heuristics Engine & Client-side Vision Metadata
 (function () {
   'use strict';
 
   let config = {
-    apiEndpoint: 'https://classifier.dev/',
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
     filterMotivationalEnabled: true,
@@ -13,11 +12,11 @@
     filterWholesomeEnabled: true,
     filterDoomEnabled: true,
     filterFomoEnabled: true,
-    filterCasualEnabled: true,
+    filterCasualEnabled: false,
     focusModeEnabled: false,
     focusWhitelistTags: ['motivational', 'meme', 'deepdive', 'wholesome', 'custom'],
-    monkModeEnabled: true,       // Hardcore Monk Mode: Block all photos/videos with women & goon-bait
-    blockReelsEnabled: true,     // Block Reels pop-ups & short videos on Facebook
+    monkModeEnabled: false,      // Monk Mode completely disabled
+    blockReelsEnabled: false,    // Reels blocking completely disabled (native playback allowed)
     autoBlurRageEnabled: true,
     blockScamsEnabled: true,
     collapseSeedingEnabled: true,
@@ -63,25 +62,121 @@
   const WOMEN_OR_GOONBAIT_REGEX =
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
+  // Local Zero-Delay Heuristic Regex Engines (0ms, Offline, No-Jev Fallback)
+  const LOCAL_RAGEBAIT_REGEX = new RegExp(
+    '(' +
+    'đụ|đĩ|đcm|đclm|đmm|dkm|đkm|vcl|vcc|vđ|vl|vlon|đéo|lồn|cặc|buồi|chó đẻ|óc chó|súc vật|bần nông|ngu lồn|ngu vl|hãm lồn|thất học|vô học|rác rưởi|mất dạy|khốn nạn|hạ đẳng|chết mẹ mày đi|cút mẹ mày đi|bú fame|đú bẩn|mặt dày|đéo biết nhục|ngu như chó|ngu như bò|não tàn|đần độn|ngáo chó' +
+    '|stfu|bitch|bastard|retard|idiot|moron|dumbass|asshole|bullshit|trash take|scumbag|pieces? of shit|kill yourself' +
+    '|bắc kỳ|nam kỳ|pbvm|bake|namke|bò đỏ|ba que|3 que|đu càng|dlv|dư luận viên|ngạo nghễ|tự nhục|cali khát nước|khát nước|bọn vện|lũ mọi' +
+    '|bóc phốt|hóng phốt|biến căng|drama cực căng|scandal chấn động|tẩy chay|con giáp thứ 13|tiểu tam|trà xanh giật chồng|đánh ghen|lột đồ|khoe hàng|chửi nhau|thứ dơ bẩn|mặt phụ khoa' +
+    ')',
+    'i'
+  );
+
+  const LOCAL_SCAM_REGEX = new RegExp(
+    '(' +
+    'tuyển\\s*(cộng tác viên|ctv)|việc\\s*nhẹ\\s*lương\\s*cao|thu\\s*nhập\\s*\\d+\\s*(k|tr|triệu|củ)\\s*/\\s*(ngày|tháng)|không\\s*cọc\\s*không\\s*vốn|làm\\s*tại\\s*nhà\\s*lương\\s*khủng|nhận\\s*việc\\s*ngay|ib\\s*nhận\\s*việc|công\\s*việc\\s*online\\s*uy\\s*tín' +
+    '|tài\\s*xỉu|nổ\\s*hũ|bắn\\s*cá|đánh\\s*bài\\s*online|cổng\\s*game\\s*quốc\\s*tế|nhà\\s*cái\\s*uy\\s*tín|kubet|thabet|sunwin|go88|b52|rikvip|cá\\s*cược\\s*bóng\\s*đá|kèo\\s*nhà\\s*cái' +
+    '|bao\\s*lỗ\\s*100%|cam\\s*kết\\s*lợi\\s*nhuận|kèo\\s*x\\d+|kéo\\s*về\\s*bờ|nhóm\\s*kéo\\s*vốn|phím\\s*lệnh\\s*chuẩn|room\\s*vip\\s*phím\\s*hàng|đầu\\s*tư\\s*sinh\\s*lời\\s*khủng|rút\\s*tiền\\s*trong\\s*ngày|lãi\\s*suất\\s*\\d+%/\\s*(ngày|tuần)|hoa\\s*hồng\\s*lên\\s*đến\\s*\\d+%' +
+    '|t\\.me/[a-zA-Z0-9_\\+]+|zalo\\.me/g/[a-zA-Z0-9_]+|link\\s*rút\\s*gọn|nhận\\s*thưởng\\s*miễn\\s*phí|tặng\\s*code\\s*\\d+k' +
+    ')',
+    'i'
+  );
+
+  const LOCAL_SEEDING_REGEX = new RegExp(
+    '(' +
+    'link\\s*(mua|săn|sale|ở|trong)?\\s*(bio|cmt|comment|bình luận|bên dưới|dưới cmt)|mua\\s*(ở|tại)\\s*đây\\s*nha|săn\\s*sale\\s*(shopee|lazada|tiktok\\s*shop)|shope\\.ee/[a-zA-Z0-9]+|s\\.lazada\\.vn/[a-zA-Z0-9]+|vt\\.tiktok\\.com/[a-zA-Z0-9]+' +
+    '|mình\\s*cũng\\s*từng\\s*bị\\s*và\\s*(đã\\s*khỏi|chữa\\s*khỏi|thành\\s*công)\\s*nhờ|ai\\s*cần\\s*(inbox|ib)\\s*(mình|em)|chấm\\s*(hóng|nhận)\\s*inbox|em\\s*chỉ\\s*cách\\s*kiếm\\s*tiền|quan\\s*tâm\\s*chấm\\s*em\\s*inbox|mình\\s*mua\\s*set\\s*này\\s*ở\\s*shop' +
+    ')',
+    'i'
+  );
+
+  const LOCAL_MEME_REGEX = /(?:haha+|hài\s*vcl|cười\s*ỉa|cười\s*vãi|lmao+|rofl|chúa\s*hề|meme\s*chất|bựa\s*vcl|🤣|😂|cười\s*sặc)/i;
+  const LOCAL_WHOLESOME_REGEX = /(?:ấm\s*lòng|tuyệt\s*vời\s*quá|biết\s*ơn|đáng\s*yêu\s*vãi|tự\s*hào\s*quá|chúc\s*mừng|hạnh\s*phúc\s*quá|wholesome|tình\s*người|nghĩa\s*cử\s*cao\s*đẹp)/i;
+  const LOCAL_MOTIVATIONAL_REGEX = /(?:nỗ\s*lực|kỷ\s*luật\s*bản\s*thân|thói\s*quen\s*tốt|vượt\s*qua\s*nghịch\s*cảnh|không\s*bao\s*giờ\s*bỏ\s*cuộc|thành\s*công\s*sẽ\s*đến|tư\s*duy\s*triệu\s*phú|bài\s*học\s*cuộc\s*sống|động\s*lực\s*mỗi\s*ngày)/i;
+
+  function classifyWithLocalHeuristics(text) {
+    if (!text || typeof text !== 'string') return null;
+    const clean = text.trim();
+    if (!clean) return null;
+
+    if (LOCAL_RAGEBAIT_REGEX.test(clean)) {
+      return {
+        scores: {
+          'rage bait / toxic / hostile / dismissive negativity': 0.94,
+          'other / casual discussion': 0.06,
+        },
+      };
+    }
+
+    if (LOCAL_SCAM_REGEX.test(clean)) {
+      return {
+        scores: {
+          'scam / financial fraud / phishing': 0.96,
+          'fomo / hype': 0.85,
+          'other / casual discussion': 0.04,
+        },
+      };
+    }
+
+    if (LOCAL_SEEDING_REGEX.test(clean)) {
+      return {
+        scores: {
+          'bot seeding / affiliate spam / spam comment': 0.95,
+          'other / casual discussion': 0.05,
+        },
+      };
+    }
+
+    if (LOCAL_MEME_REGEX.test(clean)) {
+      return {
+        scores: {
+          'meme / humor / satire': 0.88,
+          'other / casual discussion': 0.12,
+        },
+      };
+    }
+
+    if (LOCAL_WHOLESOME_REGEX.test(clean)) {
+      return {
+        scores: {
+          'wholesome / positive': 0.89,
+          'other / casual discussion': 0.11,
+        },
+      };
+    }
+
+    if (LOCAL_MOTIVATIONAL_REGEX.test(clean)) {
+      return {
+        scores: {
+          'self-improvement / motivational': 0.91,
+          'other / casual discussion': 0.09,
+        },
+      };
+    }
+
+    return null;
+  }
+
   // Impeccable & Lucide SVG Icons (Zero Slop Unicode)
   const ICONS = {
-    shield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>`,
-    shieldAlert: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
-    scan: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
-    flame: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
-    sparkles: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`,
-    smile: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>`,
-    binary: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
-    heart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
-    skull: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></svg>`,
-    zap: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
-    messageSquare: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-    tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>`,
-    target: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
-    broom: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m16 4 3 3L6 20l-3-3z"/><path d="m14 6 3 3"/><path d="M3 21l3-3"/></svg>`,
-    eyeOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .698 10.793 10.793 0 0 1-3.125 4.148"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499A10.75 10.75 0 0 1 2.062 12.35a1 1 0 0 1 0-.698 10.75 10.75 0 0 1 2.825-3.834"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
-    chevronDown: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
-    x: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`
+    shield: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>`,
+    shieldAlert: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+    scan: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    flame: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,
+    sparkles: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`,
+    smile: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>`,
+    binary: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
+    heart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
+    skull: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="m12.5 17-.5-1-.5 1h1z"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/></svg>`,
+    zap: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+    messageSquare: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    tag: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>`,
+    target: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>`,
+    broom: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m16 4 3 3L6 20l-3-3z"/><path d="m14 6 3 3"/><path d="M3 21l3-3"/></svg>`,
+    eyeOff: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .698 10.793 10.793 0 0 1-3.125 4.148"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499A10.75 10.75 0 0 1 2.062 12.35a1 1 0 0 1 0-.698 10.75 10.75 0 0 1 2.825-3.834"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
+    chevronDown: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`,
+    x: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`
   };
 
   function getBadgeIconSvg(label) {
@@ -258,8 +353,8 @@
         if (Array.isArray(res.customLabels)) config.customLabels = res.customLabels;
         if (typeof res.focusModeEnabled === 'boolean') config.focusModeEnabled = res.focusModeEnabled;
         if (Array.isArray(res.focusWhitelistTags)) config.focusWhitelistTags = res.focusWhitelistTags;
-        if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
-        if (typeof res.blockReelsEnabled === 'boolean') config.blockReelsEnabled = res.blockReelsEnabled;
+        config.monkModeEnabled = false;
+        config.blockReelsEnabled = false;
         if (typeof res.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = res.autoBlurRageEnabled;
         if (typeof res.blockScamsEnabled === 'boolean') config.blockScamsEnabled = res.blockScamsEnabled;
         if (typeof res.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = res.collapseSeedingEnabled;
@@ -327,8 +422,8 @@
         if (typeof request.config.filterFomoEnabled === 'boolean') config.filterFomoEnabled = request.config.filterFomoEnabled;
         if (typeof request.config.filterCasualEnabled === 'boolean') config.filterCasualEnabled = request.config.filterCasualEnabled;
         if (Array.isArray(request.config.customLabels)) config.customLabels = request.config.customLabels;
-        config.monkModeEnabled = request.config.monkModeEnabled;
-        if (typeof request.config.blockReelsEnabled === 'boolean') config.blockReelsEnabled = request.config.blockReelsEnabled;
+        config.monkModeEnabled = false;
+        config.blockReelsEnabled = false;
         config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
         config.blockScamsEnabled = request.config.blockScamsEnabled;
         config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
@@ -678,7 +773,7 @@
         <span class="x-jev-metric-label">${ICONS.broom} Seeding</span>
         <span class="x-jev-metric-val" id="x-jev-stat-seeding" style="color:#c084fc;">0</span>
       </div>
-      <div class="x-jev-metric-card">
+      <div class="x-jev-metric-card" style="display:none;">
         <span class="x-jev-metric-label">${ICONS.eyeOff} Monk Mode</span>
         <span class="x-jev-metric-val" id="x-jev-stat-monk" style="color:#38bdf8;">0</span>
       </div>
@@ -878,51 +973,19 @@
       document.body.classList.toggle('x-jev-disable-all-blur', disableAll);
     }
 
-    // 0. Facebook Reels & Video Popups State
-    document.querySelectorAll('[data-monk-reels-blocked="true"]').forEach((dialog) => {
-      const overlay = dialog.querySelector('.x-monk-reels-overlay');
-      if (config.monkModeEnabled || config.blockReelsEnabled) {
-        if (!dialog.classList.contains('monk-revealed')) {
-          if (overlay) overlay.style.display = 'flex';
-          dialog.querySelectorAll('video').forEach((v) => { try { v.pause(); v.muted = true; } catch (e) {} });
-        }
-      } else {
-        dialog.classList.add('monk-revealed');
-        if (overlay) overlay.style.display = 'none';
-      }
-    });
-
-    document.querySelectorAll('[data-monk-tray-blocked="true"]').forEach((tray) => {
-      const banner = tray.querySelector('.x-monk-tray-banner');
-      if (config.monkModeEnabled || config.blockReelsEnabled) {
-        if (!tray.classList.contains('monk-revealed')) {
-          if (banner) banner.style.display = 'flex';
-        }
-      } else {
-        tray.classList.add('monk-revealed');
-        if (banner) banner.style.display = 'none';
-      }
-    });
-
-    // 1. Monk Mode State
-    document.querySelectorAll('[data-monk-blocked="true"]').forEach((post) => {
-      const box = post.querySelector('.x-monk-warning-box');
-      if (config.monkModeEnabled) {
-        if (!post.hasAttribute('data-user-revealed')) {
-          post.classList.remove('monk-revealed');
-          post.removeAttribute('data-monk-revealed');
-          if (box) box.style.display = 'flex';
-        }
-      } else {
-        post.classList.add('monk-revealed');
-        post.setAttribute('data-monk-revealed', 'true');
-        post.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
-          m.style.setProperty('filter', 'none', 'important');
-          m.style.setProperty('opacity', '1', 'important');
-          m.style.setProperty('pointer-events', 'auto', 'important');
-        });
-        if (box) box.style.display = 'none';
-      }
+    // Residual Monk Mode & Reels Blocker Cleanup
+    document.querySelectorAll('[data-monk-reels-blocked="true"], [data-monk-tray-blocked="true"], [data-monk-blocked="true"]').forEach((el) => {
+      el.removeAttribute('data-monk-reels-blocked');
+      el.removeAttribute('data-monk-tray-blocked');
+      el.removeAttribute('data-monk-blocked');
+      el.removeAttribute('data-monk-revealed');
+      el.classList.remove('monk-revealed');
+      el.querySelectorAll('.x-monk-reels-overlay, .x-monk-tray-banner, .x-monk-warning-box').forEach((overlay) => overlay.remove());
+      el.querySelectorAll('video, img, .monk-blur-media').forEach((m) => {
+        m.style.removeProperty('filter');
+        m.style.removeProperty('opacity');
+        m.style.removeProperty('pointer-events');
+      });
     });
 
     // 2. Rage Bait state
@@ -1065,7 +1128,7 @@
   // --- HARDCORE MONK MODE: CLIENT-SIDE INSTANT MEDIA SCANNER ---
   // Inspects non-avatar images & videos for Meta AI accessibility alt-tags and captions
   function checkAndApplyMonkMode(postEl, text) {
-    if (!config.monkModeEnabled) return false;
+    return false;
     if (postEl.hasAttribute('data-monk-blocked')) return true;
 
     const mediaList = postEl.querySelectorAll('img, video');
@@ -1163,72 +1226,7 @@
     return false;
   }
 
-  // Call Jev API: Route via background service worker to bypass page CSP
-  // Call Jev API: Route via background service worker to bypass page CSP
-  async function callJevBatch(inputs) {
-    const taxonomy = getActiveTaxonomy(config);
-    if (!taxonomy.labels || taxonomy.labels.length <= 1) {
-      return inputs.map(() => ({ label: CATCH_ALL_LABEL, confidence: 1 }));
-    }
-
-    console.log(`[Social Shield] 📡 Gửi ${inputs.length} mẫu text lên Jev AI (active labels: ${taxonomy.labels.length})...`);
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-      return new Promise((resolve) => {
-        try {
-          chrome.runtime.sendMessage(
-            {
-              type: 'CLASSIFY_BATCH',
-              payload: {
-                labels: taxonomy.labels,
-                inputs: inputs,
-                instructions: taxonomy.instructions,
-              },
-            },
-            (response) => {
-              if (chrome.runtime.lastError) {
-                console.warn('[Social Shield] Worker error, direct fetch fallback:', chrome.runtime.lastError.message);
-                directFetch(inputs, taxonomy).then(resolve);
-              } else if (response && response.success) {
-                console.log(`[Social Shield] ✅ Nhận kết quả Jev cho ${response.results?.length} items.`);
-                resolve(response.results || []);
-              } else {
-                directFetch(inputs, taxonomy).then(resolve);
-              }
-            }
-          );
-        } catch (e) {
-          directFetch(inputs, taxonomy).then(resolve);
-        }
-      });
-    }
-    return directFetch(inputs, taxonomy);
-  }
-
-  async function directFetch(inputs, activeTax) {
-    try {
-      const tax = activeTax || getActiveTaxonomy(config);
-      if (!tax.labels || tax.labels.length <= 1) {
-        return inputs.map(() => ({ label: CATCH_ALL_LABEL, confidence: 1 }));
-      }
-      const res = await fetch(config.apiEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          labels: tax.labels,
-          inputs: inputs,
-          instructions: tax.instructions,
-          multi: true,
-          max_labels: 5,
-        }),
-      });
-      const data = await res.json();
-      return data.results || [];
-    } catch (e) {
-      return [];
-    }
-  }
+  // Pure Local Classification Pipeline (0ms Offline Engine)
 
   function isProfileOnlyLink(el) {
     if (!el) return false;
@@ -1673,7 +1671,7 @@
       ) {
         return;
       }
-      if (candidateLabel === 'other / casual discussion' && (config.filterCasualEnabled === false || isActivity)) {
+      if (candidateLabel === 'other / casual discussion' && (config.filterCasualEnabled !== true || isActivity)) {
         return;
       }
 
@@ -1791,7 +1789,16 @@
         confSpan.className = 'x-jev-confidence';
         confSpan.textContent = `${Math.round(score * 100)}%`;
 
-        if (iconSvg) badge.appendChild(iconSvg);
+        if (iconSvg) {
+          iconSvg.setAttribute('width', '14');
+          iconSvg.setAttribute('height', '14');
+          iconSvg.style.width = '14px';
+          iconSvg.style.height = '14px';
+          iconSvg.style.maxWidth = '14px';
+          iconSvg.style.maxHeight = '14px';
+          iconSvg.style.flexShrink = '0';
+          badge.appendChild(iconSvg);
+        }
         badge.appendChild(textSpan);
         badge.appendChild(confSpan);
         container.appendChild(badge);
@@ -1817,43 +1824,22 @@
     }
 
     const currentBatch = queue.splice(0, 15);
-    const uncachedIndices = [];
-    const uncachedInputs = [];
+    let cacheChanged = false;
 
-    currentBatch.forEach((item, idx) => {
+    currentBatch.forEach((item) => {
       if (textCache.has(item.text)) {
         renderClassification(item, textCache.get(item.text));
       } else {
-        uncachedIndices.push(idx);
-        uncachedInputs.push(item.text);
+        // Run Local Heuristic Regex Engine (0ms instantaneous offline)
+        const localRes = classifyWithLocalHeuristics(item.text) || { scores: { 'other / casual discussion': 0.85 } };
+        textCache.set(item.text, localRes);
+        renderClassification(item, localRes);
+        cacheChanged = true;
       }
     });
 
-    if (uncachedInputs.length > 0) {
-      const results = await callJevBatch(uncachedInputs);
-      if (Array.isArray(results) && results.length > 0) {
-        uncachedIndices.forEach((itemIdx, i) => {
-          const item = currentBatch[itemIdx];
-          const res = results[i];
-          if (item && res) {
-            textCache.set(item.text, res);
-            renderClassification(item, res);
-          } else if (item && item.postEl) {
-            item.postEl.removeAttribute('data-jev-scanned');
-            item.postEl.removeAttribute('data-jev-cmt-scanned');
-          }
-        });
-        saveCacheToStorage();
-      } else {
-        // Clear data-jev-scanned and data-jev-cmt-scanned on failure so posts can be retried on next scroll
-        uncachedIndices.forEach((idx) => {
-          const item = currentBatch[idx];
-          if (item && item.postEl) {
-            item.postEl.removeAttribute('data-jev-scanned');
-            item.postEl.removeAttribute('data-jev-cmt-scanned');
-          }
-        });
-      }
+    if (cacheChanged) {
+      saveCacheToStorage();
     }
 
     if (queue.length > 0) {
@@ -1863,8 +1849,7 @@
 
   // --- FACEBOOK REELS & VIDEO POPUPS / TRAYS SCANNER ---
   function scanFacebookReels() {
-    if (getPlatform() !== 'facebook') return;
-    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
+    return;
 
     // 1. Target Reels Pop-up / Modal Dialogs / Tahoe Video Player / Floating Miniplayer
     const dialogs = document.querySelectorAll(
@@ -2089,8 +2074,7 @@
 
   // --- INSTAGRAM REELS SCANNER ---
   function scanInstagramReels() {
-    if (getPlatform() !== 'instagram') return;
-    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
+    return;
 
     // 1. Direct Reels Page (`instagram.com/reels/` or `instagram.com/reel/...`)
     if (window.location.pathname.includes('/reel')) {
@@ -2300,8 +2284,7 @@
 
   // --- YOUTUBE SHORTS SCANNER ---
   function scanYouTubeShorts() {
-    if (getPlatform() !== 'youtube') return;
-    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
+    return;
 
     // 1. Direct / Standalone YouTube Shorts (`youtube.com/shorts/...`)
     if (window.location.pathname.startsWith('/shorts')) {
@@ -2769,7 +2752,7 @@
       // Instant UI Feedback
       hookBtn.classList.remove('is-loading');
       hookBtn.classList.add('is-saved');
-      hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+      hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
       showShieldToast(`✓ Đã lưu Hook Outlier của ${author.authorHandle || author.authorName || 'bài viết'} vào Vault!`, true);
 
       function saveToLocalStorageFallback() {
@@ -3162,7 +3145,7 @@
       // Instant UI Feedback
       hookBtn.classList.remove('is-loading');
       hookBtn.classList.add('is-saved');
-      hookBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+      hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
       showShieldToast(`✓ Đã lưu Hook Outlier của ${authorInfo.authorHandle || authorInfo.authorName} vào Vault!`, true);
 
       function saveToLocalStorageFallback() {
