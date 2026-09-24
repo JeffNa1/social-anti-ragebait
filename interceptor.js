@@ -53,22 +53,33 @@
       const userObj = obj.user || obj.author || {};
       const authorUsername = userObj.username || '';
       const authorFollowers = typeof userObj.follower_count === 'number' ? userObj.follower_count : (typeof userObj.followers_count === 'number' ? userObj.followers_count : 0);
-      const isRepost = !!(obj.reshared_post || obj.repost || obj.is_reshare || (obj.reshare_count && obj.is_repost));
+      const isRepost = !!(obj.reshared_post || obj.repost || obj.is_reshare || (obj.reshare_count && obj.is_repost) || obj.repost_context || obj.thread_header || obj.repost_header || obj.repost_user);
       
       if (threadCode) {
+        const existing = tweetsMap[String(threadCode)];
+        const finalIsRepost = isRepost || !!(existing && (existing.isRepost || existing.isRetweet));
+
         tweetsMap[String(threadCode)] = {
           tweetId: String(threadCode),
-          authorHandle: authorUsername ? '@' + authorUsername : '',
-          followersCount: authorFollowers,
-          viewsCount: obj.view_count || obj.impression_count || 0,
-          createdAt: obj.taken_at ? new Date(obj.taken_at * 1000).toISOString() : '',
-          likes: obj.like_count || 0,
-          retweets: obj.reshare_count || 0,
-          replies: obj.reply_count || 0,
+          authorHandle: authorUsername ? '@' + authorUsername : (existing?.authorHandle || ''),
+          followersCount: authorFollowers || existing?.followersCount || 0,
+          viewsCount: obj.view_count || obj.impression_count || existing?.viewsCount || 0,
+          createdAt: obj.taken_at ? new Date(obj.taken_at * 1000).toISOString() : (existing?.createdAt || ''),
+          likes: obj.like_count || existing?.likes || 0,
+          retweets: obj.reshare_count || existing?.retweets || 0,
+          replies: obj.reply_count || existing?.replies || 0,
           bookmarks: 0,
-          isRepost: isRepost,
-          isRetweet: isRepost
+          isRepost: finalIsRepost,
+          isRetweet: finalIsRepost
         };
+
+        if (obj.reshared_post?.code) {
+          tweetsMap[String(obj.reshared_post.code)] = {
+            ...(tweetsMap[String(obj.reshared_post.code)] || {}),
+            isRepost: true,
+            isRetweet: true,
+          };
+        }
       }
     }
 
@@ -87,19 +98,32 @@
       const isRetweet = !!(legacy.retweeted_status_result || legacy.retweeted_status_id_str || obj.retweeted_status_result);
 
       if (restId) {
+        const existing = tweetsMap[restId];
+        const finalIsRetweet = isRetweet || !!(existing && (existing.isRetweet || existing.isRepost));
+
         tweetsMap[restId] = {
           tweetId: restId,
-          authorHandle,
-          followersCount: authorFollowers,
-          viewsCount,
-          createdAt: legacy.created_at || '',
-          likes: legacy.favorite_count || 0,
-          retweets: legacy.retweet_count || 0,
-          replies: legacy.reply_count || 0,
-          bookmarks: legacy.bookmark_count || 0,
-          isRetweet: isRetweet,
-          isRepost: isRetweet
+          authorHandle: authorHandle || existing?.authorHandle || '',
+          followersCount: authorFollowers || existing?.followersCount || 0,
+          viewsCount: viewsCount || existing?.viewsCount || 0,
+          createdAt: legacy.created_at || existing?.createdAt || '',
+          likes: legacy.favorite_count || existing?.likes || 0,
+          retweets: legacy.retweet_count || existing?.retweets || 0,
+          replies: legacy.reply_count || existing?.replies || 0,
+          bookmarks: legacy.bookmark_count || existing?.bookmarks || 0,
+          isRetweet: finalIsRetweet,
+          isRepost: finalIsRetweet
         };
+
+        // If this tweet is a Retweet of an inner tweet, also mark the inner tweet's rest_id as a Retweet
+        const innerRestId = legacy.retweeted_status_result?.result?.rest_id || legacy.retweeted_status_id_str;
+        if (innerRestId) {
+          tweetsMap[innerRestId] = {
+            ...(tweetsMap[innerRestId] || {}),
+            isRetweet: true,
+            isRepost: true,
+          };
+        }
       }
     }
 

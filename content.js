@@ -778,6 +778,16 @@
         <span class="x-jev-metric-val" id="x-jev-stat-monk" style="color:#38bdf8;">0</span>
       </div>
     </div>
+    <div class="x-jev-flyout-toggle-row">
+      <div class="x-jev-flyout-toggle-info">
+        <span class="x-jev-flyout-toggle-label">${ICONS.flame} Làm mờ tiêu cực</span>
+        <span class="x-jev-flyout-toggle-sub" id="x-jev-flyout-rage-sub">Đang bật</span>
+      </div>
+      <label class="x-jev-flyout-switch" title="Tắt / Bật cảnh báo và làm mờ bài toxic / ragebait">
+        <input type="checkbox" id="x-jev-flyout-rage-toggle" checked>
+        <span class="x-jev-flyout-slider"></span>
+      </label>
+    </div>
     <div id="x-jev-flyout-tag-summary" style="display:flex;flex-wrap:wrap;gap:4px;font-size:10px;color:#a1a1aa;padding-top:4px;border-top:1px solid rgba(255,255,255,0.06);"></div>
     <button id="x-jev-flyout-open-vault" type="button" style="width:100%;margin-top:6px;padding:6px 10px;background:rgba(2,132,199,0.15);border:1px solid rgba(2,132,199,0.3);border-radius:6px;color:#38bdf8;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:background 0.2s;">
       ${ICONS.zap} Mở Hook Vault Dashboard
@@ -791,6 +801,27 @@
   pill.appendChild(pillToggle);
   pill.appendChild(pillClose);
   pill.appendChild(flyout);
+
+  const flyoutRageToggle = flyout.querySelector('#x-jev-flyout-rage-toggle');
+  const flyoutRageSub = flyout.querySelector('#x-jev-flyout-rage-sub');
+  if (flyoutRageToggle) {
+    flyoutRageToggle.checked = !!config.autoBlurRageEnabled;
+    if (flyoutRageSub) {
+      flyoutRageSub.textContent = config.autoBlurRageEnabled ? 'Đang bật' : 'Đã tắt';
+    }
+    flyoutRageToggle.addEventListener('change', (e) => {
+      e.stopPropagation();
+      config.autoBlurRageEnabled = flyoutRageToggle.checked;
+      if (flyoutRageSub) {
+        flyoutRageSub.textContent = config.autoBlurRageEnabled ? 'Đang bật' : 'Đã tắt';
+      }
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ autoBlurRageEnabled: config.autoBlurRageEnabled });
+      }
+      applyStateToDOM();
+      updatePill();
+    });
+  }
 
   const btnOpenVault = flyout.querySelector('#x-jev-flyout-open-vault');
   if (btnOpenVault) {
@@ -912,6 +943,13 @@
       tagSummary.innerHTML = activeTags.length > 0
         ? activeTags.map((t) => `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">${t}</span>`).join('')
         : '<span style="opacity:0.6;">Chưa ghi nhận tag nổi bật</span>';
+    }
+
+    if (flyoutRageToggle) {
+      flyoutRageToggle.checked = !!config.autoBlurRageEnabled;
+    }
+    if (flyoutRageSub) {
+      flyoutRageSub.textContent = config.autoBlurRageEnabled ? 'Đang bật' : 'Đã tắt';
     }
   }
 
@@ -1553,6 +1591,9 @@
           <span class="x-jev-warning-text">${ICONS.flame} <span><b>Ragebait / Toxic (${pct}%):</b> Nội dung tiêu cực hoặc công kích đã được làm mờ.</span></span>
         `;
 
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'x-jev-warning-actions';
+
         const revealBtn = document.createElement('button');
         revealBtn.className = 'x-jev-reveal-btn';
         revealBtn.innerHTML = `${ICONS.scan} <span>Reveal post</span>`;
@@ -1574,7 +1615,29 @@
           }
         };
 
-        warningBox.appendChild(revealBtn);
+        const disableBtn = document.createElement('button');
+        disableBtn.className = 'x-jev-disable-rage-btn';
+        disableBtn.type = 'button';
+        disableBtn.title = 'Tắt hẳn tính năng cảnh báo và làm mờ tiêu cực (có thể bật lại bất kỳ lúc nào)';
+        disableBtn.innerHTML = `<span>Tắt làm mờ</span>`;
+        disableBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          config.autoBlurRageEnabled = false;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ autoBlurRageEnabled: false });
+          }
+          applyStateToDOM();
+          updatePill();
+        };
+
+        actionsContainer.appendChild(revealBtn);
+        actionsContainer.appendChild(disableBtn);
+        warningBox.appendChild(actionsContainer);
+
+        if (!config.autoBlurRageEnabled) {
+          warningBox.style.display = 'none';
+        }
         parentContainer.insertBefore(warningBox, textEl);
       }
 
@@ -1593,10 +1656,14 @@
         applyInlineUnblur(postEl, false);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
         if (rBtn) rBtn.textContent = 'Reveal post';
+        const wBox = postEl.querySelector('.x-jev-warning-box');
+        if (wBox) wBox.style.display = 'flex';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
         applyInlineUnblur(postEl, true);
+        const wBox = postEl.querySelector('.x-jev-warning-box');
+        if (wBox) wBox.style.display = 'none';
       }
       checkAndApplyFocusCollapse(postEl, textEl, 'rage bait / toxic / hostile / dismissive negativity');
       return;
@@ -2630,17 +2697,58 @@
     return { authorName, authorHandle, authorAvatar };
   }
 
+  function extractXTweetMedia(post) {
+    const mediaUrls = [];
+    if (!post) return mediaUrls;
+
+    // 1. Photos in tweet
+    const photoImgs = post.querySelectorAll('div[data-testid="tweetPhoto"] img, img[src*="pbs.twimg.com/media"]');
+    photoImgs.forEach((img) => {
+      const src = img.currentSrc || img.src || img.getAttribute('src');
+      if (src && !src.includes('profile_images')) {
+        let cleanSrc = src;
+        if (cleanSrc.includes('&name=')) {
+          cleanSrc = cleanSrc.replace(/&name=[a-z0-9_]+/i, '&name=medium');
+        }
+        if (!mediaUrls.includes(cleanSrc)) {
+          mediaUrls.push(cleanSrc);
+        }
+      }
+    });
+
+    // 2. Video thumbnail / poster
+    const videos = post.querySelectorAll('video[poster]');
+    videos.forEach((v) => {
+      const poster = v.getAttribute('poster');
+      if (poster && !mediaUrls.includes(poster) && !poster.includes('profile_images')) {
+        mediaUrls.push(poster);
+      }
+    });
+
+    return mediaUrls;
+  }
+
   const X_REPOST_REGEX = /(?:reposted|retweeted|đã đăng lại|đã retweet|reposteó|republicou|reposté|repostet|リポスト|リツイート|转推|轉推|재게시|retwit|ripubblic)/i;
 
   function isXRepost(post) {
     if (!post) return false;
 
-    // 1. Check data-testid="socialContext"
-    const socialContext = post.querySelector('div[data-testid="socialContext"]');
+    // 1. Check data-testid="socialContext" across any tag (div, span, a, etc.)
+    const socialContext = post.querySelector('[data-testid="socialContext"]');
     if (socialContext) {
       const text = (socialContext.innerText || '').trim();
       if (X_REPOST_REGEX.test(text)) {
         return true;
+      }
+      // If socialContext has an SVG icon that is NOT a pin icon, it's a Retweet banner
+      const svg = socialContext.querySelector('svg');
+      if (svg) {
+        const aria = (svg.getAttribute('aria-label') || '').toLowerCase();
+        if (X_REPOST_REGEX.test(aria)) return true;
+        const isPinned = /(?:pinned|ghim|fijado|fixado|épinglé|angepinnt|固定)/i.test(text);
+        if (!isPinned) {
+          return true;
+        }
       }
     }
 
@@ -2653,6 +2761,15 @@
         if (cached && (cached.isRetweet || cached.isRepost)) {
           return true;
         }
+      }
+    }
+
+    // 3. Check for any top header row with retweet text outside contentEl
+    const headerRow = post.querySelector('div[data-testid="tweet"] > div:first-child');
+    if (headerRow) {
+      const hText = (headerRow.innerText || '').trim();
+      if (X_REPOST_REGEX.test(hText)) {
+        return true;
       }
     }
 
@@ -2702,14 +2819,182 @@
       if (oldBadge) oldBadge.remove();
     }
 
+    appendXHookButton(post, group, fullText, metrics);
+  }
+
+  // --- IN-PAGE MULTI-VAULT POPUP PICKER ---
+  const DEFAULT_VAULT_ID = 'vault-default';
+  const DEFAULT_VAULTS = [
+    { id: 'vault-default', name: 'Chung / Mặc định', color: '#ff6161' },
+    { id: 'vault-tech-ai', name: 'AI & Tech', color: '#57c1ff' },
+    { id: 'vault-business', name: 'Khởi Nghiệp', color: '#ffc533' }
+  ];
+
+  function openVaultPickerPopover(anchorBtn, baseItem, onSaved) {
+    document.querySelectorAll('.x-vault-picker-popover').forEach((p) => p.remove());
+
+    function getStorageData(cb) {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['x_vaults_v2', 'x_hook_vault_v1'], (res) => {
+          let vaults = Array.isArray(res?.x_vaults_v2) ? res.x_vaults_v2 : null;
+          let posts = Array.isArray(res?.x_hook_vault_v1) ? res.x_hook_vault_v1 : [];
+          if (!vaults) {
+            try {
+              const raw = localStorage.getItem('x_vaults_v2');
+              if (raw) vaults = JSON.parse(raw);
+            } catch (e) {}
+          }
+          if (!vaults || vaults.length === 0) {
+            vaults = [...DEFAULT_VAULTS];
+          } else if (!vaults.some((v) => v.id === DEFAULT_VAULT_ID)) {
+            vaults.unshift(DEFAULT_VAULTS[0]);
+          }
+          cb(vaults, posts);
+        });
+      } else {
+        try {
+          const rawV = localStorage.getItem('x_vaults_v2');
+          let vaults = rawV ? JSON.parse(rawV) : [...DEFAULT_VAULTS];
+          const rawP = localStorage.getItem('x_hook_vault_v1');
+          let posts = rawP ? JSON.parse(rawP) : [];
+          if (!vaults.some((v) => v.id === DEFAULT_VAULT_ID)) vaults.unshift(DEFAULT_VAULTS[0]);
+          cb(vaults, posts);
+        } catch (e) {
+          cb([...DEFAULT_VAULTS], []);
+        }
+      }
+    }
+
+    getStorageData((vaults, posts) => {
+      const popover = document.createElement('div');
+      popover.className = 'x-vault-picker-popover';
+
+      popover.innerHTML = `
+        <div class="x-vault-picker-header">
+          <span>Lưu vào Vault</span>
+          <button type="button" class="x-vault-picker-close" title="Đóng">&times;</button>
+        </div>
+        <div class="x-vault-picker-list"></div>
+        <div class="x-vault-picker-create">
+          <input type="text" class="x-vault-picker-input" placeholder="+ Tên Vault mới..." maxlength="30" />
+          <button type="button" class="x-vault-picker-btn-add">Tạo & Lưu</button>
+        </div>
+      `;
+
+      ['pointerdown', 'mousedown', 'click', 'keydown'].forEach((ev) => {
+        popover.addEventListener(ev, (e) => e.stopPropagation());
+      });
+
+      const listContainer = popover.querySelector('.x-vault-picker-list');
+      const inputNew = popover.querySelector('.x-vault-picker-input');
+      const btnAdd = popover.querySelector('.x-vault-picker-btn-add');
+      const btnClose = popover.querySelector('.x-vault-picker-close');
+
+      const closePopover = () => popover.remove();
+      btnClose.onclick = closePopover;
+
+      function savePostToVault(targetVaultId, vaultName) {
+        baseItem.vaultId = targetVaultId;
+        const nextPosts = posts.filter((p) => p.id !== baseItem.id);
+        nextPosts.unshift(baseItem);
+
+        try {
+          localStorage.setItem('x_hook_vault_v1', JSON.stringify(nextPosts));
+        } catch (e) {}
+
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ x_hook_vault_v1: nextPosts }, () => {
+            closePopover();
+            if (onSaved) onSaved(vaultName);
+          });
+        } else {
+          closePopover();
+          if (onSaved) onSaved(vaultName);
+        }
+      }
+
+      vaults.forEach((v) => {
+        const count = posts.filter((p) => (p.vaultId || DEFAULT_VAULT_ID) === v.id).length;
+        const itemBtn = document.createElement('button');
+        itemBtn.type = 'button';
+        itemBtn.className = 'x-vault-picker-item';
+        itemBtn.innerHTML = `
+          <div class="x-vault-picker-item-left">
+            <span class="x-vault-picker-dot" style="background:${v.color || '#ff6161'};"></span>
+            <span class="x-vault-picker-name">${v.name}</span>
+          </div>
+          <span class="x-vault-picker-count">${count}</span>
+        `;
+        itemBtn.onclick = () => savePostToVault(v.id, v.name);
+        listContainer.appendChild(itemBtn);
+      });
+
+      const handleCreateNew = () => {
+        const newName = (inputNew.value || '').trim();
+        if (!newName) return;
+        const colors = ['#ff6161', '#ffb340', '#38bdf8', '#c084fc', '#59d499', '#f43f5e'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const newVault = {
+          id: 'vault-' + Date.now(),
+          name: newName,
+          color: randomColor,
+          createdAt: new Date().toISOString()
+        };
+        const nextVaults = [...vaults, newVault];
+        try {
+          localStorage.setItem('x_vaults_v2', JSON.stringify(nextVaults));
+        } catch (e) {}
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ x_vaults_v2: nextVaults });
+        }
+        savePostToVault(newVault.id, newName);
+      };
+
+      btnAdd.onclick = handleCreateNew;
+      inputNew.onkeydown = (e) => {
+        if (e.key === 'Enter') handleCreateNew();
+        if (e.key === 'Escape') closePopover();
+      };
+
+      document.body.appendChild(popover);
+      const rect = anchorBtn.getBoundingClientRect();
+      const popoverWidth = 250;
+      let left = rect.left;
+      if (left + popoverWidth > window.innerWidth - 12) {
+        left = window.innerWidth - popoverWidth - 12;
+      }
+      if (left < 12) left = 12;
+
+      popover.style.left = `${left}px`;
+      if (rect.bottom + 230 > window.innerHeight) {
+        popover.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+        popover.style.top = 'auto';
+      } else {
+        popover.style.top = `${rect.bottom + 6}px`;
+        popover.style.bottom = 'auto';
+      }
+
+      const outsideClickListener = (e) => {
+        if (!popover.contains(e.target) && !anchorBtn.contains(e.target)) {
+          closePopover();
+          document.removeEventListener('click', outsideClickListener, true);
+        }
+      };
+      setTimeout(() => {
+        document.addEventListener('click', outsideClickListener, true);
+      }, 50);
+    });
+  }
+
+  function appendXHookButton(post, group, fullText, metrics) {
     if (group.querySelector('.x-shield-hook-btn')) return;
 
-    // Create 1-click Save Hook button
+    // Create Save Hook button with playlist/vault dropdown
     const hookBtn = document.createElement('button');
     hookBtn.type = 'button';
     hookBtn.className = 'x-shield-hook-btn';
-    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
-    hookBtn.innerHTML = `${ICONS.zap} <span>Save Hook</span>`;
+    hookBtn.setAttribute('title', 'Lưu bài viết vào Vault chủ đề');
+    hookBtn.innerHTML = `${ICONS.zap} <span>Lưu</span>`;
 
     hookBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     hookBtn.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -2717,8 +3002,6 @@
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-
-      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
       const formula = classifyHookFormula(hookText);
@@ -2732,6 +3015,10 @@
       const idMatch = tweetUrl.match(/status\/(\d+)/);
       const tweetId = idMatch ? idMatch[1] : 'tweet-' + Date.now();
 
+      const author = extractXTweetAuthor(post);
+      const outlier = evaluateOutlierStatus(metrics, author.authorHandle, post, 'x');
+      const mediaUrls = extractXTweetMedia(post);
+
       const itemToSave = {
         id: tweetId,
         platform: 'x',
@@ -2744,50 +3031,18 @@
         hook: hookText,
         fullText: fullText,
         metrics: metrics,
+        mediaUrls: mediaUrls,
         formula: formula,
         url: tweetUrl,
         savedAt: new Date().toISOString()
       };
 
-      // Instant UI Feedback
-      hookBtn.classList.remove('is-loading');
-      hookBtn.classList.add('is-saved');
-      hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-      showShieldToast(`✓ Đã lưu Hook Outlier của ${author.authorHandle || author.authorName || 'bài viết'} vào Vault!`, true);
-
-      function saveToLocalStorageFallback() {
-        try {
-          const raw = localStorage.getItem('x_hook_vault_v1');
-          let vault = raw ? JSON.parse(raw) : [];
-          if (!Array.isArray(vault)) vault = [];
-          vault = vault.filter((item) => item.id !== tweetId);
-          vault.unshift(itemToSave);
-          localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
-        } catch (err) {}
-      }
-
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        try {
-          chrome.storage.local.get(['x_hook_vault_v1'], (res) => {
-            if (chrome.runtime?.lastError) {
-              saveToLocalStorageFallback();
-              return;
-            }
-            let vault = Array.isArray(res?.x_hook_vault_v1) ? res.x_hook_vault_v1 : [];
-            vault = vault.filter((item) => item.id !== tweetId);
-            vault.unshift(itemToSave);
-            chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
-              try {
-                localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
-              } catch (e) {}
-            });
-          });
-        } catch (err) {
-          saveToLocalStorageFallback();
-        }
-      } else {
-        saveToLocalStorageFallback();
-      }
+      openVaultPickerPopover(hookBtn, itemToSave, (vaultName) => {
+        hookBtn.classList.remove('is-loading');
+        hookBtn.classList.add('is-saved');
+        hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+        showShieldToast(`✓ Đã lưu bài vào Vault "${vaultName}"!`, true);
+      });
     });
 
     group.appendChild(hookBtn);
@@ -2903,10 +3158,30 @@
       }
     }
 
-    // 2. Check author links near top of postEl (reposter banner)
-    const authorLinks = postEl.querySelectorAll('a[href*="/@"]');
+    // 2. Structural Check: Check for multiple distinct author handles at top of post (reposter banner + original author)
+    const authorLinks = Array.from(postEl.querySelectorAll('a[href*="/@"]')).filter((link) => {
+      if (contentEl && contentEl.contains(link)) return false;
+      return true;
+    });
+
+    if (authorLinks.length >= 2) {
+      const getHandle = (link) => {
+        const raw = link.getAttribute('href') || link.href || '';
+        const m = raw.match(/@([a-zA-Z0-9_\.]+)/);
+        return m ? m[1].toLowerCase() : raw.toLowerCase();
+      };
+      const firstHandle = getHandle(authorLinks[0]);
+      for (let i = 1; i < authorLinks.length; i++) {
+        const otherHandle = getHandle(authorLinks[i]);
+        if (firstHandle && otherHandle && firstHandle !== otherHandle) {
+          // Top link is reposter, subsequent link is actual author => 100% Repost!
+          return true;
+        }
+      }
+    }
+
+    // 3. Check author links near top of postEl (reposter banner text)
     for (const link of authorLinks) {
-      if (contentEl && contentEl.contains(link)) continue;
       let curr = link.parentElement;
       for (let i = 0; i < 3; i++) {
         if (!curr || curr === postEl) break;
@@ -2920,7 +3195,7 @@
       }
     }
 
-    // 3. Check for any top header row with repost text outside contentEl
+    // 4. Check for any top header row with repost text outside contentEl
     const topElements = postEl.querySelectorAll('div[dir="auto"], span[dir="auto"], header');
     for (const el of topElements) {
       if (contentEl && contentEl.contains(el)) continue;
@@ -2932,7 +3207,7 @@
       }
     }
 
-    // 4. Check for reshare / repost SVG icons in upper header outside action bar
+    // 5. Check for reshare / repost SVG icons in upper header outside action bar
     const actionBar = findThreadsActionBar(postEl);
     const allSvgs = postEl.querySelectorAll('svg');
     for (const svg of allSvgs) {
@@ -2956,9 +3231,16 @@
     const allLinks = Array.from(postEl.querySelectorAll('a[href*="/@"]'));
     let handleLink = allLinks[0];
     if (allLinks.length > 1) {
-      const firstParentText = (allLinks[0].parentElement?.innerText || '').trim();
-      if (THREADS_REPOST_REGEX.test(firstParentText)) {
+      const getH = (l) => ((l.getAttribute('href') || '').match(/@([a-zA-Z0-9_\.]+)/)?.[1] || '').toLowerCase();
+      const h0 = getH(allLinks[0]);
+      const h1 = getH(allLinks[1]);
+      if (h0 && h1 && h0 !== h1) {
         handleLink = allLinks[1];
+      } else {
+        const firstParentText = (allLinks[0].parentElement?.innerText || '').trim();
+        if (THREADS_REPOST_REGEX.test(firstParentText)) {
+          handleLink = allLinks[1];
+        }
       }
     }
 
@@ -2985,6 +3267,39 @@
     }
 
     return { authorName: authorName || 'Threads Creator', authorHandle, authorAvatar, permalink };
+  }
+
+  function extractThreadsMedia(postEl) {
+    const mediaUrls = [];
+    if (!postEl) return mediaUrls;
+
+    const imgs = Array.from(postEl.querySelectorAll('img'));
+    imgs.forEach((img) => {
+      if (img.closest('a[href*="/@"]')) return;
+      const alt = (img.getAttribute('alt') || '').toLowerCase();
+      if (alt.includes('ảnh đại diện') || alt.includes('profile') || alt.includes('avatar')) return;
+
+      const src = img.currentSrc || img.src || img.getAttribute('src') || '';
+      if (!src) return;
+      if (src.includes('s150x150') || src.includes('s320x320') || src.includes('profile_pic')) return;
+
+      if (src.includes('cdninstagram.com') || src.includes('fbcdn.net') || src.includes('threads.net')) {
+        if (img.naturalWidth && img.naturalWidth < 80) return;
+        if (!mediaUrls.includes(src)) {
+          mediaUrls.push(src);
+        }
+      }
+    });
+
+    const videos = postEl.querySelectorAll('video[poster]');
+    videos.forEach((v) => {
+      const poster = v.getAttribute('poster');
+      if (poster && !mediaUrls.includes(poster)) {
+        mediaUrls.push(poster);
+      }
+    });
+
+    return mediaUrls;
   }
 
   function findThreadsActionBar(postEl) {
@@ -3107,8 +3422,8 @@
     const hookBtn = document.createElement('button');
     hookBtn.type = 'button';
     hookBtn.className = 'x-shield-threads-hook-btn';
-    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
-    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook</span>`;
+    hookBtn.setAttribute('title', 'Lưu bài viết vào Vault chủ đề');
+    hookBtn.innerHTML = `${ICONS.zap}<span>Lưu</span>`;
 
     hookBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     hookBtn.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -3116,8 +3431,6 @@
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-
-      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
       const formula = classifyHookFormula(hookText);
@@ -3137,50 +3450,18 @@
         hook: hookText,
         fullText: fullText,
         metrics: metrics,
+        mediaUrls: extractThreadsMedia(postEl),
         formula: formula,
         url: authorInfo.permalink,
         savedAt: new Date().toISOString(),
       };
 
-      // Instant UI Feedback
-      hookBtn.classList.remove('is-loading');
-      hookBtn.classList.add('is-saved');
-      hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-      showShieldToast(`✓ Đã lưu Hook Outlier của ${authorInfo.authorHandle || authorInfo.authorName} vào Vault!`, true);
-
-      function saveToLocalStorageFallback() {
-        try {
-          const raw = localStorage.getItem('x_hook_vault_v1');
-          let vault = raw ? JSON.parse(raw) : [];
-          if (!Array.isArray(vault)) vault = [];
-          vault = vault.filter((item) => item.id !== threadId);
-          vault.unshift(itemToSave);
-          localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
-        } catch (err) {}
-      }
-
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        try {
-          chrome.storage.local.get(['x_hook_vault_v1'], (vaultRes) => {
-            if (chrome.runtime?.lastError) {
-              saveToLocalStorageFallback();
-              return;
-            }
-            let vault = Array.isArray(vaultRes?.x_hook_vault_v1) ? vaultRes.x_hook_vault_v1 : [];
-            vault = vault.filter((item) => item.id !== threadId);
-            vault.unshift(itemToSave);
-            chrome.storage.local.set({ x_hook_vault_v1: vault }, () => {
-              try {
-                localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
-              } catch (e) {}
-            });
-          });
-        } catch (err) {
-          saveToLocalStorageFallback();
-        }
-      } else {
-        saveToLocalStorageFallback();
-      }
+      openVaultPickerPopover(hookBtn, itemToSave, (vaultName) => {
+        hookBtn.classList.remove('is-loading');
+        hookBtn.classList.add('is-saved');
+        hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+        showShieldToast(`✓ Đã lưu bài vào Vault "${vaultName}"!`, true);
+      });
     });
 
     actionBar.appendChild(hookBtn);

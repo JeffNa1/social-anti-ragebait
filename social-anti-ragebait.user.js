@@ -57,6 +57,8 @@
   };
 
   try {
+    const savedAutoBlurRage = localStorage.getItem('social_shield_auto_blur_rage');
+    if (savedAutoBlurRage !== null) CONFIG.autoBlurRageEnabled = savedAutoBlurRage === 'true';
     const savedFocus = localStorage.getItem('social_shield_focus_mode');
     if (savedFocus !== null) CONFIG.focusModeEnabled = savedFocus === 'true';
     const savedTags = localStorage.getItem('social_shield_focus_tags');
@@ -516,6 +518,134 @@ body.x-jev-disable-all-blur .x-jev-warning-box {
   border-color: #ef4444 !important;
   transform: translateY(-1.5px) scale(1.03) !important;
   box-shadow: 0 4px 18px rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.5) !important;
+}
+
+.x-jev-warning-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.x-jev-disable-rage-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #cbd5e1 !important;
+  padding: 5px 11px !important;
+  border-radius: var(--jev-radius-md, 6px) !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  filter: none !important;
+  opacity: 0.9 !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+}
+
+.x-jev-disable-rage-btn:hover {
+  background: rgba(239, 68, 68, 0.18) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #fca5a5 !important;
+  opacity: 1 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Flyout Quick Toggle Row */
+.x-jev-flyout-toggle-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 10px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--jev-radius-md, 6px) !important;
+  margin-top: 2px !important;
+  transition: all 0.2s var(--jev-ease-spring) !important;
+}
+
+.x-jev-flyout-toggle-row:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.x-jev-flyout-toggle-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.x-jev-flyout-toggle-label {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #f1f5f9 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+.x-jev-flyout-toggle-label svg {
+  width: 12px !important;
+  height: 12px !important;
+  color: #f87171 !important;
+}
+
+.x-jev-flyout-toggle-sub {
+  font-size: 9.5px !important;
+  color: #94a3b8 !important;
+}
+
+/* Flyout Mini Tactile Switch */
+.x-jev-flyout-switch {
+  position: relative !important;
+  display: inline-block !important;
+  width: 32px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+}
+
+.x-jev-flyout-switch input {
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.x-jev-flyout-slider {
+  position: absolute !important;
+  cursor: pointer !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background-color: #1a1b1c !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 9999px !important;
+  transition: all 0.2s var(--jev-ease-spring) !important;
+}
+
+.x-jev-flyout-slider::before {
+  position: absolute !important;
+  content: "" !important;
+  height: 12px !important;
+  width: 12px !important;
+  left: 2px !important;
+  bottom: 2px !important;
+  background-color: #94a3b8 !important;
+  border-radius: 50% !important;
+  transition: all 0.2s var(--jev-ease-spring) !important;
+}
+
+.x-jev-flyout-switch input:checked + .x-jev-flyout-slider {
+  background-color: #ff6161 !important;
+  border-color: #ff6161 !important;
+  box-shadow: 0 0 10px rgba(255, 97, 97, 0.4) !important;
+}
+
+.x-jev-flyout-switch input:checked + .x-jev-flyout-slider::before {
+  transform: translateX(14px) !important;
+  background-color: #ffffff !important;
 }
 
 /* --- Collapsed Seeding Comment Bar (Shadcn Accordion Strip with Neon Glow) --- */
@@ -1183,6 +1313,165 @@ body.is-activity-page .x-shield-threads-hook-btn {
   width: 100% !important;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   Raycast In-Page Vault Playlist Dropdown Popover
+   ══════════════════════════════════════════════════════════════════ */
+.x-vault-picker-popover {
+  position: fixed !important;
+  z-index: 9999999 !important;
+  background: #0d0d0d !important;
+  border: 1px solid #242728 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  width: 250px !important;
+  padding: 8px !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  color: #ededed !important;
+  box-sizing: border-box !important;
+  animation: xVaultPopoverIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes xVaultPopoverIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.x-vault-picker-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 4px 6px 8px 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #a1a1aa !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.x-vault-picker-close {
+  background: transparent !important;
+  border: none !important;
+  color: #71717a !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.x-vault-picker-close:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.x-vault-picker-list {
+  max-height: 160px !important;
+  overflow-y: auto !important;
+  margin: 6px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.x-vault-picker-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 6px 8px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.12s ease !important;
+  font-size: 12.5px !important;
+  color: #ededed !important;
+  text-align: left !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+}
+
+.x-vault-picker-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+.x-vault-picker-item-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.x-vault-picker-dot {
+  width: 7px !important;
+  height: 7px !important;
+  border-radius: 50% !important;
+  flex-shrink: 0 !important;
+}
+
+.x-vault-picker-name {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-weight: 500 !important;
+}
+
+.x-vault-picker-count {
+  font-size: 10.5px !important;
+  color: #71717a !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding: 1px 5px !important;
+  border-radius: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+.x-vault-picker-create {
+  display: flex !important;
+  gap: 5px !important;
+  padding-top: 6px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+.x-vault-picker-input {
+  flex: 1 !important;
+  background: #141415 !important;
+  border: 1px solid #242728 !important;
+  border-radius: 6px !important;
+  padding: 5px 8px !important;
+  color: #fff !important;
+  font-size: 11.5px !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+.x-vault-picker-input:focus {
+  border-color: #57c1ff !important;
+}
+
+.x-vault-picker-btn-add {
+  background: #0284c7 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: background 0.15s ease !important;
+  outline: none !important;
+}
+.x-vault-picker-btn-add:hover {
+  background: #0369a1 !important;
+}
+
 /* Floating Toast Notification */
 .x-shield-page-toast {
   position: fixed !important;
@@ -1575,6 +1864,16 @@ body.is-activity-page .x-shield-threads-hook-btn {
         <span class="x-jev-metric-val" id="x-jev-stat-monk" style="color:#38bdf8;">0</span>
       </div>
     </div>
+    <div class="x-jev-flyout-toggle-row">
+      <div class="x-jev-flyout-toggle-info">
+        <span class="x-jev-flyout-toggle-label">${ICONS.flame} Làm mờ tiêu cực</span>
+        <span class="x-jev-flyout-toggle-sub" id="x-jev-flyout-rage-sub">Đang bật</span>
+      </div>
+      <label class="x-jev-flyout-switch" title="Tắt / Bật cảnh báo và làm mờ bài toxic / ragebait">
+        <input type="checkbox" id="x-jev-flyout-rage-toggle" checked>
+        <span class="x-jev-flyout-slider"></span>
+      </label>
+    </div>
     <div id="x-jev-flyout-tag-summary" style="display:flex;flex-wrap:wrap;gap:4px;font-size:10px;color:#a1a1aa;padding-top:4px;border-top:1px solid rgba(255,255,255,0.06);"></div>
     <div style="font-size:9.5px;color:#71717a;text-align:center;margin-top:2px;">Nhấn đúp vào thanh để Bật/Tắt chế độ bảo vệ</div>
   `;
@@ -1585,6 +1884,28 @@ body.is-activity-page .x-shield-threads-hook-btn {
   pill.appendChild(pillToggle);
   pill.appendChild(pillClose);
   pill.appendChild(flyout);
+
+  const flyoutRageToggle = flyout.querySelector('#x-jev-flyout-rage-toggle');
+  const flyoutRageSub = flyout.querySelector('#x-jev-flyout-rage-sub');
+  if (flyoutRageToggle) {
+    flyoutRageToggle.checked = !!CONFIG.autoBlurRageEnabled;
+    if (flyoutRageSub) {
+      flyoutRageSub.textContent = CONFIG.autoBlurRageEnabled ? 'Đang bật' : 'Đã tắt';
+    }
+    flyoutRageToggle.addEventListener('change', (e) => {
+      e.stopPropagation();
+      CONFIG.autoBlurRageEnabled = flyoutRageToggle.checked;
+      if (flyoutRageSub) {
+        flyoutRageSub.textContent = CONFIG.autoBlurRageEnabled ? 'Đang bật' : 'Đã tắt';
+      }
+      try {
+        localStorage.setItem('social_shield_auto_blur_rage', String(CONFIG.autoBlurRageEnabled));
+      } catch (err) {}
+      applyStateToDOM();
+      updatePill();
+      scanFeed();
+    });
+  }
 
   // Fast capture phase listener on document ensures clicks/taps on close button are never swallowed
   const handlePillClose = (e) => {
@@ -1679,6 +2000,13 @@ body.is-activity-page .x-shield-threads-hook-btn {
       tagSummary.innerHTML = activeTags.length > 0
         ? activeTags.map((t) => `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">${t}</span>`).join('')
         : '<span style="opacity:0.6;">Chưa ghi nhận tag nổi bật</span>';
+    }
+
+    if (flyoutRageToggle) {
+      flyoutRageToggle.checked = !!CONFIG.autoBlurRageEnabled;
+    }
+    if (flyoutRageSub) {
+      flyoutRageSub.textContent = CONFIG.autoBlurRageEnabled ? 'Đang bật' : 'Đã tắt';
     }
   }
 
@@ -2222,6 +2550,9 @@ body.is-activity-page .x-shield-threads-hook-btn {
           </div>
         `;
 
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'x-jev-warning-actions';
+
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
         btn.innerHTML = `${ICONS.scan} <span>Hiện nội dung</span>`;
@@ -2243,7 +2574,30 @@ body.is-activity-page .x-shield-threads-hook-btn {
           }
         };
 
-        warning.appendChild(btn);
+        const disableBtn = document.createElement('button');
+        disableBtn.className = 'x-jev-disable-rage-btn';
+        disableBtn.type = 'button';
+        disableBtn.title = 'Tắt hẳn tính năng cảnh báo và làm mờ tiêu cực';
+        disableBtn.innerHTML = `<span>Tắt làm mờ</span>`;
+        disableBtn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          CONFIG.autoBlurRageEnabled = false;
+          try {
+            localStorage.setItem('social_shield_auto_blur_rage', 'false');
+          } catch (err) {}
+          applyStateToDOM();
+          updatePill();
+          scanFeed();
+        };
+
+        actionsContainer.appendChild(btn);
+        actionsContainer.appendChild(disableBtn);
+        warning.appendChild(actionsContainer);
+
+        if (!CONFIG.autoBlurRageEnabled) {
+          warning.style.display = 'none';
+        }
         parentContainer.insertBefore(warning, textEl);
       }
 
@@ -2262,10 +2616,14 @@ body.is-activity-page .x-shield-threads-hook-btn {
         applyInlineUnblur(postEl, false);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
         if (rBtn) rBtn.textContent = 'Hiện nội dung';
+        const wBox = postEl.querySelector('.x-jev-warning-box');
+        if (wBox) wBox.style.display = 'flex';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
         applyInlineUnblur(postEl, true);
+        const wBox = postEl.querySelector('.x-jev-warning-box');
+        if (wBox) wBox.style.display = 'none';
       }
       checkAndApplyFocusCollapse(postEl, textEl, 'rage bait / toxic / hostile / dismissive negativity');
       return;
@@ -3032,28 +3390,50 @@ body.is-activity-page .x-shield-threads-hook-btn {
             saveFollowersCache();
           }
         }
-        if ((obj.code || obj.pk || obj.id) && (typeof obj.like_count === 'number' || typeof obj.reply_count === 'number')) {
+        if ((obj.code || obj.pk || obj.id) && (typeof obj.like_count === 'number' || typeof obj.reply_count === 'number' || Array.isArray(obj.thread_items))) {
           const code = String(obj.code || obj.pk || obj.id);
-          const isRepost = !!(obj.reshared_post || obj.repost || obj.is_reshare || (obj.reshare_count && obj.is_repost));
+          const isRepost = !!(obj.reshared_post || obj.repost || obj.is_reshare || (obj.reshare_count && obj.is_repost) || obj.repost_context || obj.thread_header || obj.repost_header || obj.repost_user);
+          const existing = tweetDataCache.get(code);
+          const finalIsRepost = isRepost || !!(existing && (existing.isRepost || existing.isRetweet));
           tweetDataCache.set(code, {
-            likes: obj.like_count || 0,
-            replies: obj.reply_count || 0,
-            retweets: obj.reshare_count || 0,
-            viewsCount: obj.view_count || obj.impression_count || 0,
-            isRepost: isRepost,
-            isRetweet: isRepost
+            likes: obj.like_count || existing?.likes || 0,
+            replies: obj.reply_count || existing?.replies || 0,
+            retweets: obj.reshare_count || existing?.retweets || 0,
+            viewsCount: obj.view_count || obj.impression_count || existing?.viewsCount || 0,
+            isRepost: finalIsRepost,
+            isRetweet: finalIsRepost
           });
+          if (obj.reshared_post?.code) {
+            const innerCode = String(obj.reshared_post.code);
+            const innerExisting = tweetDataCache.get(innerCode) || {};
+            tweetDataCache.set(innerCode, {
+              ...innerExisting,
+              isRepost: true,
+              isRetweet: true
+            });
+          }
         }
         if (obj.__typename === 'Tweet' || (obj.legacy && obj.rest_id)) {
           const restId = String(obj.rest_id || obj.id || '');
           const isRetweet = !!(obj.legacy?.retweeted_status_result || obj.legacy?.retweeted_status_id_str || obj.retweeted_status_result);
           if (restId) {
+            const existing = tweetDataCache.get(restId);
+            const finalIsRetweet = isRetweet || !!(existing && (existing.isRetweet || existing.isRepost));
             tweetDataCache.set(restId, {
-              isRetweet: isRetweet,
-              isRepost: isRetweet,
-              likes: obj.legacy?.favorite_count || 0,
-              viewsCount: obj.views?.count ? parseInt(obj.views.count, 10) || 0 : 0
+              isRetweet: finalIsRetweet,
+              isRepost: finalIsRetweet,
+              likes: obj.legacy?.favorite_count || existing?.likes || 0,
+              viewsCount: obj.views?.count ? parseInt(obj.views.count, 10) || existing?.viewsCount || 0 : existing?.viewsCount || 0
             });
+            const innerRestId = obj.legacy?.retweeted_status_result?.result?.rest_id || obj.legacy?.retweeted_status_id_str;
+            if (innerRestId) {
+              const innerExisting = tweetDataCache.get(String(innerRestId)) || {};
+              tweetDataCache.set(String(innerRestId), {
+                ...innerExisting,
+                isRetweet: true,
+                isRepost: true
+              });
+            }
           }
         }
         if (Array.isArray(obj)) {
@@ -3282,22 +3662,167 @@ body.is-activity-page .x-shield-threads-hook-btn {
     }
   }
 
-  function saveHookToVaultUserscript(itemToSave, hookBtn, confidence) {
-    try {
-      const raw = localStorage.getItem('x_hook_vault_v1');
-      let vault = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(vault)) vault = [];
-      vault = vault.filter((item) => item.id !== itemToSave.id);
-      vault.unshift(itemToSave);
-      localStorage.setItem('x_hook_vault_v1', JSON.stringify(vault));
-      hookBtn.classList.add('is-saved');
-      hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-      showShieldToast(`✓ Đã lưu Hook Outlier của ${itemToSave.authorHandle || itemToSave.authorName || 'bài viết'} vào Vault!`);
-    } catch (e) {
-      hookBtn.classList.add('is-saved');
-      hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
-      showShieldToast('✓ Đã lưu Hook vào Vault!');
+  const DEFAULT_VAULT_ID = 'vault-default';
+  const DEFAULT_VAULTS = [
+    { id: 'vault-default', name: 'Chung / Mặc định', color: '#ff6161' },
+    { id: 'vault-tech-ai', name: 'Công Nghệ & AI', color: '#38bdf8' },
+    { id: 'vault-business', name: 'Khởi Nghiệp', color: '#ffc533' }
+  ];
+
+  function openVaultPickerPopover(anchorBtn, baseItem, onSaved) {
+    document.querySelectorAll('.x-vault-picker-popover').forEach((p) => p.remove());
+
+    function getStorageData(cb) {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['x_vaults_v2', 'x_hook_vault_v1'], (res) => {
+          let vaults = Array.isArray(res?.x_vaults_v2) ? res.x_vaults_v2 : null;
+          let posts = Array.isArray(res?.x_hook_vault_v1) ? res.x_hook_vault_v1 : [];
+          if (!vaults) {
+            try {
+              const raw = localStorage.getItem('x_vaults_v2');
+              if (raw) vaults = JSON.parse(raw);
+            } catch (e) {}
+          }
+          if (!vaults || vaults.length === 0) {
+            vaults = [...DEFAULT_VAULTS];
+          } else if (!vaults.some((v) => v.id === DEFAULT_VAULT_ID)) {
+            vaults.unshift(DEFAULT_VAULTS[0]);
+          }
+          cb(vaults, posts);
+        });
+      } else {
+        try {
+          const rawV = localStorage.getItem('x_vaults_v2');
+          let vaults = rawV ? JSON.parse(rawV) : [...DEFAULT_VAULTS];
+          const rawP = localStorage.getItem('x_hook_vault_v1');
+          let posts = rawP ? JSON.parse(rawP) : [];
+          if (!vaults.some((v) => v.id === DEFAULT_VAULT_ID)) vaults.unshift(DEFAULT_VAULTS[0]);
+          cb(vaults, posts);
+        } catch (e) {
+          cb([...DEFAULT_VAULTS], []);
+        }
+      }
     }
+
+    getStorageData((vaults, posts) => {
+      const popover = document.createElement('div');
+      popover.className = 'x-vault-picker-popover';
+
+      popover.innerHTML = `
+        <div class="x-vault-picker-header">
+          <span>Lưu vào Vault</span>
+          <button type="button" class="x-vault-picker-close" title="Đóng">&times;</button>
+        </div>
+        <div class="x-vault-picker-list"></div>
+        <div class="x-vault-picker-create">
+          <input type="text" class="x-vault-picker-input" placeholder="+ Tên Vault mới..." maxlength="30" />
+          <button type="button" class="x-vault-picker-btn-add">Tạo & Lưu</button>
+        </div>
+      `;
+
+      ['pointerdown', 'mousedown', 'click', 'keydown'].forEach((ev) => {
+        popover.addEventListener(ev, (e) => e.stopPropagation());
+      });
+
+      const listContainer = popover.querySelector('.x-vault-picker-list');
+      const inputNew = popover.querySelector('.x-vault-picker-input');
+      const btnAdd = popover.querySelector('.x-vault-picker-btn-add');
+      const btnClose = popover.querySelector('.x-vault-picker-close');
+
+      const closePopover = () => popover.remove();
+      btnClose.onclick = closePopover;
+
+      function savePostToVault(targetVaultId, vaultName) {
+        baseItem.vaultId = targetVaultId;
+        const nextPosts = posts.filter((p) => p.id !== baseItem.id);
+        nextPosts.unshift(baseItem);
+
+        try {
+          localStorage.setItem('x_hook_vault_v1', JSON.stringify(nextPosts));
+        } catch (e) {}
+
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ x_hook_vault_v1: nextPosts }, () => {
+            closePopover();
+            if (onSaved) onSaved(vaultName);
+          });
+        } else {
+          closePopover();
+          if (onSaved) onSaved(vaultName);
+        }
+      }
+
+      vaults.forEach((v) => {
+        const count = posts.filter((p) => (p.vaultId || DEFAULT_VAULT_ID) === v.id).length;
+        const itemBtn = document.createElement('button');
+        itemBtn.type = 'button';
+        itemBtn.className = 'x-vault-picker-item';
+        itemBtn.innerHTML = `
+          <div class="x-vault-picker-item-left">
+            <span class="x-vault-picker-dot" style="background:${v.color || '#ff6161'};"></span>
+            <span class="x-vault-picker-name">${v.name}</span>
+          </div>
+          <span class="x-vault-picker-count">${count}</span>
+        `;
+        itemBtn.onclick = () => savePostToVault(v.id, v.name);
+        listContainer.appendChild(itemBtn);
+      });
+
+      const handleCreateNew = () => {
+        const newName = (inputNew.value || '').trim();
+        if (!newName) return;
+        const colors = ['#ff6161', '#ffb340', '#38bdf8', '#c084fc', '#59d499', '#f43f5e'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const newVault = {
+          id: 'vault-' + Date.now(),
+          name: newName,
+          color: randomColor,
+          createdAt: new Date().toISOString()
+        };
+        const nextVaults = [...vaults, newVault];
+        try {
+          localStorage.setItem('x_vaults_v2', JSON.stringify(nextVaults));
+        } catch (e) {}
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ x_vaults_v2: nextVaults });
+        }
+        savePostToVault(newVault.id, newName);
+      };
+
+      btnAdd.onclick = handleCreateNew;
+      inputNew.onkeydown = (e) => {
+        if (e.key === 'Enter') handleCreateNew();
+        if (e.key === 'Escape') closePopover();
+      };
+
+      document.body.appendChild(popover);
+      const rect = anchorBtn.getBoundingClientRect();
+      const popoverWidth = 250;
+      let left = rect.left;
+      if (left + popoverWidth > window.innerWidth - 12) {
+        left = window.innerWidth - popoverWidth - 12;
+      }
+      if (left < 12) left = 12;
+
+      popover.style.left = `${left}px`;
+      if (rect.bottom + 230 > window.innerHeight) {
+        popover.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+        popover.style.top = 'auto';
+      } else {
+        popover.style.top = `${rect.bottom + 6}px`;
+        popover.style.bottom = 'auto';
+      }
+
+      const outsideClickListener = (e) => {
+        if (!popover.contains(e.target) && !anchorBtn.contains(e.target)) {
+          closePopover();
+          document.removeEventListener('click', outsideClickListener, true);
+        }
+      };
+      setTimeout(() => {
+        document.addEventListener('click', outsideClickListener, true);
+      }, 50);
+    });
   }
 
   // --- Threads Hook & Outlier Engine ---
@@ -3388,10 +3913,30 @@ body.is-activity-page .x-shield-threads-hook-btn {
       }
     }
 
-    // 2. Check author links near top of postEl (reposter banner)
-    const authorLinks = postEl.querySelectorAll('a[href*="/@"]');
+    // 2. Structural Check: Check for multiple distinct author handles at top of post (reposter banner + original author)
+    const authorLinks = Array.from(postEl.querySelectorAll('a[href*="/@"]')).filter((link) => {
+      if (contentEl && contentEl.contains(link)) return false;
+      return true;
+    });
+
+    if (authorLinks.length >= 2) {
+      const getHandle = (link) => {
+        const raw = link.getAttribute('href') || link.href || '';
+        const m = raw.match(/@([a-zA-Z0-9_\.]+)/);
+        return m ? m[1].toLowerCase() : raw.toLowerCase();
+      };
+      const firstHandle = getHandle(authorLinks[0]);
+      for (let i = 1; i < authorLinks.length; i++) {
+        const otherHandle = getHandle(authorLinks[i]);
+        if (firstHandle && otherHandle && firstHandle !== otherHandle) {
+          // Top link is reposter, subsequent link is actual author => 100% Repost!
+          return true;
+        }
+      }
+    }
+
+    // 3. Check author links near top of postEl (reposter banner text)
     for (const link of authorLinks) {
-      if (contentEl && contentEl.contains(link)) continue;
       let curr = link.parentElement;
       for (let i = 0; i < 3; i++) {
         if (!curr || curr === postEl) break;
@@ -3405,7 +3950,7 @@ body.is-activity-page .x-shield-threads-hook-btn {
       }
     }
 
-    // 3. Check for any top header row with repost text outside contentEl
+    // 4. Check for any top header row with repost text outside contentEl
     const topElements = postEl.querySelectorAll('div[dir="auto"], span[dir="auto"], header');
     for (const el of topElements) {
       if (contentEl && contentEl.contains(el)) continue;
@@ -3417,7 +3962,7 @@ body.is-activity-page .x-shield-threads-hook-btn {
       }
     }
 
-    // 4. Check for reshare / repost SVG icons in upper header outside action bar
+    // 5. Check for reshare / repost SVG icons in upper header outside action bar
     const actionBar = findThreadsActionBar(postEl);
     const allSvgs = postEl.querySelectorAll('svg');
     for (const svg of allSvgs) {
@@ -3441,9 +3986,16 @@ body.is-activity-page .x-shield-threads-hook-btn {
     const allLinks = Array.from(postEl.querySelectorAll('a[href*="/@"]'));
     let handleLink = allLinks[0];
     if (allLinks.length > 1) {
-      const firstParentText = (allLinks[0].parentElement?.innerText || '').trim();
-      if (THREADS_REPOST_REGEX.test(firstParentText)) {
+      const getH = (l) => ((l.getAttribute('href') || '').match(/@([a-zA-Z0-9_\.]+)/)?.[1] || '').toLowerCase();
+      const h0 = getH(allLinks[0]);
+      const h1 = getH(allLinks[1]);
+      if (h0 && h1 && h0 !== h1) {
         handleLink = allLinks[1];
+      } else {
+        const firstParentText = (allLinks[0].parentElement?.innerText || '').trim();
+        if (THREADS_REPOST_REGEX.test(firstParentText)) {
+          handleLink = allLinks[1];
+        }
       }
     }
 
@@ -3462,6 +4014,39 @@ body.is-activity-page .x-shield-threads-hook-btn {
     if (postLink && postLink.href) permalink = postLink.href;
 
     return { authorName: authorName || 'Threads Creator', authorHandle, authorAvatar, permalink };
+  }
+
+  function extractThreadsMedia(postEl) {
+    const mediaUrls = [];
+    if (!postEl) return mediaUrls;
+
+    const imgs = Array.from(postEl.querySelectorAll('img'));
+    imgs.forEach((img) => {
+      if (img.closest('a[href*="/@"]')) return;
+      const alt = (img.getAttribute('alt') || '').toLowerCase();
+      if (alt.includes('ảnh đại diện') || alt.includes('profile') || alt.includes('avatar')) return;
+
+      const src = img.currentSrc || img.src || img.getAttribute('src') || '';
+      if (!src) return;
+      if (src.includes('s150x150') || src.includes('s320x320') || src.includes('profile_pic')) return;
+
+      if (src.includes('cdninstagram.com') || src.includes('fbcdn.net') || src.includes('threads.net')) {
+        if (img.naturalWidth && img.naturalWidth < 80) return;
+        if (!mediaUrls.includes(src)) {
+          mediaUrls.push(src);
+        }
+      }
+    });
+
+    const videos = postEl.querySelectorAll('video[poster]');
+    videos.forEach((v) => {
+      const poster = v.getAttribute('poster');
+      if (poster && !mediaUrls.includes(poster)) {
+        mediaUrls.push(poster);
+      }
+    });
+
+    return mediaUrls;
   }
 
   function findThreadsActionBar(postEl) {
@@ -3574,14 +4159,15 @@ body.is-activity-page .x-shield-threads-hook-btn {
     const hookBtn = document.createElement('button');
     hookBtn.type = 'button';
     hookBtn.className = 'x-shield-threads-hook-btn';
-    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
-    hookBtn.innerHTML = `${ICONS.zap}<span>Save Hook</span>`;
+    hookBtn.setAttribute('title', 'Lưu bài viết vào Vault chủ đề');
+    hookBtn.innerHTML = `${ICONS.zap}<span>Lưu</span>`;
+
+    hookBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    hookBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-
-      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
       const formula = classifyHookFormula(hookText);
@@ -3600,12 +4186,18 @@ body.is-activity-page .x-shield-threads-hook-btn {
         hook: hookText,
         fullText: fullText,
         metrics: metrics,
+        mediaUrls: extractThreadsMedia(postEl),
         formula: formula,
         url: authorInfo.permalink,
         savedAt: new Date().toISOString(),
       };
 
-      saveHookToVaultUserscript(itemToSave, hookBtn);
+      openVaultPickerPopover(hookBtn, itemToSave, (vaultName) => {
+        hookBtn.classList.remove('is-loading');
+        hookBtn.classList.add('is-saved');
+        hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+        showShieldToast(`✓ Đã lưu bài vào Vault "${vaultName}"!`, true);
+      });
     });
 
     actionBar.appendChild(hookBtn);
@@ -3628,6 +4220,37 @@ body.is-activity-page .x-shield-threads-hook-btn {
     const avatarImg = post.querySelector('div[data-testid="Tweet-User-Avatar"] img, img[src*="profile_images"]');
     const authorAvatar = avatarImg ? avatarImg.src : '';
     return { authorName, authorHandle, authorAvatar };
+  }
+
+  function extractXTweetMedia(post) {
+    const mediaUrls = [];
+    if (!post) return mediaUrls;
+
+    // 1. Photos in tweet
+    const photoImgs = post.querySelectorAll('div[data-testid="tweetPhoto"] img, img[src*="pbs.twimg.com/media"]');
+    photoImgs.forEach((img) => {
+      const src = img.currentSrc || img.src || img.getAttribute('src');
+      if (src && !src.includes('profile_images')) {
+        let cleanSrc = src;
+        if (cleanSrc.includes('&name=')) {
+          cleanSrc = cleanSrc.replace(/&name=[a-z0-9_]+/i, '&name=medium');
+        }
+        if (!mediaUrls.includes(cleanSrc)) {
+          mediaUrls.push(cleanSrc);
+        }
+      }
+    });
+
+    // 2. Video thumbnail / poster
+    const videos = post.querySelectorAll('video[poster]');
+    videos.forEach((v) => {
+      const poster = v.getAttribute('poster');
+      if (poster && !mediaUrls.includes(poster) && !poster.includes('profile_images')) {
+        mediaUrls.push(poster);
+      }
+    });
+
+    return mediaUrls;
   }
 
   function extractXTweetMetrics(post) {
@@ -3662,12 +4285,22 @@ body.is-activity-page .x-shield-threads-hook-btn {
   function isXRepost(post) {
     if (!post) return false;
 
-    // 1. Check data-testid="socialContext"
-    const socialContext = post.querySelector('div[data-testid="socialContext"]');
+    // 1. Check data-testid="socialContext" across any tag (div, span, a, etc.)
+    const socialContext = post.querySelector('[data-testid="socialContext"]');
     if (socialContext) {
       const text = (socialContext.innerText || '').trim();
       if (X_REPOST_REGEX.test(text)) {
         return true;
+      }
+      // If socialContext has an SVG icon that is NOT a pin icon, it's a Retweet banner
+      const svg = socialContext.querySelector('svg');
+      if (svg) {
+        const aria = (svg.getAttribute('aria-label') || '').toLowerCase();
+        if (X_REPOST_REGEX.test(aria)) return true;
+        const isPinned = /(?:pinned|ghim|fijado|fixado|épinglé|angepinnt|固定)/i.test(text);
+        if (!isPinned) {
+          return true;
+        }
       }
     }
 
@@ -3680,6 +4313,15 @@ body.is-activity-page .x-shield-threads-hook-btn {
         if (cached && (cached.isRetweet || cached.isRepost)) {
           return true;
         }
+      }
+    }
+
+    // 3. Check for any top header row with retweet text outside contentEl
+    const headerRow = post.querySelector('div[data-testid="tweet"] > div:first-child');
+    if (headerRow) {
+      const hText = (headerRow.innerText || '').trim();
+      if (X_REPOST_REGEX.test(hText)) {
+        return true;
       }
     }
 
@@ -3731,13 +4373,15 @@ body.is-activity-page .x-shield-threads-hook-btn {
     const hookBtn = document.createElement('button');
     hookBtn.type = 'button';
     hookBtn.className = 'x-shield-hook-btn';
-    hookBtn.setAttribute('title', 'Lưu Hook Outlier này vào Vault để học hỏi & phân tích');
-    hookBtn.innerHTML = `${ICONS.zap} <span>Save Hook</span>`;
+    hookBtn.setAttribute('title', 'Lưu bài viết vào Vault chủ đề');
+    hookBtn.innerHTML = `${ICONS.zap} <span>Lưu</span>`;
+
+    hookBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    hookBtn.addEventListener('mousedown', (e) => e.stopPropagation());
 
     hookBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      if (hookBtn.classList.contains('is-saved')) return;
 
       const hookText = extractTweetHook(fullText);
       const permalinkEl = post.querySelector('a[href*="/status/"]');
@@ -3756,6 +4400,7 @@ body.is-activity-page .x-shield-threads-hook-btn {
         hook: hookText,
         fullText: fullText,
         metrics: metrics,
+        mediaUrls: extractXTweetMedia(post),
         formula: classifyHookFormula(hookText),
         jevConfidence: 0.88,
         jevLabel: 'Heuristic',
@@ -3763,8 +4408,12 @@ body.is-activity-page .x-shield-threads-hook-btn {
         savedAt: new Date().toISOString(),
       };
 
-      hookBtn.classList.remove('is-loading');
-      saveHookToVaultUserscript(baseItem, hookBtn, 0.88);
+      openVaultPickerPopover(hookBtn, baseItem, (vaultName) => {
+        hookBtn.classList.remove('is-loading');
+        hookBtn.classList.add('is-saved');
+        hookBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg> <span>Saved!</span>`;
+        showShieldToast(`✓ Đã lưu bài vào Vault "${vaultName}"!`, true);
+      });
     });
 
     group.appendChild(hookBtn);

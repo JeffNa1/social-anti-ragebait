@@ -1,5 +1,6 @@
 // Popup Controller for Viral Outlier & Hook Vault
 document.addEventListener('DOMContentLoaded', () => {
+  const toggleAutoBlurRage = document.getElementById('toggleAutoBlurRage');
   const toggleOutlier = document.getElementById('toggleOutlier');
   const selectMultiplier = document.getElementById('selectMultiplier');
   const selectViewsFloor = document.getElementById('selectViewsFloor');
@@ -73,8 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load existing settings
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
-      ['outlierDetectionEnabled', 'outlierThresholdMultiplier', 'minViewsFloor', 'x_hook_vault_v1'],
+      ['autoBlurRageEnabled', 'outlierDetectionEnabled', 'outlierThresholdMultiplier', 'minViewsFloor', 'x_hook_vault_v1'],
       (res) => {
+        if (toggleAutoBlurRage) {
+          toggleAutoBlurRage.checked = typeof res.autoBlurRageEnabled === 'boolean' ? res.autoBlurRageEnabled : true;
+        }
         if (typeof res.outlierDetectionEnabled === 'boolean') {
           toggleOutlier.checked = res.outlierDetectionEnabled;
         }
@@ -91,6 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     );
+  }
+
+  // Handle Negative Content Blur toggle
+  if (toggleAutoBlurRage) {
+    toggleAutoBlurRage.addEventListener('change', () => {
+      chrome.storage.local.set({ autoBlurRageEnabled: toggleAutoBlurRage.checked });
+    });
   }
 
   // Handle Outlier toggle

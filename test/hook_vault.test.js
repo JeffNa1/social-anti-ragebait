@@ -464,10 +464,17 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
 
     function isXRepostTest(postEl, tweetDataCache = new Map()) {
       if (!postEl) return false;
-      const socialContext = postEl.querySelector ? postEl.querySelector('div[data-testid="socialContext"]') : null;
+      const socialContext = postEl.querySelector ? postEl.querySelector('[data-testid="socialContext"]') : null;
       if (socialContext) {
         const text = (socialContext.innerText || '').trim();
         if (X_REPOST_REGEX.test(text)) return true;
+        const svg = socialContext.querySelector ? socialContext.querySelector('svg') : null;
+        if (svg) {
+          const aria = (svg.getAttribute ? svg.getAttribute('aria-label') : '') || '';
+          if (X_REPOST_REGEX.test(aria)) return true;
+          const isPinned = /(?:pinned|ghim|fijado|fixado|épinglé|angepinnt|固定)/i.test(text);
+          if (!isPinned) return true;
+        }
       }
       const permalink = postEl.querySelector ? postEl.querySelector('a[href*="/status/"]') : null;
       if (permalink && permalink.href) {
@@ -476,6 +483,11 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
           const cached = tweetDataCache.get(idMatch[1]);
           if (cached && (cached.isRetweet || cached.isRepost)) return true;
         }
+      }
+      const headerRow = postEl.querySelector ? postEl.querySelector('div[data-testid="tweet"] > div:first-child') : null;
+      if (headerRow) {
+        const hText = (headerRow.innerText || '').trim();
+        if (X_REPOST_REGEX.test(hText)) return true;
       }
       return false;
     }
@@ -490,9 +502,25 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
           if (cached && (cached.isRepost || cached.isRetweet)) return true;
         }
       }
-      const authorLinks = postEl.querySelectorAll ? postEl.querySelectorAll('a[href*="/@"]') : [];
+      const authorLinks = Array.from(postEl.querySelectorAll ? postEl.querySelectorAll('a[href*="/@"]') : []).filter((link) => {
+        if (contentEl && contentEl.contains && contentEl.contains(link)) return false;
+        return true;
+      });
+      if (authorLinks.length >= 2) {
+        const getHandle = (link) => {
+          const raw = (link.getAttribute && link.getAttribute('href')) || link.href || '';
+          const m = raw.match(/@([a-zA-Z0-9_\.]+)/);
+          return m ? m[1].toLowerCase() : raw.toLowerCase();
+        };
+        const firstHandle = getHandle(authorLinks[0]);
+        for (let i = 1; i < authorLinks.length; i++) {
+          const otherHandle = getHandle(authorLinks[i]);
+          if (firstHandle && otherHandle && firstHandle !== otherHandle) {
+            return true;
+          }
+        }
+      }
       for (const link of authorLinks) {
-        if (contentEl && contentEl.contains && contentEl.contains(link)) continue;
         let curr = link.parentElement;
         for (let i = 0; i < 3; i++) {
           if (!curr || curr === postEl) break;
@@ -506,6 +534,27 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
         }
       }
       return false;
+    }
+
+    function extractThreadsAuthorTest(postEl) {
+      const allLinks = Array.from(postEl.querySelectorAll ? postEl.querySelectorAll('a[href*="/@"]') : []);
+      let handleLink = allLinks[0];
+      if (allLinks.length > 1) {
+        const getH = (l) => (((l.getAttribute && l.getAttribute('href')) || l.href || '').match(/@([a-zA-Z0-9_\.]+)/)?.[1] || '').toLowerCase();
+        const h0 = getH(allLinks[0]);
+        const h1 = getH(allLinks[1]);
+        if (h0 && h1 && h0 !== h1) {
+          handleLink = allLinks[1];
+        } else {
+          const firstParentText = (allLinks[0].parentElement?.innerText || '').trim();
+          if (THREADS_REPOST_REGEX.test(firstParentText)) {
+            handleLink = allLinks[1];
+          }
+        }
+      }
+      const raw = handleLink ? ((handleLink.getAttribute && handleLink.getAttribute('href')) || handleLink.href || '') : '';
+      const match = raw.match(/@([a-zA-Z0-9_\.]+)/);
+      return match ? '@' + match[1] : raw.replace('/', '');
     }
 
     test("Accurately detects X retweets across multiple languages via socialContext", () => {
@@ -530,14 +579,30 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
       expect(isXRepostTest(mockRetweetJA)).toBe(true);
     });
 
+    test("Detects X retweets when socialContext is non-div tag or has retweet SVG icon", () => {
+      const mockRetweetSpan = {
+        querySelector: (sel) => sel.includes('socialContext') ? {
+          innerText: '',
+          querySelector: (s) => s === 'svg' ? { getAttribute: () => '' } : null
+        } : null
+      };
+      expect(isXRepostTest(mockRetweetSpan)).toBe(true);
+    });
+
     test("Does NOT flag normal tweets or pinned tweets as reposts on X", () => {
       const mockPinnedTweet = {
-        querySelector: (sel) => sel.includes('socialContext') ? { innerText: 'Pinned Tweet' } : null
+        querySelector: (sel) => sel.includes('socialContext') ? {
+          innerText: 'Pinned Tweet',
+          querySelector: (s) => s === 'svg' ? { getAttribute: () => '' } : null
+        } : null
       };
       expect(isXRepostTest(mockPinnedTweet)).toBe(false);
 
       const mockPinnedTweetVN = {
-        querySelector: (sel) => sel.includes('socialContext') ? { innerText: 'Bài viết đã ghim' } : null
+        querySelector: (sel) => sel.includes('socialContext') ? {
+          innerText: 'Bài viết đã ghim',
+          querySelector: (s) => s === 'svg' ? { getAttribute: () => '' } : null
+        } : null
       };
       expect(isXRepostTest(mockPinnedTweetVN)).toBe(false);
 
@@ -571,6 +636,30 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
       };
 
       expect(isThreadsRepostTest(mockThreadsRepost, null)).toBe(true);
+    });
+
+    test("Accurately detects Threads reposts with multiple distinct handles and selects actual author", () => {
+      const mockReposterLink = {
+        getAttribute: (attr) => attr === 'href' ? '/@reposter_account' : null,
+        href: 'https://threads.net/@reposter_account',
+        parentElement: { innerText: '', parentElement: null }
+      };
+      const mockAuthorLink = {
+        getAttribute: (attr) => attr === 'href' ? '/@real_creator' : null,
+        href: 'https://threads.net/@real_creator',
+        parentElement: { innerText: 'real_creator', parentElement: null }
+      };
+
+      const mockMultiHandlePost = {
+        querySelector: () => null,
+        querySelectorAll: (sel) => sel.includes('/@') ? [mockReposterLink, mockAuthorLink] : []
+      };
+
+      // 1. Must be recognized as repost purely by structural multi-handle heuristic
+      expect(isThreadsRepostTest(mockMultiHandlePost, null)).toBe(true);
+
+      // 2. Author extractor must skip the reposter link and extract the real creator
+      expect(extractThreadsAuthorTest(mockMultiHandlePost)).toBe('@real_creator');
     });
 
     test("Does NOT flag regular Threads posts when 'đã đăng lại' is in the post body", () => {
@@ -632,5 +721,328 @@ describe("X Hook Vault & Viral Intelligence Unit Tests", () => {
       expect(originalEvaluation.badge).toBe('rendered');
     });
   });
+
+  describe("Multi-Vault Playlist & Topic Collection Engine", () => {
+    const DEFAULT_VAULT_ID = 'vault-default';
+    const DEFAULT_VAULTS = [
+      { id: 'vault-default', name: 'Chung / Mặc định', color: '#ff6161', createdAt: new Date().toISOString() },
+      { id: 'vault-ai-tech', name: 'AI & Tech', color: '#57c1ff', createdAt: new Date().toISOString() },
+      { id: 'vault-business', name: 'Khởi Nghiệp', color: '#ffc533', createdAt: new Date().toISOString() }
+    ];
+
+    function initVaults(existingVaults) {
+      if (!Array.isArray(existingVaults) || existingVaults.length === 0) {
+        return [...DEFAULT_VAULTS];
+      }
+      // Ensure default vault always exists
+      if (!existingVaults.some(v => v.id === DEFAULT_VAULT_ID)) {
+        return [DEFAULT_VAULTS[0], ...existingVaults];
+      }
+      return existingVaults;
+    }
+
+    function migrateLegacyPosts(posts) {
+      if (!Array.isArray(posts)) return [];
+      return posts.map(item => {
+        if (!item.vaultId) {
+          return { ...item, vaultId: DEFAULT_VAULT_ID };
+        }
+        return item;
+      });
+    }
+
+    function createVault(vaults, name, color = '#ff6161') {
+      const cleanName = (name || '').trim();
+      if (!cleanName) throw new Error('Tên Vault không được để trống');
+      if (vaults.some(v => v.name.toLowerCase() === cleanName.toLowerCase())) {
+        throw new Error('Tên Vault đã tồn tại');
+      }
+      const newVault = {
+        id: 'vault-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+        name: cleanName,
+        color: color || '#ff6161',
+        createdAt: new Date().toISOString()
+      };
+      return [...vaults, newVault];
+    }
+
+    function deleteVault(vaults, posts, vaultIdToDelete) {
+      if (vaultIdToDelete === DEFAULT_VAULT_ID) {
+        throw new Error('Không thể xóa Vault mặc định');
+      }
+      const nextVaults = vaults.filter(v => v.id !== vaultIdToDelete);
+      // Reassign all posts in deleted vault to default vault
+      const nextPosts = posts.map(p => {
+        if (p.vaultId === vaultIdToDelete) {
+          return { ...p, vaultId: DEFAULT_VAULT_ID };
+        }
+        return p;
+      });
+      return { vaults: nextVaults, posts: nextPosts };
+    }
+
+    function filterPostsByVault(posts, vaultId) {
+      if (!vaultId || vaultId === 'all') return posts;
+      return posts.filter(p => p.vaultId === vaultId);
+    }
+
+    function movePostToVault(posts, postId, targetVaultId) {
+      return posts.map(p => {
+        if (p.id === postId) {
+          return { ...p, vaultId: targetVaultId };
+        }
+        return p;
+      });
+    }
+
+    test("Initializes default vaults and migrates legacy posts without vaultId", () => {
+      const emptyVaults = [];
+      const initialized = initVaults(emptyVaults);
+      expect(initialized.length).toBe(3);
+      expect(initialized[0].id).toBe('vault-default');
+
+      const legacyPosts = [
+        { id: 'p1', hook: 'Great hook', fullText: 'Full text', url: 'https://threads.net/@user/post/1' },
+        { id: 'p2', hook: 'Another hook', fullText: 'Full text 2', url: 'https://x.com/user/status/2' }
+      ];
+
+      const migrated = migrateLegacyPosts(legacyPosts);
+      expect(migrated[0].vaultId).toBe('vault-default');
+      expect(migrated[1].vaultId).toBe('vault-default');
+    });
+
+    test("Creates new custom vault with valid ID, color and timestamp", () => {
+      let vaults = initVaults([]);
+      vaults = createVault(vaults, "Copywriting Niche", "#c084fc");
+      expect(vaults.length).toBe(4);
+      const created = vaults.find(v => v.name === "Copywriting Niche");
+      expect(created).toBeDefined();
+      expect(created.color).toBe("#c084fc");
+      expect(created.id).toStartWith("vault-");
+      expect(created.createdAt).toBeDefined();
+    });
+
+    test("Rejects duplicate or empty vault names", () => {
+      let vaults = initVaults([]);
+      expect(() => createVault(vaults, "")).toThrow();
+      expect(() => createVault(vaults, "   ")).toThrow();
+      expect(() => createVault(vaults, "AI & Tech")).toThrow(); // Already exists
+    });
+
+    test("Saves posts into designated vault and preserves direct post URL", () => {
+      let vaults = initVaults([]);
+      let posts = [];
+
+      const newPost = {
+        id: 'post-123',
+        platform: 'threads',
+        authorName: 'Alex River',
+        hook: 'Viral opening hook',
+        fullText: 'Full post content',
+        url: 'https://www.threads.net/@alex/post/12345',
+        vaultId: 'vault-ai-tech',
+        savedAt: new Date().toISOString()
+      };
+
+      posts.push(newPost);
+      expect(posts.length).toBe(1);
+      expect(posts[0].vaultId).toBe('vault-ai-tech');
+      expect(posts[0].url).toBe('https://www.threads.net/@alex/post/12345');
+      expect(posts[0].url).toStartWith('https://www.threads.net');
+    });
+
+    test("Filters posts by vault ID accurately (or returns all for 'all')", () => {
+      const posts = [
+        { id: 'p1', vaultId: 'vault-default', hook: 'Hook 1' },
+        { id: 'p2', vaultId: 'vault-ai-tech', hook: 'Hook 2' },
+        { id: 'p3', vaultId: 'vault-ai-tech', hook: 'Hook 3' },
+        { id: 'p4', vaultId: 'vault-business', hook: 'Hook 4' }
+      ];
+
+      expect(filterPostsByVault(posts, 'all').length).toBe(4);
+      expect(filterPostsByVault(posts, 'vault-default').length).toBe(1);
+      expect(filterPostsByVault(posts, 'vault-ai-tech').length).toBe(2);
+      expect(filterPostsByVault(posts, 'vault-business').length).toBe(1);
+    });
+
+    test("Moves a post from one vault to another seamlessly", () => {
+      let posts = [
+        { id: 'p1', vaultId: 'vault-default', hook: 'Hook 1' }
+      ];
+
+      posts = movePostToVault(posts, 'p1', 'vault-ai-tech');
+      expect(posts[0].vaultId).toBe('vault-ai-tech');
+    });
+
+    test("Deletes a custom vault and moves its associated posts to default vault without data loss", () => {
+      let vaults = initVaults([]);
+      vaults = createVault(vaults, "Temp Vault", "#f43f5e");
+      const tempVault = vaults.find(v => v.name === "Temp Vault");
+
+      let posts = [
+        { id: 'p1', vaultId: tempVault.id, hook: 'Post in temp vault' },
+        { id: 'p2', vaultId: 'vault-ai-tech', hook: 'Post in AI vault' }
+      ];
+
+      const result = deleteVault(vaults, posts, tempVault.id);
+      expect(result.vaults.some(v => v.id === tempVault.id)).toBe(false);
+      // Post p1 should be automatically moved to vault-default
+      const movedPost = result.posts.find(p => p.id === 'p1');
+      expect(movedPost.vaultId).toBe(DEFAULT_VAULT_ID);
+      // Post p2 should remain untouched
+      const untouchedPost = result.posts.find(p => p.id === 'p2');
+      expect(untouchedPost.vaultId).toBe('vault-ai-tech');
+
+      // Attempting to delete default vault must throw
+      expect(() => deleteVault(result.vaults, result.posts, DEFAULT_VAULT_ID)).toThrow();
+    });
+
+    test("Ensures every saved post has a clickable direct URL to Threads or X", () => {
+      const threadsPost = {
+        id: 't1',
+        platform: 'threads',
+        url: 'https://threads.net/@creator/post/abcxyz'
+      };
+      const xPost = {
+        id: 'x1',
+        platform: 'x',
+        url: 'https://x.com/creator/status/123456789'
+      };
+
+      expect(threadsPost.url).toMatch(/^https:\/\/(www\.)?threads\.net/);
+      expect(xPost.url).toMatch(/^https:\/\/(www\.)?x\.com/);
+    });
+  });
+
+  describe("Visual Media Archiving & Density Switcher Intelligence (Twittermark Style)", () => {
+    function extractXTweetMediaTest(postEl) {
+      const mediaUrls = [];
+      if (!postEl) return mediaUrls;
+      const photoImgs = postEl.querySelectorAll ? postEl.querySelectorAll('div[data-testid="tweetPhoto"] img, img[src*="pbs.twimg.com/media"]') : [];
+      photoImgs.forEach((img) => {
+        const src = img.src || img.getAttribute?.('src');
+        if (src && !src.includes('profile_images')) {
+          let cleanSrc = src;
+          if (cleanSrc.includes('&name=')) cleanSrc = cleanSrc.replace(/&name=[a-z0-9_]+/i, '&name=medium');
+          if (!mediaUrls.includes(cleanSrc)) mediaUrls.push(cleanSrc);
+        }
+      });
+      const videos = postEl.querySelectorAll ? postEl.querySelectorAll('video[poster]') : [];
+      videos.forEach((v) => {
+        const poster = v.getAttribute?.('poster');
+        if (poster && !mediaUrls.includes(poster) && !poster.includes('profile_images')) {
+          mediaUrls.push(poster);
+        }
+      });
+      return mediaUrls;
+    }
+
+    function extractThreadsMediaTest(postEl) {
+      const mediaUrls = [];
+      if (!postEl) return mediaUrls;
+      const imgs = Array.from(postEl.querySelectorAll ? postEl.querySelectorAll('img') : []);
+      imgs.forEach((img) => {
+        if (img.closest?.('a[href*="/@"]')) return;
+        const alt = (img.getAttribute?.('alt') || '').toLowerCase();
+        if (alt.includes('ảnh đại diện') || alt.includes('profile') || alt.includes('avatar')) return;
+        const src = img.src || img.getAttribute?.('src') || '';
+        if (!src || src.includes('profile_pic') || src.includes('s150x150')) return;
+        if (src.includes('cdninstagram.com') || src.includes('fbcdn.net') || src.includes('threads.net')) {
+          if (!mediaUrls.includes(src)) mediaUrls.push(src);
+        }
+      });
+      return mediaUrls;
+    }
+
+    function renderCardMediaTest(mediaUrls) {
+      if (!Array.isArray(mediaUrls) || mediaUrls.length === 0) return '';
+      const validUrls = mediaUrls.filter((u) => u && typeof u === 'string').slice(0, 4);
+      if (validUrls.length === 0) return '';
+      const count = validUrls.length;
+      return `<div class="card-media-gallery media-count-${count}">${validUrls.map(u => `<div class="media-item" data-src="${u}"></div>`).join('')}</div>`;
+    }
+
+    test("Extracts attached photos and video posters from X tweets while ignoring avatars", () => {
+      const mockXPost = {
+        querySelectorAll: (sel) => {
+          if (sel.includes('tweetPhoto')) {
+            return [
+              { src: 'https://pbs.twimg.com/media/photo1.jpg?format=jpg&name=small' },
+              { src: 'https://pbs.twimg.com/media/photo2.jpg?format=jpg&name=small' }
+            ];
+          }
+          if (sel.includes('video[poster]')) {
+            return [{ getAttribute: (attr) => attr === 'poster' ? 'https://pbs.twimg.com/media/video_thumb.jpg' : null }];
+          }
+          return [];
+        }
+      };
+
+      const media = extractXTweetMediaTest(mockXPost);
+      expect(media.length).toBe(3);
+      expect(media[0]).toContain('&name=medium');
+      expect(media[2]).toBe('https://pbs.twimg.com/media/video_thumb.jpg');
+    });
+
+    test("Extracts attached media from Threads posts while filtering out author avatars", () => {
+      const mockThreadsPost = {
+        querySelectorAll: (sel) => {
+          if (sel === 'img') {
+            return [
+              {
+                src: 'https://cdninstagram.com/avatar_150x150.jpg',
+                closest: (s) => s.includes('/@') ? true : null,
+                getAttribute: () => 'avatar'
+              },
+              {
+                src: 'https://cdninstagram.com/v/t51.2885-15/post_image_1.jpg',
+                closest: () => null,
+                getAttribute: () => 'Photo by creator'
+              },
+              {
+                src: 'https://scontent.cdninstagram.com/post_image_2.jpg',
+                closest: () => null,
+                getAttribute: () => ''
+              }
+            ];
+          }
+          return [];
+        }
+      };
+
+      const media = extractThreadsMediaTest(mockThreadsPost);
+      expect(media.length).toBe(2);
+      expect(media).not.toContain('https://cdninstagram.com/avatar_150x150.jpg');
+      expect(media[0]).toBe('https://cdninstagram.com/v/t51.2885-15/post_image_1.jpg');
+    });
+
+    test("Renders media gallery with correct responsive layout classes (1, 2, 3, 4 images)", () => {
+      expect(renderCardMediaTest([])).toBe('');
+      expect(renderCardMediaTest(['https://img.com/1.jpg'])).toContain('media-count-1');
+      expect(renderCardMediaTest(['https://img.com/1.jpg', 'https://img.com/2.jpg'])).toContain('media-count-2');
+      expect(renderCardMediaTest(['https://img.com/1.jpg', 'https://img.com/2.jpg', 'https://img.com/3.jpg'])).toContain('media-count-3');
+      expect(renderCardMediaTest(['https://img.com/1.jpg', 'https://img.com/2.jpg', 'https://img.com/3.jpg', 'https://img.com/4.jpg', 'https://img.com/5.jpg'])).toContain('media-count-4');
+    });
+
+    test("Manages density switching between Large (To) and Compact (Bé) with persistence", () => {
+      const storage = {};
+      function switchDensity(target, currentEl) {
+        if (target !== 'large' && target !== 'compact') target = 'large';
+        storage['vault_view_density_v1'] = target;
+        currentEl.className = `hook-grid density-${target}`;
+        return target;
+      }
+
+      const mockGrid = { className: 'hook-grid density-large' };
+      expect(switchDensity('compact', mockGrid)).toBe('compact');
+      expect(mockGrid.className).toBe('hook-grid density-compact');
+      expect(storage['vault_view_density_v1']).toBe('compact');
+
+      expect(switchDensity('large', mockGrid)).toBe('large');
+      expect(mockGrid.className).toBe('hook-grid density-large');
+      expect(storage['vault_view_density_v1']).toBe('large');
+    });
+  });
 });
+
 

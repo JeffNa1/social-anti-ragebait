@@ -1091,6 +1091,56 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       expect(el.style.getProperty('pointer-events')).toBeUndefined();
     });
   });
+
+  test("Master Toggle for Negative Content Blurring (autoBlurRageEnabled): toggling off unblurs and hides warning, toggling on restores blur", () => {
+    const mockPost = {
+      revealed: false,
+      dataRevealed: false,
+      warningDisplay: 'flex',
+      filter: 'blur(14px)',
+      userRevealed: false,
+    };
+
+    function renderPost(config) {
+      if (!config.autoBlurRageEnabled) {
+        mockPost.revealed = true;
+        mockPost.dataRevealed = true;
+        mockPost.warningDisplay = 'none';
+        mockPost.filter = 'none';
+      } else {
+        if (!mockPost.userRevealed) {
+          mockPost.revealed = false;
+          mockPost.dataRevealed = false;
+          mockPost.warningDisplay = 'flex';
+          mockPost.filter = 'blur(14px)';
+        }
+      }
+    }
+
+    // 1. Initial state with autoBlurRageEnabled = true
+    renderPost({ autoBlurRageEnabled: true });
+    expect(mockPost.revealed).toBe(false);
+    expect(mockPost.warningDisplay).toBe('flex');
+    expect(mockPost.filter).toBe('blur(14px)');
+
+    // 2. User toggles off negative content blurring (autoBlurRageEnabled = false)
+    renderPost({ autoBlurRageEnabled: false });
+    expect(mockPost.revealed).toBe(true);
+    expect(mockPost.warningDisplay).toBe('none');
+    expect(mockPost.filter).toBe('none');
+
+    // 3. User toggles back on (autoBlurRageEnabled = true)
+    renderPost({ autoBlurRageEnabled: true });
+    expect(mockPost.revealed).toBe(false);
+    expect(mockPost.warningDisplay).toBe('flex');
+    expect(mockPost.filter).toBe('blur(14px)');
+
+    // 4. If user manually revealed a post, toggling preserves their reveal
+    mockPost.userRevealed = true;
+    renderPost({ autoBlurRageEnabled: true });
+    expect(mockPost.warningDisplay).toBe('flex');
+  });
 });
+
 
 

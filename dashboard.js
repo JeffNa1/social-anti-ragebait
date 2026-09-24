@@ -3,6 +3,17 @@
   'use strict';
 
   const STORAGE_KEY = 'x_hook_vault_v1';
+  const VAULTS_KEY = 'x_vaults_v2';
+  const DEFAULT_VAULT_ID = 'vault-default';
+  const DEFAULT_VAULTS = [
+    { id: 'vault-default', name: 'Chung / Mặc định', color: '#ff6161', createdAt: new Date().toISOString() },
+    { id: 'vault-tech-ai', name: 'AI & Tech', color: '#57c1ff', createdAt: new Date().toISOString() },
+    { id: 'vault-business', name: 'Khởi Nghiệp', color: '#ffc533', createdAt: new Date().toISOString() }
+  ];
+
+  let currentVaults = [];
+  let selectedVaultId = 'all';
+
   const INITIALIZED_KEY = 'x_hook_vault_initialized_v2';
   const SEED_IDS = new Set(['seed-outlier-1', 'seed-1', 'seed-2', 'seed-3', 'seed-threads-1']);
 
@@ -19,6 +30,9 @@
       postAgeHours: 14,
       hook: 'I launched a micro-SaaS with 0 audience and hit $8,200 MRR in 45 days. The counter-intuitive distribution strategy nobody tells you:',
       fullText: 'I launched a micro-SaaS with 0 audience and hit $8,200 MRR in 45 days. The counter-intuitive distribution strategy nobody tells you:\n\n1. Target negative reviews of bloated enterprise tools.\n2. DM unhappy users with a 1-click alternative.\n3. Offer 50% lifetime discount for direct feedback.\n4. Convert the best feedback into public case studies.',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80'
+      ],
       metrics: { views: 41300, likes: 2100, retweets: 480, bookmarks: 1850, replies: 165 },
       formula: 'story',
       url: 'https://x.com/alex_builds',
@@ -35,6 +49,10 @@
       postAgeHours: 24,
       hook: 'Most people think starting a business is about having a great idea. It’s not. It’s about solving an expensive problem for people who have money.',
       fullText: 'Most people think starting a business is about having a great idea. It’s not. It’s about solving an expensive problem for people who have money.\n\nHere are 5 questions to ask yourself before building anything:\n1. Who has the money?\n2. What hurts them most?\n3. Can you deliver fast?\n4. Can you charge high ticket?\n5. Can you get referrals?',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=800&auto=format&fit=crop&q=80'
+      ],
       metrics: { views: 1840000, likes: 34200, retweets: 4800, bookmarks: 12500, replies: 950 },
       formula: 'contrarian',
       url: 'https://x.com/AlexHormozi',
@@ -51,6 +69,11 @@
       postAgeHours: 48,
       hook: 'I spent 40 hours studying the daily routines of 10 self-made billionaires. Here are the 7 habits they all share (that cost $0):',
       fullText: 'I spent 40 hours studying the daily routines of 10 self-made billionaires. Here are the 7 habits they all share (that cost $0):\n\n1. Deep work blocks before 9 AM\n2. Walking meetings\n3. Ruthless calendar audits\n4. Daily reflection\n5. Reading 1 hour daily\n6. High protein breakfast\n7. Zero notifications during family dinners.',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=600&auto=format&fit=crop&q=80'
+      ],
       metrics: { views: 3200000, likes: 62000, retweets: 11400, bookmarks: 28900, replies: 1420 },
       formula: 'cheatsheet',
       url: 'https://x.com/SahilBloom',
@@ -76,6 +99,9 @@
       authorAvatar: '',
       hook: 'The future of open-source AI is moving significantly faster than closed models. Here is what we learned deploying Llama across 500M users:',
       fullText: 'The future of open-source AI is moving significantly faster than closed models. Here is what we learned deploying Llama across 500M users:\n\n1. Community fine-tunes beat general frontier models on niche benchmarks.\n2. On-device inference cost dropped by 10x.\n3. The ecosystem effect creates faster feedback loops than proprietary APIs.',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80'
+      ],
       metrics: { views: 0, likes: 48500, retweets: 6200, replies: 3400, bookmarks: 0 },
       formula: 'proof',
       url: 'https://threads.net/@zuck',
@@ -91,6 +117,12 @@
       outlierMultiplier: 4.8,
       hook: 'If you want to reach new audiences on Threads in 2026 without paid ads, here is the exact algorithm ranking breakdown:',
       fullText: 'If you want to reach new audiences on Threads in 2026 without paid ads, here is the exact algorithm ranking breakdown:\n\n1. Meaningful replies and conversations carry 3x more weight than simple likes.\n2. Original media sparks longer dwell time.\n3. Topic tags connect your post directly to interest graphs.\n4. Avoid engagement bait—it gets demoted in For You feed.',
+      mediaUrls: [
+        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&auto=format&fit=crop&q=80'
+      ],
       metrics: { views: 420000, likes: 28900, retweets: 4100, replies: 3120, bookmarks: 0 },
       formula: 'cheatsheet',
       url: 'https://threads.net/@mosseri',
@@ -231,6 +263,12 @@
           }
         } catch (e) {}
 
+        // Ensure every item has a vaultId assigned
+        items = items.map((it) => {
+          if (!it.vaultId) it.vaultId = DEFAULT_VAULT_ID;
+          return it;
+        });
+
         // Mirror to localStorage so preview mode stays in sync
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -258,10 +296,70 @@
             items = [];
           }
         }
+
+        // Ensure every item has a vaultId assigned
+        items = items.map((it) => {
+          if (!it.vaultId) it.vaultId = DEFAULT_VAULT_ID;
+          return it;
+        });
+
         callback(items);
       } catch (e) {
         callback([]);
       }
+    }
+  }
+
+  // Load Vaults / Topics list
+  function loadVaults(callback) {
+    function processVaults(vaults) {
+      if (!Array.isArray(vaults) || vaults.length === 0) {
+        vaults = [...DEFAULT_VAULTS];
+        saveVaults(vaults);
+      } else {
+        if (!vaults.some((v) => v.id === DEFAULT_VAULT_ID)) {
+          vaults.unshift(DEFAULT_VAULTS[0]);
+          saveVaults(vaults);
+        }
+      }
+      currentVaults = vaults;
+      if (callback) callback(vaults);
+    }
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get([VAULTS_KEY], (res) => {
+        let vaults = res?.[VAULTS_KEY];
+        if (!vaults) {
+          try {
+            const raw = localStorage.getItem(VAULTS_KEY);
+            if (raw) vaults = JSON.parse(raw);
+          } catch (e) {}
+        }
+        processVaults(vaults);
+      });
+    } else {
+      try {
+        const raw = localStorage.getItem(VAULTS_KEY);
+        const vaults = raw ? JSON.parse(raw) : null;
+        processVaults(vaults);
+      } catch (e) {
+        processVaults([]);
+      }
+    }
+  }
+
+  // Save Vaults / Topics list
+  function saveVaults(vaults, callback) {
+    currentVaults = vaults;
+    try {
+      localStorage.setItem(VAULTS_KEY, JSON.stringify(vaults));
+    } catch (e) {}
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ [VAULTS_KEY]: vaults }, () => {
+        if (callback) callback();
+      });
+    } else {
+      if (callback) callback();
     }
   }
 
@@ -316,25 +414,40 @@
 
   // DecryptedText Matrix Hacker Scramble Animation (React Bits)
   let scrambleAnimId = null;
-  function scrambleDecryptedText(element, iconHtml, targetText, duration = 600) {
+  let scrambleTimeoutId = null;
+  function scrambleDecryptedText(element, iconHtml, targetText, duration = 320) {
     if (!element) return;
     if (scrambleAnimId) cancelAnimationFrame(scrambleAnimId);
+    if (scrambleTimeoutId) clearTimeout(scrambleTimeoutId);
+
+    const cleanTarget = String(targetText || '');
+    if (!cleanTarget) {
+      element.innerHTML = `${iconHtml ? iconHtml + ' ' : ''}<span>Chưa đủ dữ liệu</span>`;
+      return;
+    }
 
     const GLYPHS = 'ABCDEF0123456789!@#$%^&*<>~+=/?';
-    const cleanTarget = String(targetText || '');
     const startTime = performance.now();
     const len = cleanTarget.length;
+
+    const setFinal = () => {
+      element.innerHTML = `${iconHtml ? iconHtml + ' ' : ''}<span>${cleanTarget}</span>`;
+      scrambleAnimId = null;
+      scrambleTimeoutId = null;
+    };
 
     function frame(now) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const resolvedCount = Math.floor(progress * len);
+      if (progress >= 1) {
+        setFinal();
+        return;
+      }
 
+      const resolvedCount = Math.floor(progress * len);
       let scrambled = '';
       for (let i = 0; i < len; i++) {
-        if (i < resolvedCount) {
-          scrambled += cleanTarget[i];
-        } else if (cleanTarget[i] === ' ' || cleanTarget[i] === '/' || cleanTarget[i] === '-') {
+        if (i < resolvedCount || cleanTarget[i] === ' ' || cleanTarget[i] === '/' || cleanTarget[i] === '-') {
           scrambled += cleanTarget[i];
         } else {
           scrambled += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
@@ -342,16 +455,11 @@
       }
 
       element.innerHTML = `${iconHtml ? iconHtml + ' ' : ''}<span>${scrambled}</span>`;
-
-      if (progress < 1) {
-        scrambleAnimId = requestAnimationFrame(frame);
-      } else {
-        element.innerHTML = `${iconHtml ? iconHtml + ' ' : ''}<span>${cleanTarget}</span>`;
-        scrambleAnimId = null;
-      }
+      scrambleAnimId = requestAnimationFrame(frame);
     }
 
     scrambleAnimId = requestAnimationFrame(frame);
+    scrambleTimeoutId = setTimeout(setFinal, duration + 20);
   }
 
   // SpotlightCard Cursor-following Radial Glow (React Bits)
@@ -490,6 +598,90 @@
     }
   }
 
+  // Render Vault Tabs / Playlists
+  function renderVaultTabs() {
+    const vaultTabsList = document.getElementById('vaultTabsList');
+    const collectionsTotalBadge = document.getElementById('collectionsTotalBadge');
+    if (!vaultTabsList) return;
+
+    if (collectionsTotalBadge) {
+      collectionsTotalBadge.textContent = `${currentVaults.length} Vaults`;
+    }
+
+    vaultTabsList.innerHTML = '';
+
+    // 1. "Tất cả bài viết" tab
+    const allTab = document.createElement('button');
+    allTab.type = 'button';
+    allTab.className = `vault-tab ${selectedVaultId === 'all' ? 'active' : ''}`;
+    allTab.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span>Tất cả bài viết</span>
+      <span class="vault-tab-count">${currentHooks.length}</span>
+    `;
+    allTab.onclick = () => {
+      selectedVaultId = 'all';
+      renderVaultTabs();
+      renderHookList();
+    };
+    vaultTabsList.appendChild(allTab);
+
+    // 2. Each Vault tab
+    currentVaults.forEach((vault) => {
+      const count = currentHooks.filter((h) => (h.vaultId || DEFAULT_VAULT_ID) === vault.id).length;
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = `vault-tab ${selectedVaultId === vault.id ? 'active' : ''}`;
+
+      const isDefault = vault.id === DEFAULT_VAULT_ID;
+      const deleteBtnHtml = !isDefault
+        ? `<span class="vault-tab-delete" title="Xóa Vault này" data-id="${vault.id}">&times;</span>`
+        : '';
+
+      tab.innerHTML = `
+        <span class="vault-tab-dot" style="background:${vault.color || '#ff6161'};"></span>
+        <span>${escapeHtml(vault.name)}</span>
+        <span class="vault-tab-count">${count}</span>
+        ${deleteBtnHtml}
+      `;
+
+      tab.onclick = (e) => {
+        if (e.target.classList.contains('vault-tab-delete')) {
+          e.stopPropagation();
+          deleteVaultPrompt(vault);
+          return;
+        }
+        selectedVaultId = vault.id;
+        renderVaultTabs();
+        renderHookList();
+      };
+
+      vaultTabsList.appendChild(tab);
+    });
+  }
+
+  function deleteVaultPrompt(vault) {
+    if (confirm(`Bạn có chắc muốn xóa Vault "${vault.name}"?\nToàn bộ bài viết trong Vault này sẽ được chuyển về "Chung / Mặc định".`)) {
+      currentHooks = currentHooks.map((h) => {
+        if (h.vaultId === vault.id) {
+          return { ...h, vaultId: DEFAULT_VAULT_ID };
+        }
+        return h;
+      });
+      const nextVaults = currentVaults.filter((v) => v.id !== vault.id);
+      if (selectedVaultId === vault.id) {
+        selectedVaultId = 'all';
+      }
+      saveVaults(nextVaults, () => {
+        saveVaultData(currentHooks, () => {
+          renderVaultTabs();
+          renderHookList();
+          showToast(`✓ Đã xóa Vault "${vault.name}"`);
+        });
+      });
+    }
+  }
+
   // Render hook feed
   function renderHookList() {
     const query = searchInput.value.trim().toLowerCase();
@@ -502,6 +694,7 @@
 
     // Filter
     let filtered = currentHooks.filter((item) => {
+      if (selectedVaultId !== 'all' && (item.vaultId || DEFAULT_VAULT_ID) !== selectedVaultId) return false;
       if (platformVal !== 'all' && (item.platform || 'x') !== platformVal) return false;
       if (outlierVal === 'outliers_only' && (item.outlierMultiplier || 0) < 3.0) return false;
       if (outlierVal === 'super_outliers' && (item.outlierMultiplier || 0) < 10.0) return false;
@@ -547,6 +740,31 @@
       .replace(/"/g, '&quot;');
   }
 
+  function renderCardMedia(mediaUrls) {
+    if (!Array.isArray(mediaUrls) || mediaUrls.length === 0) return '';
+    const validUrls = mediaUrls.filter((u) => u && typeof u === 'string').slice(0, 4);
+    if (validUrls.length === 0) return '';
+
+    const count = validUrls.length;
+    const countClass = `media-count-${count}`;
+
+    const imgsHtml = validUrls
+      .map(
+        (url, idx) => `
+      <div class="media-item media-item-${idx}" data-src="${escapeHtml(url)}" title="Bấm để mở ảnh gốc">
+        <img src="${escapeHtml(url)}" loading="lazy" alt="Ảnh đính kèm" onerror="this.parentElement.style.display='none';" />
+      </div>
+    `
+      )
+      .join('');
+
+    return `
+      <div class="card-media-gallery ${countClass}">
+        ${imgsHtml}
+      </div>
+    `;
+  }
+
   // Create Card DOM
   function createHookCard(item) {
     const card = document.createElement('div');
@@ -569,6 +787,28 @@
       ? `<span class="outlier-chip" title="Reach gấp ${mult.toFixed(1)} lần lượng followers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>${mult.toFixed(1)}x Outlier ${fols > 0 ? `(${formatMetric(fols)} fols)` : ''}</span>`
       : '';
 
+    const itemVault = currentVaults.find((v) => v.id === (item.vaultId || DEFAULT_VAULT_ID)) || currentVaults[0] || { id: DEFAULT_VAULT_ID, name: 'Chung', color: '#ff6161' };
+    const vaultBadge = `
+      <span class="card-vault-tag" style="border-color:${itemVault.color}44; color:${itemVault.color};" title="Vault: ${escapeHtml(itemVault.name)}">
+        <span class="card-vault-tag-dot" style="background:${itemVault.color};"></span>
+        <span class="card-vault-tag-text">${escapeHtml(itemVault.name)}</span>
+      </span>
+    `;
+
+    const platformBadge = item.platform === 'threads'
+      ? `<span class="platform-badge threads" title="Bài viết từ Threads">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+             <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3.3 11.2c-.3 1.8-1.5 2.8-3.3 2.8-2 0-3.3-1.4-3.3-3.7 0-2.4 1.4-3.8 3.5-3.8 1.9 0 3.1 1.2 3.2 2.9h-1.6c-.1-1-.7-1.5-1.6-1.5-1.1 0-1.8.8-1.8 2.4 0 1.5.7 2.3 1.8 2.3 1 0 1.5-.6 1.6-1.4z"/>
+           </svg>
+           <span>Threads</span>
+         </span>`
+      : `<span class="platform-badge x-twitter" title="Bài viết từ X (Twitter)">
+           <svg viewBox="0 0 24 24" fill="currentColor">
+             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+           </svg>
+           <span>Twitter</span>
+         </span>`;
+
     card.innerHTML = `
       <div class="card-header">
         <div class="author-info">
@@ -583,46 +823,24 @@
         </div>
 
         <div class="card-top-badges">
-          ${outlierBadge}
-          ${
-            item.platform === 'threads'
-              ? `<span class="platform-badge threads">
-                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12" style="display:inline-block; vertical-align:-1px; margin-right:3px;">
-                     <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm3.3 11.2c-.3 1.8-1.5 2.8-3.3 2.8-2 0-3.3-1.4-3.3-3.7 0-2.4 1.4-3.8 3.5-3.8 1.9 0 3.1 1.2 3.2 2.9h-1.6c-.1-1-.7-1.5-1.6-1.5-1.1 0-1.8.8-1.8 2.4 0 1.5.7 2.3 1.8 2.3 1 0 1.5-.6 1.6-1.4z"/>
-                   </svg>Threads
-                 </span>`
-              : `<span class="platform-badge x-twitter">
-                   <svg viewBox="0 0 24 24" fill="currentColor" width="10" height="10" style="display:inline-block; vertical-align:-1px; margin-right:3px;">
-                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                   </svg>X
-                 </span>`
-          }
-          <span class="formula-badge ${meta.class}" title="Công thức Hook">
-            ${meta.icon} ${meta.label}
-          </span>
+          ${platformBadge}
+          ${vaultBadge}
         </div>
       </div>
 
       <div class="hook-content-body">
         <div class="hook-text-highlight">
-          ${escapeHtml(item.hook || item.fullText || '')}
+          ${escapeHtml(item.fullText || item.hook || '').replace(/\n/g, '<br/>')}
         </div>
 
-        ${
-          item.fullText && item.fullText !== item.hook
-            ? `
-          <button class="btn-toggle-accordion">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            <span>Xem toàn bộ bài viết</span>
-          </button>
-          <div class="full-text-accordion collapsed">
-            <div class="full-text-inner">
-              ${escapeHtml(item.fullText).replace(/\n/g, '<br/>')}
-            </div>
-          </div>
-        `
-            : ''
-        }
+        ${renderCardMedia(item.mediaUrls)}
+
+        <div class="card-meta-row">
+          <span class="formula-badge ${meta.class}" title="Công thức Hook: ${escapeHtml(meta.label)}">
+            ${meta.icon} <span>${meta.label}</span>
+          </span>
+          ${outlierBadge}
+        </div>
       </div>
 
       <div class="metrics-bar">
@@ -664,27 +882,64 @@
       </div>
 
       <div class="card-actions">
-        <button class="btn btn-secondary btn-card btn-copy-hook" title="Sao chép câu Hook mở đầu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          <span>Copy Hook</span>
-        </button>
+        <div class="card-actions-left">
+          ${
+            item.url
+              ? `
+            <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-card btn-view-post" title="Mở trực tiếp bài viết gốc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span>Xem bài gốc ↗</span>
+            </a>
+          `
+              : ''
+          }
 
-        <button class="btn btn-destructive-subtle btn-card btn-delete-hook" title="Xóa hook này khỏi Vault">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>
-        </button>
+          <button class="btn btn-secondary btn-card btn-copy-hook" title="Sao chép câu Hook mở đầu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+
+        <div class="card-actions-right">
+          <div class="custom-dropdown card-vault-dropdown">
+            <button type="button" class="btn btn-secondary btn-card card-vault-trigger custom-dropdown-trigger" title="Chuyển bài viết sang Vault khác" aria-haspopup="listbox" aria-expanded="false">
+              <span class="card-vault-dot" style="background: ${itemVault.color || '#ff6161'};"></span>
+              <span class="card-vault-label dropdown-trigger-label">${escapeHtml(itemVault.name)}</span>
+              <svg class="dropdown-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="custom-dropdown-menu card-vault-menu" role="listbox">
+              ${currentVaults.map((v) => `
+                <div class="custom-dropdown-item ${(item.vaultId || DEFAULT_VAULT_ID) === v.id ? 'selected' : ''}" data-val="${v.id}">
+                  <div class="item-content">
+                    <span class="card-vault-item-dot" style="background: ${v.color || '#ff6161'};"></span>
+                    <span>${escapeHtml(v.name)}</span>
+                  </div>
+                  <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <button class="btn btn-destructive-subtle btn-card btn-delete-hook" title="Xóa hook này khỏi Vault">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>
+          </button>
+        </div>
       </div>
     `;
 
-    // Accordion toggle with smooth arrow rotation
-    const toggleBtn = card.querySelector('.btn-toggle-accordion');
-    if (toggleBtn) {
-      toggleBtn.onclick = () => {
-        const acc = card.querySelector('.full-text-accordion');
-        const isCollapsed = acc.classList.toggle('collapsed');
-        toggleBtn.classList.toggle('open', !isCollapsed);
-        toggleBtn.querySelector('span').textContent = isCollapsed ? 'Xem toàn bộ bài viết' : 'Thu gọn nội dung';
-      };
+    // Media gallery click to open original image
+    const gallery = card.querySelector('.card-media-gallery');
+    if (gallery) {
+      gallery.addEventListener('click', (e) => {
+        const itemEl = e.target.closest('.media-item');
+        if (itemEl && itemEl.dataset.src) {
+          e.stopPropagation();
+          e.preventDefault();
+          window.open(itemEl.dataset.src, '_blank');
+        }
+      });
     }
+
 
     // Copy hook
     const copyBtn = card.querySelector('.btn-copy-hook');
@@ -702,11 +957,67 @@
         const nextHooks = currentHooks.filter((h) => h.id !== item.id);
         saveVaultData(nextHooks, () => {
           updateStats(currentHooks);
+          renderVaultTabs();
           renderHookList();
           showToast('Đã xóa Hook thành công');
         });
       }
     };
+
+    // Move vault custom dropdown
+    const vaultDropdown = card.querySelector('.card-vault-dropdown');
+    if (vaultDropdown) {
+      const trigger = vaultDropdown.querySelector('.card-vault-trigger');
+      const menu = vaultDropdown.querySelector('.card-vault-menu');
+      const items = vaultDropdown.querySelectorAll('.custom-dropdown-item');
+
+      trigger.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = menu.classList.contains('open');
+
+        document.querySelectorAll('.custom-dropdown-menu').forEach((m) => m.classList.remove('open'));
+        document.querySelectorAll('.custom-dropdown-trigger').forEach((t) => {
+          t.classList.remove('open');
+          t.setAttribute('aria-expanded', 'false');
+        });
+
+        if (!isOpen) {
+          const rect = trigger.getBoundingClientRect();
+          const spaceBelow = window.innerHeight - rect.bottom;
+          if (spaceBelow < 230 && rect.top > 230) {
+            menu.style.bottom = 'calc(100% + 6px)';
+            menu.style.top = 'auto';
+          } else {
+            menu.style.top = 'calc(100% + 6px)';
+            menu.style.bottom = 'auto';
+          }
+
+          menu.classList.add('open');
+          trigger.classList.add('open');
+          trigger.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      items.forEach((it) => {
+        it.onclick = (e) => {
+          e.stopPropagation();
+          const targetVaultId = it.getAttribute('data-val');
+          menu.classList.remove('open');
+          trigger.classList.remove('open');
+          trigger.setAttribute('aria-expanded', 'false');
+
+          if (targetVaultId === (item.vaultId || DEFAULT_VAULT_ID)) return;
+
+          item.vaultId = targetVaultId;
+          const targetVault = currentVaults.find((v) => v.id === targetVaultId);
+          saveVaultData(currentHooks, () => {
+            renderVaultTabs();
+            renderHookList();
+            showToast(`✓ Đã chuyển bài sang Vault "${targetVault?.name || 'Vault'}"!`);
+          });
+        };
+      });
+    }
 
     return card;
   }
@@ -798,23 +1109,84 @@
   filterFormula.onchange = () => renderHookList();
   sortOrder.onchange = () => renderHookList();
 
+  const FILTER_PLATFORM_KEY = 'vault_filter_platform_pref_v2';
+
   // Segmented Control Switchers
-  function setupSegmentedControl(containerId, selectEl) {
+  function setupSegmentedControl(containerId, selectEl, storageKey) {
     const container = document.getElementById(containerId);
     if (!container || !selectEl) return;
     const buttons = container.querySelectorAll('.segment-btn');
+
+    // Restore saved choice if valid, defaulting to 'all'
+    if (storageKey) {
+      let saved = null;
+      try {
+        saved = localStorage.getItem(storageKey);
+      } catch (e) {}
+      if (!saved) saved = 'all';
+
+      if (Array.from(buttons).some((b) => b.getAttribute('data-val') === saved)) {
+        buttons.forEach((b) => b.classList.toggle('active', b.getAttribute('data-val') === saved));
+        selectEl.value = saved;
+      }
+    }
+
     buttons.forEach((btn) => {
       btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-val') || 'all';
         buttons.forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        selectEl.value = btn.getAttribute('data-val') || 'all';
+        selectEl.value = val;
+        if (storageKey) {
+          try {
+            localStorage.setItem(storageKey, val);
+          } catch (e) {}
+        }
         renderHookList();
       });
     });
   }
 
-  setupSegmentedControl('segmentedPlatform', filterPlatform);
+  setupSegmentedControl('segmentedPlatform', filterPlatform, FILTER_PLATFORM_KEY);
   setupSegmentedControl('segmentedOutlier', filterOutlier);
+
+  // View Density Switcher (To / Bé - Twittermark Style)
+  const DENSITY_KEY = 'vault_view_density_v1';
+  function setupViewDensityToggle() {
+    const hookList = document.getElementById('hookList');
+    const btnLarge = document.getElementById('btnDensityLarge');
+    const btnCompact = document.getElementById('btnDensityCompact');
+    if (!hookList || !btnLarge || !btnCompact) return;
+
+    let saved = 'large';
+    try {
+      const val = localStorage.getItem(DENSITY_KEY);
+      if (val === 'compact' || val === 'large') saved = val;
+    } catch (e) {}
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramDensity = urlParams.get('density');
+    if (paramDensity === 'compact' || paramDensity === 'large') {
+      saved = paramDensity;
+    }
+
+    function setDensity(mode) {
+      hookList.classList.remove('density-large', 'density-compact');
+      hookList.classList.add(`density-${mode}`);
+      btnLarge.classList.toggle('active', mode === 'large');
+      btnCompact.classList.toggle('active', mode === 'compact');
+      try {
+        localStorage.setItem(DENSITY_KEY, mode);
+      } catch (e) {}
+    }
+
+    btnLarge.addEventListener('click', () => setDensity('large'));
+    btnCompact.addEventListener('click', () => setDensity('compact'));
+
+    setDensity(saved);
+  }
+
+  setupViewDensityToggle();
 
   // Custom Floating Popover Dropdown Setup
   function setupCustomDropdown(dropdownId, triggerId, menuId, selectEl, onChangeCallback) {
@@ -883,25 +1255,111 @@
     }
   });
 
-  // Initialize
+  // Create Vault Modal Setup
+  function initCreateVaultModal() {
+    const btnCreateVault = document.getElementById('btnCreateVault');
+    const modalCreateVault = document.getElementById('modalCreateVault');
+    const btnCloseModalVault = document.getElementById('btnCloseModalVault');
+    const btnCancelModalVault = document.getElementById('btnCancelModalVault');
+    const btnConfirmModalVault = document.getElementById('btnConfirmModalVault');
+    const inputVaultName = document.getElementById('inputVaultName');
+    let selectedModalColor = '#ff6161';
 
+    if (!btnCreateVault || !modalCreateVault) return;
+
+    const openModal = () => {
+      modalCreateVault.classList.remove('hidden');
+      if (inputVaultName) {
+        inputVaultName.value = '';
+        setTimeout(() => inputVaultName.focus(), 80);
+      }
+    };
+
+    const closeModal = () => {
+      modalCreateVault.classList.add('hidden');
+    };
+
+    btnCreateVault.onclick = openModal;
+    if (btnCloseModalVault) btnCloseModalVault.onclick = closeModal;
+    if (btnCancelModalVault) btnCancelModalVault.onclick = closeModal;
+
+    modalCreateVault.addEventListener('click', (e) => {
+      if (e.target === modalCreateVault) closeModal();
+    });
+
+    const colorSwatches = document.querySelectorAll('.color-swatch');
+    colorSwatches.forEach((swatch) => {
+      swatch.onclick = () => {
+        colorSwatches.forEach((s) => s.classList.remove('active'));
+        swatch.classList.add('active');
+        selectedModalColor = swatch.getAttribute('data-color') || '#ff6161';
+      };
+    });
+
+    const submitCreateVault = () => {
+      const name = (inputVaultName?.value || '').trim();
+      if (!name) {
+        alert('Vui lòng nhập tên cho Vault mới!');
+        return;
+      }
+      if (currentVaults.some((v) => v.name.toLowerCase() === name.toLowerCase())) {
+        alert('Tên Vault này đã tồn tại!');
+        return;
+      }
+      const newVault = {
+        id: 'vault-' + Date.now(),
+        name: name,
+        color: selectedModalColor,
+        createdAt: new Date().toISOString()
+      };
+      const nextVaults = [...currentVaults, newVault];
+      saveVaults(nextVaults, () => {
+        selectedVaultId = newVault.id;
+        renderVaultTabs();
+        renderHookList();
+        closeModal();
+        showToast(`✓ Đã tạo Vault "${name}" thành công!`);
+      });
+    };
+
+    if (btnConfirmModalVault) btnConfirmModalVault.onclick = submitCreateVault;
+    if (inputVaultName) {
+      inputVaultName.onkeydown = (e) => {
+        if (e.key === 'Enter') submitCreateVault();
+        if (e.key === 'Escape') closeModal();
+      };
+    }
+  }
+
+  // Initialize
   initSpotlightCards();
   initClickSparks();
+  initCreateVaultModal();
 
-  loadVaultData((items) => {
-    currentHooks = items;
-    updateStats(currentHooks);
-    renderHookList();
+  loadVaults(() => {
+    loadVaultData((items) => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('sample') === 'true') {
+        items = [...SEED_SAMPLES];
+      }
+      currentHooks = items;
+      updateStats(currentHooks);
+      renderVaultTabs();
+      renderHookList();
+    });
   });
 
-  // Real-time synchronization when a hook is saved in another tab (Threads or X)
+  // Real-time synchronization when a hook or vault is saved in another tab (Threads or X)
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'local' && changes[STORAGE_KEY]) {
-        loadVaultData((items) => {
-          currentHooks = items;
-          updateStats(currentHooks);
-          renderHookList();
+      if (area === 'local' && (changes[STORAGE_KEY] || changes[VAULTS_KEY])) {
+        loadVaults(() => {
+          loadVaultData((items) => {
+            currentHooks = items;
+            updateStats(currentHooks);
+            renderVaultTabs();
+            renderHookList();
+          });
         });
       }
     });
@@ -909,11 +1367,14 @@
 
   // Cross-tab synchronization for localStorage
   window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY) {
-      loadVaultData((items) => {
-        currentHooks = items;
-        updateStats(currentHooks);
-        renderHookList();
+    if (e.key === STORAGE_KEY || e.key === VAULTS_KEY) {
+      loadVaults(() => {
+        loadVaultData((items) => {
+          currentHooks = items;
+          updateStats(currentHooks);
+          renderVaultTabs();
+          renderHookList();
+        });
       });
     }
   });
