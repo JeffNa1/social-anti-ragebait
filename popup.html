@@ -304,6 +304,106 @@
       height: 15px;
       flex-shrink: 0;
     }
+    /* Custom Keyword Mute Section */
+    .keyword-mute-container {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .keyword-input-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .keyword-input {
+      flex: 1;
+      background: #0d0d0d;
+      border: 1px solid #242728;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 12px;
+      color: #f4f4f6;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .keyword-input:focus {
+      border-color: #57c1ff;
+      box-shadow: 0 0 10px rgba(87, 193, 255, 0.25);
+    }
+    .keyword-input::placeholder {
+      color: #636366;
+    }
+    .btn-add-kw {
+      background: #242728;
+      color: #f4f4f6;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+      white-space: nowrap;
+    }
+    .btn-add-kw:hover {
+      background: #323538;
+      border-color: #57c1ff;
+      color: #57c1ff;
+    }
+    .btn-add-kw:active {
+      transform: scale(0.95);
+    }
+    .keyword-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      max-height: 95px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .kw-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 97, 97, 0.12);
+      border: 1px solid rgba(255, 97, 97, 0.35);
+      color: #ff8585;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      animation: chipFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes chipFadeIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .kw-chip-remove {
+      background: none;
+      border: none;
+      color: rgba(255, 133, 133, 0.7);
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease;
+    }
+    .kw-chip-remove:hover {
+      color: #ff6161;
+    }
+    .keyword-empty-hint {
+      font-size: 11px;
+      color: #636366;
+      font-style: italic;
+      margin-top: 4px;
+    }
     @media (prefers-reduced-motion: reduce) {
       *, ::before, ::after {
         animation-duration: 0.01ms !important;
@@ -396,6 +496,25 @@
           <option value="5000">5,000 views</option>
         </select>
       </div>
+    </div>
+
+    <!-- Custom Keyword Mute Section -->
+    <div class="keyword-mute-container">
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Làm Mờ Theo Cụm Từ</div>
+          <div class="setting-desc">Tự động mờ bài chứa từ khóa m chỉ định</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="toggleKeywordBlur" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="keyword-input-row">
+        <input type="text" id="inputCustomKeyword" class="keyword-input" placeholder="Nhập từ khóa cần mờ (VD: crypto, drama...)" maxlength="50" />
+        <button type="button" id="btnAddKeyword" class="btn-add-kw">+ Thêm</button>
+      </div>
+      <div class="keyword-chips" id="keywordChips"></div>
     </div>
   </div>
 

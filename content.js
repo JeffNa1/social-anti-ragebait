@@ -32,6 +32,8 @@
     outlierMaxAgeHours: 48,
     outlierThreadsMinLikes: 150,
     outlierThreadsMinMultiplier: 2.0,
+    customMuteKeywords: [],
+    customKeywordBlurEnabled: true,
   };
 
   let scannedCount = 0;
@@ -335,8 +337,12 @@
         'outlierMaxAgeHours',
         'outlierThreadsMinLikes',
         'outlierThreadsMinMultiplier',
+        'customMuteKeywords',
+        'customKeywordBlurEnabled',
       ],
       (res) => {
+        if (Array.isArray(res.customMuteKeywords)) config.customMuteKeywords = res.customMuteKeywords;
+        if (typeof res.customKeywordBlurEnabled === 'boolean') config.customKeywordBlurEnabled = res.customKeywordBlurEnabled;
         if (typeof res.outlierDetectionEnabled === 'boolean') config.outlierDetectionEnabled = res.outlierDetectionEnabled;
         if (typeof res.outlierMinMultiplier === 'number') config.outlierMinMultiplier = res.outlierMinMultiplier;
         if (typeof res.outlierMinViews === 'number') config.outlierMinViews = res.outlierMinViews;
@@ -489,6 +495,8 @@
           'collapseSeedingEnabled',
           'confidenceThreshold',
           'hideFloatingPill',
+          'customMuteKeywords',
+          'customKeywordBlurEnabled',
         ].forEach((key) => {
           if (changes[key]) {
             if (key === 'customLabels') {
@@ -496,6 +504,12 @@
                 taxonomyChanged = true;
               }
               config.customLabels = changes.customLabels.newValue || [];
+            } else if (key === 'customMuteKeywords') {
+              config.customMuteKeywords = Array.isArray(changes.customMuteKeywords.newValue) ? changes.customMuteKeywords.newValue : [];
+              rescanAllKeywordMutes();
+            } else if (key === 'customKeywordBlurEnabled') {
+              config.customKeywordBlurEnabled = !!changes.customKeywordBlurEnabled.newValue;
+              rescanAllKeywordMutes();
             } else {
               if (TAXONOMY_KEYS.includes(key) && changes[key].newValue !== config[key]) {
                 taxonomyChanged = true;
@@ -1007,6 +1021,7 @@
       document.body.classList.toggle('x-jev-no-scam-blur', !config.blockScamsEnabled);
       document.body.classList.toggle('x-jev-hide-pill', !!config.hideFloatingPill);
       document.body.classList.toggle('x-jev-no-focus', !config.focusModeEnabled);
+      document.body.classList.toggle('x-shield-no-keyword-blur', !config.customKeywordBlurEnabled);
       const disableAll = !config.autoBlurRageEnabled && !config.monkModeEnabled && !config.blockScamsEnabled;
       document.body.classList.toggle('x-jev-disable-all-blur', disableAll);
     }
@@ -1161,6 +1176,21 @@
         chrome.storage.local.set({ focusCollapsedCount });
       }
     }
+
+    // 8. Custom Keyword Mute State
+    document.querySelectorAll('[data-keyword-blocked="true"]').forEach((post) => {
+      const box = post.querySelector('.x-shield-keyword-box');
+      if (config.customKeywordBlurEnabled) {
+        if (!post.classList.contains('x-keyword-revealed')) {
+          applyInlineUnblur(post, false);
+          if (box) box.style.display = 'flex';
+        }
+      } else {
+        post.classList.add('x-keyword-revealed');
+        applyInlineUnblur(post, true);
+        if (box) box.style.display = 'none';
+      }
+    });
   }
 
   // --- HARDCORE MONK MODE: CLIENT-SIDE INSTANT MEDIA SCANNER ---
@@ -1340,6 +1370,137 @@
     }
   }
 
+  // --- CUSTOM KEYWORD / PHRASE BLUR FILTER ---
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function matchCustomKeyword(text) {
+    if (!config.customKeywordBlurEnabled || !Array.isArray(config.customMuteKeywords) || config.customMuteKeywords.length === 0) {
+      return null;
+    }
+    if (!text || typeof text !== 'string') return null;
+    const lowerText = text.toLowerCase();
+    for (const kw of config.customMuteKeywords) {
+      if (!kw || typeof kw !== 'string') continue;
+      const cleanKw = kw.trim().toLowerCase();
+      if (cleanKw && lowerText.includes(cleanKw)) {
+        return kw.trim();
+      }
+    }
+    return null;
+  }
+
+  function checkAndApplyKeywordMute(postEl, text, textEl) {
+    if (!postEl) return false;
+    const effectiveText = text || (textEl ? textEl.innerText : '') || (postEl.innerText || '');
+    const matchedKw = matchCustomKeyword(effectiveText);
+    const existingBox = postEl.querySelector('.x-shield-keyword-box');
+
+    if (!matchedKw || !config.customKeywordBlurEnabled) {
+      if (postEl.hasAttribute('data-keyword-blocked')) {
+        postEl.removeAttribute('data-keyword-blocked');
+        postEl.removeAttribute('data-matched-keyword');
+        postEl.removeAttribute('data-keyword-revealed');
+        postEl.classList.remove('x-shield-keyword-blurred');
+        postEl.classList.remove('x-keyword-revealed');
+        if (existingBox) existingBox.remove();
+        if (!postEl.hasAttribute('data-jev-rage') && !postEl.hasAttribute('data-jev-scam')) {
+          postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
+            el.removeAttribute('data-jev-blur-item');
+            el.style.removeProperty('filter');
+            el.style.removeProperty('opacity');
+            el.style.removeProperty('pointer-events');
+            el.style.removeProperty('user-select');
+          });
+        }
+      }
+      return false;
+    }
+
+    postEl.setAttribute('data-keyword-blocked', 'true');
+    postEl.setAttribute('data-matched-keyword', matchedKw);
+    postEl.classList.add('x-shield-keyword-blurred');
+
+    if (textEl) textEl.setAttribute('data-jev-blur-item', 'true');
+    postEl.querySelectorAll('span[dir="auto"], div[dir="auto"]').forEach((span) => {
+      if (!span.closest('button') && !span.closest('time') && !isProfileOnlyLink(span)) {
+        span.setAttribute('data-jev-blur-item', 'true');
+      }
+    });
+    postEl.querySelectorAll('img, video').forEach((m) => {
+      if (!isProfileOnlyLink(m)) m.setAttribute('data-jev-blur-item', 'true');
+    });
+
+    if (!existingBox) {
+      const box = document.createElement('div');
+      box.className = 'x-shield-keyword-box';
+      box.innerHTML = `
+        <span class="x-keyword-text">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>
+          <span><b>Bộ lọc từ khóa:</b> Đã làm mờ bài viết chứa cụm từ <i>"${escapeHtml(matchedKw)}"</i>.</span>
+        </span>
+      `;
+
+      const revealBtn = document.createElement('button');
+      revealBtn.className = 'x-keyword-reveal-btn';
+      revealBtn.type = 'button';
+      revealBtn.textContent = 'Xem bài viết';
+      revealBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isRevealed = postEl.classList.toggle('x-keyword-revealed');
+        if (isRevealed) {
+          postEl.setAttribute('data-keyword-revealed', 'true');
+          applyInlineUnblur(postEl, true);
+          revealBtn.textContent = 'Ẩn lại';
+        } else {
+          postEl.removeAttribute('data-keyword-revealed');
+          applyInlineUnblur(postEl, false);
+          revealBtn.textContent = 'Xem bài viết';
+        }
+      };
+
+      box.appendChild(revealBtn);
+
+      if (textEl && textEl.parentElement) {
+        textEl.parentElement.insertBefore(box, textEl);
+      } else {
+        postEl.prepend(box);
+      }
+    } else {
+      const kwSpan = existingBox.querySelector('.x-keyword-text span');
+      if (kwSpan) {
+        kwSpan.innerHTML = `<b>Bộ lọc từ khóa:</b> Đã làm mờ bài viết chứa cụm từ <i>"${escapeHtml(matchedKw)}"</i>.`;
+      }
+    }
+
+    if (!postEl.classList.contains('x-keyword-revealed')) {
+      applyInlineUnblur(postEl, false);
+    }
+    return true;
+  }
+
+  function rescanAllKeywordMutes() {
+    const posts = document.querySelectorAll('article[data-testid="tweet"], [data-pressable-container="true"], div[data-pagelet^="FeedUnit_"], div[role="article"], div[role="feed"] > div');
+    posts.forEach((post) => {
+      const textEl = post.querySelector('div[data-testid="tweetText"]') ||
+                     post.querySelector('div[data-ad-rendering-role="story_message"]') ||
+                     post.querySelector('div[dir="auto"], span[dir="auto"]');
+      const text = textEl ? textEl.innerText.trim() : (post.innerText || '');
+      checkAndApplyKeywordMute(post, text, textEl);
+    });
+  }
+
   function getPostTagKey(label) {
     if (label === 'self-improvement / motivational') return 'motivational';
     if (label === 'meme / humor / satire') return 'meme';
@@ -1444,6 +1605,9 @@
     // Check Monk Mode first
     checkAndApplyMonkMode(postEl, item.text);
 
+    // Check Custom Keyword Mute
+    checkAndApplyKeywordMute(postEl, item.text, textEl);
+
     if (postEl.hasAttribute('data-jev-handled')) return;
     if (!res || typeof res !== 'object') return;
 
@@ -1490,7 +1654,7 @@
         if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
       });
 
-      if (!postEl.querySelector('.x-jev-scam-box')) {
+      if (!postEl.querySelector('.x-jev-scam-box') && !postEl.hasAttribute('data-keyword-blocked')) {
         const box = document.createElement('div');
         box.className = 'x-jev-scam-box';
         const pct = Math.round(scamScore * 100);
@@ -1583,7 +1747,7 @@
         if (!isProfileOnlyLink(m)) m.setAttribute('data-jev-blur-item', 'true');
       });
 
-      if (!postEl.querySelector('.x-jev-warning-box')) {
+      if (!postEl.querySelector('.x-jev-warning-box') && !postEl.hasAttribute('data-keyword-blocked')) {
         const warningBox = document.createElement('div');
         warningBox.className = 'x-jev-warning-box';
         const pct = Math.round(rageScore * 100);
@@ -3256,9 +3420,18 @@
       authorName = nameSpan ? nameSpan.innerText.trim() : authorHandle;
     }
 
-    const avatarImg = postEl.querySelector('img[alt*="ảnh đại diện"], img[alt*="profile"], img[src*="cdninstagram.com"], img[src*="threads.net"]');
+    const postRoot = postEl.closest('article, div[role="article"], div[data-pressable-container="true"]') || postEl;
+    let avatarImg = postRoot.querySelector('header img, a[href*="/@"] img, img[alt*="ảnh đại diện"], img[alt*="profile"], img[src*="cdninstagram.com"], img[src*="fbcdn.net"], img[src*="threads.net"], img[src*="threads.com"]');
+    if (!avatarImg && postEl.parentElement) {
+      avatarImg = postEl.parentElement.querySelector('a[href*="/@"] img, img[src*="cdninstagram.com"], img[src*="fbcdn.net"]');
+    }
     if (avatarImg) {
-      authorAvatar = avatarImg.src || '';
+      authorAvatar = avatarImg.currentSrc || avatarImg.src || avatarImg.getAttribute('src') || '';
+    }
+
+    const cleanHandle = (authorHandle || '').replace('@', '').trim();
+    if (!authorAvatar && cleanHandle) {
+      authorAvatar = `https://unavatar.io/threads/${cleanHandle}`;
     }
 
     const postLink = postEl.querySelector('a[href*="/post/"], a[href*="/t/"]');
@@ -3450,7 +3623,7 @@
         hook: hookText,
         fullText: fullText,
         metrics: metrics,
-        mediaUrls: extractThreadsMedia(postEl),
+        mediaUrls: extractThreadsMedia(post),
         formula: formula,
         url: authorInfo.permalink,
         savedAt: new Date().toISOString(),
@@ -3661,6 +3834,7 @@
 
         // Threads Hook Vault & Jev AI Viral Scanner runs on visible posts, never on Activity notifications
         if (cleanText && !isActivity) {
+          checkAndApplyKeywordMute(post, cleanText, targetItem ? targetItem.el : null);
           processThreadsHookAndViral(post, cleanText, targetItem ? targetItem.el : null);
         }
 
@@ -3694,6 +3868,7 @@
         if (msgEl) {
           let text = msgEl.innerText.trim();
           text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          checkAndApplyKeywordMute(post, text, msgEl);
           if (text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
             scannedCount++;
@@ -3734,6 +3909,7 @@
 
         // Run Hook & Viral scanner on all visible tweets
         if (text) {
+          checkAndApplyKeywordMute(post, text, textEl);
           processXTweetHookAndViral(post, text);
         }
 

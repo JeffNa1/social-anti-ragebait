@@ -12,11 +12,7 @@
     <header class="vault-header">
       <div class="header-left">
         <div class="brand-badge">
-          <!-- Custom Geometric Shield-Lightning Icon -->
-          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z"/>
-            <path d="M13 7l-4 5h6l-3 5"/>
-          </svg>
+          <canvas id="botAvatarCanvas" width="40" height="40" class="bot-avatar-canvas" title="Jev AI Agent"></canvas>
           <span class="brand-title">Social Shield</span>
           <span class="brand-tag">THREADS FIRST</span>
         </div>
@@ -79,7 +75,7 @@
           </div>
         </div>
         <div class="stat-card-body">
-          <div class="stat-value" id="statTotalHooks">0</div>
+          <div class="stat-value metal-text" id="statTotalHooks">0</div>
           <div class="stat-hint">Sẵn sàng để học hỏi & mài sắc</div>
         </div>
         <div class="stat-meter-track">
@@ -105,7 +101,7 @@
           </div>
         </div>
         <div class="stat-card-body">
-          <div class="stat-value" id="statMaxViews">0</div>
+          <div class="stat-value metal-text" id="statMaxViews">0</div>
           <div class="stat-hint" id="statMaxViewsAuthor">Chưa có dữ liệu</div>
         </div>
         <div class="stat-meter-track">
@@ -152,7 +148,7 @@
           </div>
         </div>
         <div class="stat-card-body">
-          <div class="stat-value" id="statAvgLikes">0</div>
+          <div class="stat-value metal-text" id="statAvgLikes">0</div>
           <div class="stat-hint">Lượt thích & phản hồi / bài</div>
         </div>
         <div class="stat-meter-track">
@@ -172,7 +168,7 @@
           <span class="collections-title">CHỦ ĐỀ & PLAYLISTS</span>
           <span class="collections-count-badge" id="collectionsTotalBadge">0 Vaults</span>
         </div>
-        <button id="btnCreateVault" class="btn btn-secondary btn-create-vault" title="Tạo một Vault chủ đề mới">
+        <button id="btnCreateVault" class="btn btn-secondary btn-create-vault border-beam-pulse" title="Tạo một Vault chủ đề mới">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span>+ Tạo Vault Mới</span>
         </button>
@@ -188,7 +184,7 @@
     <!-- Filter & Search Toolbar -->
     <section class="toolbar-section">
       <div class="toolbar-primary-row">
-        <div class="search-box">
+        <div class="search-box border-beam-container" id="searchBoxWrapper">
           <!-- Custom Crosshair Lens Search Icon -->
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="7"/>
@@ -440,13 +436,10 @@
 
       <div id="emptyState" class="empty-state hidden">
         <div class="empty-header-row">
-          <!-- Custom Radar Scanning for Signal Icon -->
-          <svg class="empty-inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="9"/>
-            <path d="M12 3a9 9 0 0 1 9 9"/>
-            <path d="M12 7a5 5 0 0 1 5 5"/>
-            <circle cx="12" cy="12" r="2" fill="currentColor"/>
-          </svg>
+          <!-- Libraries.dev ThinkingOrb (state: searching) -->
+          <div class="thinking-orb-wrapper" title="Libraries.dev ThinkingOrb (state: searching, size: 64)">
+            <canvas id="thinkingOrbCanvas" width="128" height="128" class="thinking-orb-canvas" style="width: 64px; height: 64px;"></canvas>
+          </div>
           <h2 class="empty-title">Chưa có Hook Threads nào trong Vault</h2>
         </div>
         <p class="empty-desc">Lướt Threads (hoặc X) và bấm nút <strong>[⚡ Save Hook]</strong> dưới bài viết để tự động gom vào kho lưu trữ.</p>
@@ -506,7 +499,16 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
       <span id="toastMsg"></span>
     </div>
-  </div>
+  <!-- Libraries.dev Liquid Gooey SVG Filter -->
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
+    <defs>
+      <filter id="liquidGooey">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+        <feBlend in="SourceGraphic" in2="goo" />
+      </filter>
+    </defs>
+  </svg>
 
   <script src="dashboard.js"></script>
 </body>

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "libraries-dev": {
+      "source": "Jakubantalik/Libraries.dev",
+      "sourceType": "github",
+      "skillPath": "skills/libraries-dev/SKILL.md",
+      "computedHash": "007578dd0c49905277bc099972ce9b0bdfb0bc01b70e82bd27a9019a3419a7c3"
+    }
+  }
+}

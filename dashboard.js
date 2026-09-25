@@ -24,7 +24,7 @@
       platform: 'x',
       authorName: 'Alex River (Solo Bootstrapper)',
       authorHandle: '@alex_builds',
-      authorAvatar: '',
+      authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
       authorFollowers: 1450,
       outlierMultiplier: 28.5,
       postAgeHours: 14,
@@ -43,7 +43,7 @@
       platform: 'x',
       authorName: 'Alex Hormozi',
       authorHandle: '@AlexHormozi',
-      authorAvatar: '',
+      authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
       authorFollowers: 650000,
       outlierMultiplier: 2.8,
       postAgeHours: 24,
@@ -63,7 +63,7 @@
       platform: 'x',
       authorName: 'Sahil Bloom',
       authorHandle: '@SahilBloom',
-      authorAvatar: '',
+      authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80',
       authorFollowers: 1100000,
       outlierMultiplier: 2.9,
       postAgeHours: 48,
@@ -83,7 +83,7 @@
       id: 'seed-3',
       authorName: 'Dan Koe',
       authorHandle: '@thedankoe',
-      authorAvatar: '',
+      authorAvatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=120&auto=format&fit=crop&q=80',
       hook: 'The modern trap is working 50 hours a week at a job you hate to buy things you don’t need to impress people you don’t like.',
       fullText: 'The modern trap is working 50 hours a week at a job you hate to buy things you don’t need to impress people you don’t like.\n\nEscaping it doesn’t require millions. It requires:\n- Lower fixed expenses\n- 2 hours of daily skill building\n- A distribution channel (your writing)\n- Patience to play a 2-year game.',
       metrics: { views: 920000, likes: 21500, retweets: 3900, bookmarks: 8700, replies: 620 },
@@ -96,7 +96,7 @@
       platform: 'threads',
       authorName: 'Mark Zuckerberg',
       authorHandle: '@zuck',
-      authorAvatar: '',
+      authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
       hook: 'The future of open-source AI is moving significantly faster than closed models. Here is what we learned deploying Llama across 500M users:',
       fullText: 'The future of open-source AI is moving significantly faster than closed models. Here is what we learned deploying Llama across 500M users:\n\n1. Community fine-tunes beat general frontier models on niche benchmarks.\n2. On-device inference cost dropped by 10x.\n3. The ecosystem effect creates faster feedback loops than proprietary APIs.',
       mediaUrls: [
@@ -112,7 +112,7 @@
       platform: 'threads',
       authorName: 'Adam Mosseri',
       authorHandle: '@mosseri',
-      authorAvatar: '',
+      authorAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80',
       authorFollowers: 2800000,
       outlierMultiplier: 4.8,
       hook: 'If you want to reach new audiences on Threads in 2026 without paid ads, here is the exact algorithm ranking breakdown:',
@@ -263,9 +263,17 @@
           }
         } catch (e) {}
 
-        // Ensure every item has a vaultId assigned
+        // Ensure every item has a vaultId assigned and a valid avatar
         items = items.map((it) => {
           if (!it.vaultId) it.vaultId = DEFAULT_VAULT_ID;
+          if (!it.authorAvatar && it.authorHandle) {
+            const clean = it.authorHandle.replace('@', '').trim();
+            if (clean) {
+              it.authorAvatar = it.platform === 'threads'
+                ? `https://unavatar.io/threads/${clean}`
+                : `https://unavatar.io/x/${clean}`;
+            }
+          }
           return it;
         });
 
@@ -297,9 +305,17 @@
           }
         }
 
-        // Ensure every item has a vaultId assigned
+        // Ensure every item has a vaultId assigned and a valid avatar
         items = items.map((it) => {
           if (!it.vaultId) it.vaultId = DEFAULT_VAULT_ID;
+          if (!it.authorAvatar && it.authorHandle) {
+            const clean = it.authorHandle.replace('@', '').trim();
+            if (clean) {
+              it.authorAvatar = it.platform === 'threads'
+                ? `https://unavatar.io/threads/${clean}`
+                : `https://unavatar.io/x/${clean}`;
+            }
+          }
           return it;
         });
 
@@ -520,6 +536,233 @@
         }, 480);
       }
     });
+  }
+
+  // Libraries.dev ThinkingOrb Component (state: "searching", size: 64)
+  function initThinkingOrb() {
+    const canvas = document.getElementById('thinkingOrbCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = 64 * dpr;
+    canvas.height = 64 * dpr;
+
+    // Generate Fibonacci sphere points
+    const N = 120;
+    const points = [];
+    const phiRatio = (1 + Math.sqrt(5)) / 2;
+    for (let i = 0; i < N; i++) {
+      const y = 1 - (i / (N - 1)) * 2;
+      const radiusAtY = Math.sqrt(Math.max(0, 1 - y * y));
+      const theta = 2 * Math.PI * i / phiRatio;
+      const x = Math.cos(theta) * radiusAtY;
+      const z = Math.sin(theta) * radiusAtY;
+      points.push({ x, y, z, origTheta: theta });
+    }
+
+    let rotY = 0;
+    const tiltX = 0.28;
+    const cosTilt = Math.cos(tiltX);
+    const sinTilt = Math.sin(tiltX);
+
+    function frame() {
+      const emptyStateEl = document.getElementById('emptyState');
+      if (emptyStateEl && emptyStateEl.classList.contains('hidden')) {
+        requestAnimationFrame(frame);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const R = 23 * dpr;
+
+      rotY += 0.022;
+      const sweepAngle = (rotY * 1.5) % (Math.PI * 2);
+
+      const cosY = Math.cos(rotY);
+      const sinY = Math.sin(rotY);
+
+      for (let i = 0; i < N; i++) {
+        const p = points[i];
+
+        const rx = p.x * cosY + p.z * sinY;
+        const rz = -p.x * sinY + p.z * cosY;
+
+        const ry = p.y * cosTilt - rz * sinTilt;
+        const finalZ = p.y * sinTilt + rz * cosTilt;
+
+        const sx = cx + rx * R;
+        const sy = cy + ry * R;
+
+        let curAngle = Math.atan2(rz, rx);
+        if (curAngle < 0) curAngle += Math.PI * 2;
+        const angleDiff = Math.abs(curAngle - sweepAngle);
+        const isNearSweep = angleDiff < 0.35 || Math.abs(angleDiff - Math.PI * 2) < 0.35;
+
+        let dotRadius = Math.max(1, (finalZ + 1.2) * 1.35 * dpr);
+        let alpha = Math.max(0.12, (finalZ + 1) * 0.45);
+
+        ctx.beginPath();
+        if (isNearSweep && finalZ > -0.3) {
+          ctx.fillStyle = finalZ > 0.3 ? '#57c1ff' : '#c084fc';
+          ctx.shadowColor = '#57c1ff';
+          ctx.shadowBlur = 8 * dpr;
+          dotRadius *= 1.45;
+          alpha = Math.min(1, alpha + 0.5);
+        } else {
+          ctx.fillStyle = finalZ > 0 ? `rgba(255, 255, 255, ${alpha})` : `rgba(87, 193, 255, ${alpha * 0.5})`;
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.arc(sx, sy, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // Libraries.dev BotAvatar Component (type: "clover", state: "active", native Canvas 2D)
+  function initBotAvatar() {
+    const canvas = document.getElementById('botAvatarCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = 40 * dpr;
+    canvas.height = 40 * dpr;
+
+    let time = 0;
+    let blinkTimer = 0;
+    let isBlinking = false;
+    let eyeLookX = 0;
+    let eyeLookY = 0;
+
+    setInterval(() => {
+      eyeLookX = (Math.random() - 0.5) * 4;
+      eyeLookY = (Math.random() - 0.5) * 2;
+    }, 2400);
+
+    function frame() {
+      time += 0.04;
+      blinkTimer++;
+      if (!isBlinking && blinkTimer > 160 + Math.random() * 80) {
+        isBlinking = true;
+        blinkTimer = 0;
+      }
+      if (isBlinking && blinkTimer > 8) {
+        isBlinking = false;
+        blinkTimer = 0;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2 + Math.sin(time) * 1.8 * dpr;
+      const r = 15 * dpr;
+
+      // Outer aura ring
+      const ringPulse = (Math.sin(time * 1.5) + 1) * 0.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 2.5 * dpr + ringPulse * 1.5 * dpr, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(87, 193, 255, ${0.25 + ringPulse * 0.25})`;
+      ctx.lineWidth = 1.5 * dpr;
+      ctx.stroke();
+
+      // Bot glossy body
+      const grad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.2, cx, cy, r);
+      grad.addColorStop(0, '#38bdf8');
+      grad.addColorStop(0.35, '#0284c7');
+      grad.addColorStop(0.85, '#0f172a');
+      grad.addColorStop(1, '#020617');
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Metallic border ring
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 1 * dpr;
+      ctx.stroke();
+
+      // Visor / Face screen
+      const visorW = 18 * dpr;
+      const visorH = 10 * dpr;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(cx - visorW / 2, cy - visorH / 2, visorW, visorH, 5 * dpr);
+      } else {
+        ctx.rect(cx - visorW / 2, cy - visorH / 2, visorW, visorH);
+      }
+      ctx.fillStyle = '#090d16';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(87, 193, 255, 0.35)';
+      ctx.lineWidth = 0.75 * dpr;
+      ctx.stroke();
+
+      // Expressive glowing eyes
+      const eyeH = isBlinking ? 1 * dpr : 3.5 * dpr;
+      const eyeW = 3.5 * dpr;
+      const eyeOffset = 4.2 * dpr;
+      const eyeY = cy + eyeLookY * dpr;
+
+      ctx.fillStyle = '#57c1ff';
+      ctx.shadowColor = '#57c1ff';
+      ctx.shadowBlur = 6 * dpr;
+
+      // Left eye
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(cx - eyeOffset - eyeW / 2 + eyeLookX * 0.6 * dpr, eyeY - eyeH / 2, eyeW, eyeH, 1.5 * dpr);
+      } else {
+        ctx.rect(cx - eyeOffset - eyeW / 2 + eyeLookX * 0.6 * dpr, eyeY - eyeH / 2, eyeW, eyeH);
+      }
+      ctx.fill();
+
+      // Right eye
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(cx + eyeOffset - eyeW / 2 + eyeLookX * 0.6 * dpr, eyeY - eyeH / 2, eyeW, eyeH, 1.5 * dpr);
+      } else {
+        ctx.rect(cx + eyeOffset - eyeW / 2 + eyeLookX * 0.6 * dpr, eyeY - eyeH / 2, eyeW, eyeH);
+      }
+      ctx.fill();
+
+      // Reset shadow
+      ctx.shadowBlur = 0;
+
+      // Glossy top specular reflection
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - r * 0.62, r * 0.55, r * 0.22, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.fill();
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  // Libraries.dev BorderBeam Integration (line on search, pulse on CTA)
+  function initBorderBeam() {
+    const searchBoxWrapper = document.getElementById('searchBoxWrapper');
+    if (searchInput && searchBoxWrapper) {
+      searchInput.addEventListener('focus', () => searchBoxWrapper.classList.add('border-beam-active'));
+      searchInput.addEventListener('blur', () => {
+        if (searchInput.value.trim().length === 0) {
+          searchBoxWrapper.classList.remove('border-beam-active');
+        }
+      });
+      searchInput.addEventListener('input', () => {
+        searchBoxWrapper.classList.toggle('border-beam-active', searchInput.value.trim().length > 0 || document.activeElement === searchInput);
+      });
+    }
   }
 
   // Update Stats Cards
@@ -769,14 +1012,21 @@
   function createHookCard(item) {
     const card = document.createElement('div');
     const isOutlier = (item.outlierMultiplier || 0) >= 3.0;
+    const isSuperOutlier = (item.outlierMultiplier || 0) >= 10.0;
     const isViral = (item.metrics?.views || 0) >= 50000 || (item.metrics?.likes || 0) >= 1000;
-    card.className = `hook-card ${isOutlier ? 'is-outlier-card' : (isViral ? 'is-viral-card' : '')}`;
+    card.className = `hook-card border-beam-card ${isSuperOutlier ? 'is-outlier-card is-super-outlier' : (isOutlier ? 'is-outlier-card' : (isViral ? 'is-viral-card' : ''))}`;
     card.setAttribute('data-id', item.id);
 
     const meta = FORMULA_META[item.formula] || FORMULA_META.other;
     const authorInitials = (item.authorName || 'U').substring(0, 2).toUpperCase();
-    const avatarHtml = item.authorAvatar
-      ? `<img src="${escapeHtml(item.authorAvatar)}" class="author-avatar" alt="${escapeHtml(item.authorName)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div class="author-avatar fallback" style="display:none; align-items:center; justify-content:center; font-size:12px; font-weight:700;">${authorInitials}</div>`
+    const cleanHandle = (item.authorHandle || '').replace('@', '').trim();
+    const unavatarUrl = cleanHandle
+      ? (item.platform === 'threads' ? `https://unavatar.io/threads/${cleanHandle}` : `https://unavatar.io/x/${cleanHandle}`)
+      : '';
+    const avatarSrc = item.authorAvatar || unavatarUrl;
+
+    const avatarHtml = avatarSrc
+      ? `<img src="${escapeHtml(avatarSrc)}" class="author-avatar" alt="${escapeHtml(item.authorName)}" referrerpolicy="no-referrer" loading="lazy" onerror="if (this.src !== '${unavatarUrl}' && '${unavatarUrl}') { this.src = '${unavatarUrl}'; } else { this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex'; }" /><div class="author-avatar fallback" style="display:none; align-items:center; justify-content:center; font-size:12px; font-weight:700;">${authorInitials}</div>`
       : `<div class="author-avatar fallback" style="display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">${authorInitials}</div>`;
 
     const formattedDate = item.savedAt ? new Date(item.savedAt).toLocaleDateString('vi-VN') : 'Gần đây';
@@ -1334,6 +1584,9 @@
   // Initialize
   initSpotlightCards();
   initClickSparks();
+  initThinkingOrb();
+  initBotAvatar();
+  initBorderBeam();
   initCreateVaultModal();
 
   loadVaults(() => {

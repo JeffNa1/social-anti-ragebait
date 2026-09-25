@@ -1428,3 +1428,123 @@ div.x-shield-threads-viral {
   from { transform: scale(0.8); opacity: 0.5; }
   to { transform: scale(1.3); opacity: 1; }
 }
+
+/* ==========================================================================
+   Custom Keyword / Phrase Blur Filter Styles
+   ========================================================================== */
+
+/* Blur targets for posts containing muted keywords */
+[data-keyword-blocked="true"]:not(.x-keyword-revealed):not([data-keyword-revealed="true"]) [data-jev-blur-item="true"],
+.x-shield-keyword-blurred:not(.x-keyword-revealed):not([data-keyword-revealed="true"]) [data-jev-blur-item="true"],
+.x-shield-keyword-blurred:not(.x-keyword-revealed):not([data-keyword-revealed="true"]) span[dir="auto"],
+.x-shield-keyword-blurred:not(.x-keyword-revealed):not([data-keyword-revealed="true"]) div[dir="auto"],
+.x-shield-keyword-blurred:not(.x-keyword-revealed):not([data-keyword-revealed="true"]) img:not([src*="profile_images"]):not([alt*="avatar"]):not([alt*="profile"]),
+.x-shield-keyword-blurred:not(.x-keyword-revealed):not([data-keyword-revealed="true"]) video {
+  filter: blur(14px) !important;
+  opacity: 0.15 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  transition: filter 0.2s ease, opacity 0.2s ease !important;
+}
+
+/* User reveals keyword-muted post */
+[data-keyword-blocked="true"].x-keyword-revealed [data-jev-blur-item="true"],
+[data-keyword-blocked="true"][data-keyword-revealed="true"] [data-jev-blur-item="true"],
+.x-shield-keyword-blurred.x-keyword-revealed [data-jev-blur-item="true"],
+.x-shield-keyword-blurred[data-keyword-revealed="true"] [data-jev-blur-item="true"],
+.x-shield-keyword-blurred.x-keyword-revealed span[dir="auto"],
+.x-shield-keyword-blurred.x-keyword-revealed div[dir="auto"],
+.x-shield-keyword-blurred.x-keyword-revealed img,
+.x-shield-keyword-blurred.x-keyword-revealed video {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: auto !important;
+  pointer-events: auto !important;
+}
+
+/* Global override when user turns off keyword blur switch */
+body.x-shield-no-keyword-blur [data-keyword-blocked="true"] [data-jev-blur-item="true"],
+body.x-shield-no-keyword-blur .x-shield-keyword-blurred [data-jev-blur-item="true"],
+body.x-shield-no-keyword-blur .x-shield-keyword-blurred span[dir="auto"],
+body.x-shield-no-keyword-blur .x-shield-keyword-blurred div[dir="auto"],
+body.x-shield-no-keyword-blur .x-shield-keyword-blurred img,
+body.x-shield-no-keyword-blur .x-shield-keyword-blurred video {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: auto !important;
+  pointer-events: auto !important;
+}
+
+body.x-shield-no-keyword-blur .x-shield-keyword-box {
+  display: none !important;
+}
+
+/* Warning box for keyword-blurred posts */
+.x-shield-keyword-box {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14) 0%, rgba(24, 24, 27, 0.96) 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  border-radius: var(--jev-radius-lg, 10px) !important;
+  padding: 10px 14px !important;
+  margin: 6px 0 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  font-size: 12px !important;
+  color: #fbbf24 !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  z-index: 99 !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 25px rgba(245, 158, 11, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s !important;
+}
+
+.x-shield-keyword-box:hover {
+  border-color: rgba(245, 158, 11, 0.7) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 35px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.x-keyword-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 500 !important;
+  color: #fde68a !important;
+  line-height: 1.35 !important;
+}
+
+.x-keyword-text svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: #f59e0b !important;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6)) !important;
+  flex-shrink: 0 !important;
+}
+
+.x-keyword-reveal-btn {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  padding: 5px 12px !important;
+  border-radius: 6px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.18s ease !important;
+}
+
+.x-keyword-reveal-btn:hover {
+  background: rgba(245, 158, 11, 0.35) !important;
+  border-color: #fbbf24 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.35) !important;
+}
+
